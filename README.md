@@ -60,7 +60,7 @@ docker run --rm -it primus/aegis /bin/bash
 
 ## How Aegis Works
 
-<img src='docs/_static/figs/concept.png' width = "800" height = "200" align="middle"/>
+<img src='docs/_static/figs/concept.png' width = "850" height = "220" align="middle"/>
 
 Aegis accepts pre-trained machine learning ONNX models as input, converts them to MLIR using the ONNX-MLIR integrated into the Aegis frontend, and then compiles the MLIR into a fully homomorphic encryption (FHE) program using Aegis. The program is executed through Aegis FHERuntime. This process enables Aegis to support pre-trained machine learning models that have been trained and fine-tuned using popular machine learning frameworks, such as PyTorch, TensorFlow, Scikit-learn, and more.
 
