@@ -51,7 +51,7 @@ set_property(TARGET capnpc PROPERTY IMPORTED_LOCATION ${CAPNP_CMD})
 add_dependencies(capnpc capnp_repo)
 
 
-get_filename_component(AEGIS_PROTOCOL_CAPNP_FILE "aegis-protocol/src/protocol.capnp" ABSOLUTE)
+get_filename_component(AEGIS_PROTOCOL_CAPNP_FILE "src/protocol.capnp" ABSOLUTE)
 get_filename_component(AEGIS_PROTOCOL_FOLDER "${AEGIS_PROTOCOL_CAPNP_FILE}" DIRECTORY)
 set(GENERATED_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 file(MAKE_DIRECTORY "${GENERATED_DIRECTORY}")
