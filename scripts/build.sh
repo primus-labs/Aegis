@@ -13,7 +13,7 @@ mkdir -p build
 cd build
 
 cmake -G Ninja ../llvm \
--DLLVM_ENABLE_PROJECTS=mlir \
+-DLLVM_ENABLE_PROJECTS="mlir;openmp" \
 -DLLVM_BUILD_EXAMPLES=OFF \
 -DLLVM_TARGETS_TO_BUILD=X86 \
 -DCMAKE_BUILD_TYPE=Release \
@@ -28,20 +28,27 @@ cmake -G Ninja ../llvm \
 cmake --build .
 
 
-
 echo "****************************************************"
 echo "**************     build onnx-mlir     *************"
 echo "****************************************************"
+MLIR_DIR=$(pwd)/lib/cmake/mlir
 cd ../../onnx-mlir
 mkdir -p build
 cd build
-cmake --build . --config Release
+cmake -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DLLVM_ENABLE_ASSERTIONS=ON \
+        -DMLIR_DIR=${MLIR_DIR} \
+        ..
 
 
 echo "****************************************************"
 echo "**************      build OpenFHE      *************"
 echo "****************************************************"
-
+cd ../../openfhe-development
+mkdir -p build
+cd build
+cmake ..
 
 
 echo "****************************************************"
