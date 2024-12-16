@@ -6,3 +6,6 @@
 	path = third_party/onnx-mlir
 	url = https://github.com/onnx/onnx-mlir.git
 	branch = 0.4.3.0
+[submodule "third_party/openfhe"]
+	path = third_party/openfhe
+	url = https://github.com/openfheorg/openfhe-development.git
