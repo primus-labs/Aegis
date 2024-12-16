@@ -14,6 +14,7 @@ Aegis provides developer-friendly FHE compiler and runtime environment toolkit, 
 
 ```shell
 sudo apt update
+sudo apt install ninja-build
 sudo apt install clang
 sudo apt install python3
 sudo apt install python3-pip
@@ -25,10 +26,11 @@ sudo pip install scikit-learn   # (Optional)
 #### CentOS
 
 ```shell
-sudo apt update
-sudo apt install clang
-sudo apt install python3
-sudo apt install python3-pip
+sudo yum update
+sudo yum install ninja-build
+sudo yum install clang
+sudo yum install python3
+sudo yum install python3-pip
 sudo pip install torch          
 sudo pip install tensorflow     # (Optional)
 sudo pip install scikit-learn   # (Optional)
