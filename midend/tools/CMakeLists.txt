@@ -24,7 +24,7 @@ set(DEP_LIBS
 
 add_llvm_executable(aegiscompiler main.cpp)
 llvm_update_compile_flags(aegiscompiler)
-target_link_libraries(aegiscompiler PRIVATE ${LIBS})
+target_link_libraries(aegiscompiler PRIVATE ${DEP_LIBS})
 
 add_dependencies(aegiscompiler mlir-headers)
 
