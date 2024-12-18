@@ -2,7 +2,6 @@
 #include <optional>
 
 #include "Dialect/Secret/SecretOps.h"
-#include "Dialect/Secret/SecretPatterns.h"
 #include "Dialect/Secret/SecretTypes.h"
 
 #include "llvm/ADT/SmallString.h"
