@@ -41,14 +41,15 @@ endforeach()
 
 
 set(MLIR_TABLEGEN_OUTPUT_DIR ${LLVM_BINARY_DIR}/tools/mlir/include)
-message(STATUS "MLIR_TABLEGEN_OUTPUT_DIR       ================> ${MLIR_TABLEGEN_OUTPUT_DIR}")
 include_directories(SYSTEM ${MLIR_INCLUDE_DIRS})        # MLIR headers
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})        # LLVM headers
 include_directories(SYSTEM ${MLIR_TABLEGEN_OUTPUT_DIR}) # MLIR Tabelgen headers
 include_directories(${PROJECT_SOURCE_DIR})              # Aegis headers
 include_directories(${PROJECT_BINARY_DIR})              # Aegis headers 
-message(STATUS "MLIR_INCLUDE_DIRS   ================> ${MLIR_INCLUDE_DIR}")
+message(STATUS "MLIR_TABLEGEN_OUTPUT_DIR  ================> ${MLIR_TABLEGEN_OUTPUT_DIR}")
+message(STATUS "MLIR_INCLUDE_DIRS   ================> ${MLIR_INCLUDE_DIRS}")
 message(STATUS "LLVM_INCLUDE_DIRS   ================> ${LLVM_INCLUDE_DIRS}")
+
 
 # *********************************************************************
 #                          Aegis Protocol

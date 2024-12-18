@@ -59,7 +59,7 @@ def Secret_RevealOp : Secret_Op<"reveal", [Pure]> {
     ];
 }
 
-def Secret_AddOp : FHE_Op<"add", [Pure, Commutative]> {
+def Secret_AddOp : Secret_Op<"add", [Pure, Commutative]> {
     let summary = "Adds two encrypted integers";
 
     let description = [{
@@ -81,7 +81,7 @@ def Secret_AddOp : FHE_Op<"add", [Pure, Commutative]> {
     );
 }
 
-def Secret_AddPlainOp : FHE_Op<"add", [Pure]> {
+def Secret_AddPlainOp : Secret_Op<"add", [Pure]> {
     let summary = "Adds an encrypted integer and a clear integer";
 
     let description = [{

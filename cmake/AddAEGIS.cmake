@@ -29,7 +29,8 @@ function(add_aegis_dialect dialect dialect_namespace)
   add_public_tablegen_target(Aegis${dialect}DialectIncGen)
   add_dependencies(Aegis${dialect}IncGen Aegis${dialect}DialectIncGen)
 
-  message("CMAKE_CURRENT_SOURCE_DIR     ===============>     ${CMAKE_CURRENT_SOURCE_DIR}")
+  message("CMAKE_CURRENT_SOURCE_DIR   ===============>    ${CMAKE_CURRENT_SOURCE_DIR}")
+  message("CMAKE_CURRENT_BINARY_DIR   ===============>    ${CMAKE_CURRENT_BINARY_DIR}")
 
   # Ops
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dialect}Ops.td")

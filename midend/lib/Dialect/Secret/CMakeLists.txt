@@ -13,6 +13,7 @@ add_mlir_dialect_library(
 
     DEPENDS
     mlir-headers
+    AegisSecretIncGen
 
     LINK_LIBS
     PUBLIC

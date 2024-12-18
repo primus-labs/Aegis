@@ -25,7 +25,7 @@ def Secret : Secret_Type<"Secret", "secret"> {
 }
 
 
-def BatchedSecret : TypeDef<FHE_Dialect, "BatchedSecret">  {
+def BatchedSecret : TypeDef<Secret_Dialect, "BatchedSecret">  {
   let summary = "Batched Secret";
 
   let description = [{
