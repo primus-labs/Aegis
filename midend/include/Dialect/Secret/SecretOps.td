@@ -63,9 +63,6 @@ def Secret_AddOp : Secret_Op<"add", [Pure, Commutative]> {
     let summary = "Adds two secret values";
 
     let description = [{
-        The "add" operation performs element-wise addition between two secret tensors.
-        The shapes of the tensor operands are expected to match.
-
         Example:
         ```mlir
         "secret.add"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!ecete.Secret<i32>)
@@ -86,9 +83,6 @@ def Secret_AddPlainOp : Secret_Op<"add_plain", [Pure]> {
     let summary = "Adds an secret value and a clear value";
 
     let description = [{
-        The "add_plain" operation performs element-wise addition between secret value and clear value.
-        The shapes of the two value operands are expected to match.
-
         Example:
         ```mlir
         "secret.add_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!ecete.Secret<i32>)
@@ -108,9 +102,6 @@ def Secret_SubOp : Secret_Op<"sub", [Pure]> {
     let summary = "subtraction two secret values";
 
     let description = [{
-        The "sub" operation performs element-wise subtraction between two secret tensors.
-        The shapes of the tensor operands are expected to match.
-
         Example:
         ```mlir
         "secret.sub"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!ecete.Secret<i32>)
@@ -131,9 +122,6 @@ def Secret_SubPlainOp : Secret_Op<"sub_plain", [Pure]> {
     let summary = "subtraction an secret value and a clear value";
 
     let description = [{
-        The "sub_plain" operation performs element-wise subtraction between secret value and clear value.
-        The shapes of the two value operands are expected to match.
-
         Example:
         ```mlir
         "secret.sub_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!ecete.Secret<i32>)
@@ -153,7 +141,6 @@ def Secret_NegOp : Secret_Op<"neg", [Pure]> {
     let summary = "Negates an secret value";
 
     let description = [{
-
         Example:
         ```mlir
         "secret.neg"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
@@ -258,15 +245,12 @@ def Secret_DivPlainOp : Secret_Op<"div_plain", [Pure]> {
 }
 
 def Secret_EqOp : Secret_Op<"eq", [Pure, Commutative]> {
-    let summary = "Equality two secret values";
+    let summary = "Checking the equality of two secret values";
 
     let description = [{
-        The "eq" operation performs element-wise equality between two secret tensors.
-        The shapes of the tensor operands are expected to match.
-
         Example:
         ```mlir
-        "secret.eq"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!ecete.Secret<i32>)
+        "secret.eq"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
         ```
     }];
 
@@ -281,15 +265,12 @@ def Secret_EqOp : Secret_Op<"eq", [Pure, Commutative]> {
 }
 
 def Secret_EqPlainOp : Secret_Op<"eq_plain", [Pure]> {
-    let summary = "Equality an secret value and a clear value";
+    let summary = "Checking the equality between the secret value and the clear value.";
 
     let description = [{
-        The "eq_plain" operation performs element-wise equality between secret value and clear value.
-        The shapes of the two value operands are expected to match.
-
         Example:
         ```mlir
-        "secret.eq_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!ecete.Secret<i32>)
+        "secret.eq_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
         ```
     }];
 
@@ -303,15 +284,12 @@ def Secret_EqPlainOp : Secret_Op<"eq_plain", [Pure]> {
 }
 
 def Secret_NotEqOp : Secret_Op<"not_eq", [Pure, Commutative]> {
-    let summary = "Not-Equality two secret values";
+    let summary = "Checking the inequality of two secret values";
 
     let description = [{
-        The "not_eq" operation performs element-wise not-equality between two secret tensors.
-        The shapes of the tensor operands are expected to match.
-
         Example:
         ```mlir
-        "secret.not_eq"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!ecete.Secret<i32>)
+        "secret.not_eq"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
         ```
     }];
 
@@ -326,15 +304,12 @@ def Secret_NotEqOp : Secret_Op<"not_eq", [Pure, Commutative]> {
 }
 
 def Secret_NotEqPlainOp : Secret_Op<"not_eq_plain", [Pure]> {
-    let summary = "Not-equality an secret value and a clear value";
+    let summary = "Checking the inequality between the secret value and the clear value.";
 
     let description = [{
-        The "not_eq_plain" operation performs element-wise not-equality between secret value and clear value.
-        The shapes of the two value operands are expected to match.
-
         Example:
         ```mlir
-        "secret.not_eq_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!ecete.Secret<i32>)
+        "secret.not_eq_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
         ```
     }];
 
@@ -345,6 +320,179 @@ def Secret_NotEqPlainOp : Secret_Op<"not_eq_plain", [Pure]> {
     );
 
     let hasFolder = 1;
+}
+
+def Secret_GreaterOp : Secret_Op<"greater", [Pure]> {
+    let summary = "Returns the truth secret value of (x > y) element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.greater"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_GreaterPlainOp : Secret_Op<"greater_plain", [Pure]> {
+    let summary = "Returns the truth secret value of (x > y) element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.greater_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_GreaterEqOp : Secret_Op<"greater_eq", [Pure]> {
+    let summary = "Returns the truth secret value of (x >= y) element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.greater_eq"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_GreaterEqPlainOp : Secret_Op<"greater_eq_plain", [Pure]> {
+    let summary = "Returns the truth secret value of (x >= y) element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.greater_eq_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_MaxOp : Secret_Op<"max", [Pure]> {
+    let summary = "Returns the max of secret value x and secret value y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.max"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_MaxPlainOp : Secret_Op<"max_plain", [Pure]> {
+    let summary = "Returns the max of secret value x and clear value y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.max_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_MinOp : Secret_Op<"min", [Pure]> {
+    let summary = "Returns the min of secret value x and secret value y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.min"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_MinPlainOp : Secret_Op<"min_plain", [Pure]> {
+    let summary = "Returns the min of secret value x and clear value y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.min_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_SelectOp: Secret_Op<"select", []> {
+  let summary = "The select operation chooses one value based on a binary condition supplied as its first operand.";
+
+  let description = [{
+        Example:
+        ```mlir
+        "secret.select"(%cond, %a, %b): (!AnyType, !AnyType, !AnyType) -> (!AnyType)
+        ```
+    }];
+
+  let arguments = (ins AnyType:$condition,
+                       AnyType:$true_value,
+                       AnyType:$false_value);
+  
+  let results = (outs AnyType:$output);
 }
 
 #endif  // DIALECT_SECRET_SECRETOPS_TD_
