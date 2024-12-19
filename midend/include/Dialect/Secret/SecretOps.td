@@ -495,4 +495,213 @@ def Secret_SelectOp: Secret_Op<"select", []> {
   let results = (outs AnyType:$output);
 }
 
+def Secret_BitwiseAndOp : Secret_Op<"bitwise_and", [Pure, Commutative]> {
+    let summary = "Elementwise computes the bitwise AND of secret value x and y.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.bitwise_and"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_BitwiseOrOp : Secret_Op<"bitwise_or", [Pure, Commutative]> {
+    let summary = "Elementwise computes the bitwise OR of secret value x and y.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.bitwise_or"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_BitwiseXorOp : Secret_Op<"bitwise_xor", [Pure, Commutative]> {
+    let summary = "Elementwise computes the bitwise XOR of secret value x and y.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.bitwise_xor"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_BitwiseInvertOp : Secret_Op<"bitwise_invert", [Pure]> {
+    let summary = "Invert (flip) each bit of the secret value.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.bitwise_invert"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_ShlPlainOp : Secret_Op<"shl_plain", [Pure]> {
+    let summary = "The shl_plain operation logical shifts the secret value of the first operand to the left by the clear value of the second operand.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.shl_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_ShrPlainOp : Secret_Op<"shr_plain", [Pure]> {
+    let summary = "The shl_plain operation logical shifts the secret value of the first operand to the right by the clear value of the second operand.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.shr_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_SarPlainOp : Secret_Op<"sar_plain", [Pure]> {
+    let summary = "The shl_plain operation arithmetic shifts the secret value of the first operand to the right by the clear value of the second operand.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.sar_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_LogicalAndOp : Secret_Op<"logical_and", [Pure, Commutative]> {
+    let summary = "Returns the logical AND of the secret values x and y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.logical_and"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_LogicalOrOp : Secret_Op<"logical_or", [Pure, Commutative]> {
+    let summary = "Returns the logical OR of the secret values x and y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.logical_or"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_LogicalXorOp : Secret_Op<"logical_xor", [Pure, Commutative]> {
+    let summary = "Returns the logical XOR of the secret values x and y element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.logical_xor"(%a, %b): (!Secete.Secret<i32>, !Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins
+        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
+        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+    );
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_LogicalNotOp : Secret_Op<"logical_not", [Pure]> {
+    let summary = "Returns the logical NOT of the secret values x element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.logical_not"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
 #endif  // DIALECT_SECRET_SECRETOPS_TD_
