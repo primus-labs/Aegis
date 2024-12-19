@@ -29,8 +29,8 @@ function(add_aegis_dialect dialect dialect_namespace)
   add_public_tablegen_target(Aegis${dialect}DialectIncGen)
   add_dependencies(Aegis${dialect}IncGen Aegis${dialect}DialectIncGen)
 
-  message("CMAKE_CURRENT_SOURCE_DIR   ===============>    ${CMAKE_CURRENT_SOURCE_DIR}")
-  message("CMAKE_CURRENT_BINARY_DIR   ===============>    ${CMAKE_CURRENT_BINARY_DIR}")
+  message(STATUS "CMAKE_CURRENT_SOURCE_DIR   ===============>    ${CMAKE_CURRENT_SOURCE_DIR}")
+  message(STATUS "CMAKE_CURRENT_BINARY_DIR   ===============>    ${CMAKE_CURRENT_BINARY_DIR}")
 
   # Ops
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dialect}Ops.td")
@@ -102,3 +102,14 @@ function(add_aegis_pass pass)
   add_public_tablegen_target(Aegis${pass}IncGen)
 endfunction()
 
+
+# *********************************************************************
+# Generate doc function
+# *********************************************************************
+function(add_aegis_doc doc_filename output_file output_directory command)
+    set(SAVED_MLIR_BINARY_DIR ${MLIR_BINARY_DIR})
+    set(MLIR_BINARY_DIR ${AEGIS_BUILD_BINARY_DIR})
+    add_mlir_doc(${doc_filename} ${output_file} ${output_directory} ${command} ${ARGN})
+    set(MLIR_BINARY_DIR ${SAVED_MLIR_BINARY_DIR})
+    unset(SAVED_MLIR_BINARY_DIR)
+endfunction()

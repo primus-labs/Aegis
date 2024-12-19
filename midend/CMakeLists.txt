@@ -5,9 +5,11 @@ project(aegis LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(AEGIS_BUILD_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE 0)
 
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY ===============> ${CMAKE_BINARY_DIR}/bin")
+message(STATUS "AEGIS_BUILD_BINARY_DIR         ===============> ${AEGIS_BUILD_BINARY_DIR}")
 message(STATUS "PROJECT_SOURCE_DIR             ===============> ${PROJECT_SOURCE_DIR}")
 
 # *********************************************************************
