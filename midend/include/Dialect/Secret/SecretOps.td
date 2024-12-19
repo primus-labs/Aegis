@@ -59,6 +59,10 @@ def Secret_RevealOp : Secret_Op<"reveal", [Pure]> {
     ];
 }
 
+
+/**********************************************************/
+/*********        arithmetic operator          ************/
+/**********************************************************/
 def Secret_AddOp : Secret_Op<"add", [Pure, Commutative]> {
     let summary = "Adds two secret values";
 
@@ -591,7 +595,7 @@ def Secret_ShlPlainOp : Secret_Op<"shl_plain", [Pure]> {
 }
 
 def Secret_ShrPlainOp : Secret_Op<"shr_plain", [Pure]> {
-    let summary = "The shl_plain operation logical shifts the secret value of the first operand to the right by the clear value of the second operand.";
+    let summary = "The shr_plain operation logical shifts the secret value of the first operand to the right by the clear value of the second operand.";
 
     let description = [{
         Example:
@@ -610,7 +614,7 @@ def Secret_ShrPlainOp : Secret_Op<"shr_plain", [Pure]> {
 }
 
 def Secret_SarPlainOp : Secret_Op<"sar_plain", [Pure]> {
-    let summary = "The shl_plain operation arithmetic shifts the secret value of the first operand to the right by the clear value of the second operand.";
+    let summary = "The sar_plain operation arithmetic shifts the secret value of the first operand to the right by the clear value of the second operand.";
 
     let description = [{
         Example:
@@ -695,6 +699,173 @@ def Secret_LogicalNotOp : Secret_Op<"logical_not", [Pure]> {
         Example:
         ```mlir
         "secret.logical_not"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+
+/**********************************************************/
+/***********           math operator           ************/
+/**********************************************************/
+def Secret_AbsOp : Secret_Op<"abs", [Pure]> {
+    let summary = "Computes the absolute secret value element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.abs"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_PowPlainOp : Secret_Op<"pow_plain", [Pure]> {
+    let summary = "Computes the power of one value to another element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.shl_plain"(%a, %b): (!Secete.Secret<i32>, !i32) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+
+    let hasFolder = 1;
+}
+
+def Secret_SqrtOp : Secret_Op<"sqrt", [Pure]> {
+    let summary = "Computes element-wise square root of the input secret value.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.sqrt"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_RsqrtOp : Secret_Op<"rsqrt", [Pure]> {
+    let summary = "Computes reciprocal of square root of secret value element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.rsqrt"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_ExpOp : Secret_Op<"exp", [Pure]> {
+    let summary = "Computes base-e exponential of the specified secret value element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.exp"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_Exp2Op : Secret_Op<"exp2", [Pure]> {
+    let summary = "Computes base-2 exponential of the specified secret value element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.exp2"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_LogOp : Secret_Op<"log", [Pure]> {
+    let summary = "Computes natural logarithm of the specified secret element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.log"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_Log2Op : Secret_Op<"log2", [Pure]> {
+    let summary = "Computes base-2 logarithm of the specified secret element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.log2"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_Log10Op : Secret_Op<"log10", [Pure]> {
+    let summary = "Computes base-10 logarithm of the specified secret element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.log10"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,BatchedSecret]>:$output
+    );
+}
+
+def Secret_Log1pOp : Secret_Op<"log1p", [Pure]> {
+    let summary = "Computes natural logarithm of (1 + secret value) element-wise.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.log1p"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
         ```
     }];
 
