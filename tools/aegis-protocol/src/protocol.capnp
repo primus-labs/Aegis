@@ -14,7 +14,7 @@ struct Shape{
 
 
 struct Payload{
-  data @0 :List(Data);  # The binary data of the payload
+  data @0 :List(Data);  # The binary data of the payload.
 }
 
 
@@ -27,4 +27,41 @@ struct RawInfo{
 struct RawData {
   payload @0 :Payload;  # The binary payload
   rawInfo @1 :RawInfo;  # The informations to parse the binary payload.
+}
+
+
+struct KeysParams {
+  ckks @0 :Ckks;       # ckks params.
+}
+
+
+struct Ckks {
+  poly_mod_dg @0 UInt32         #poly modulus degree.
+  coff_mod_ch @1 :List(UInt32)  #coff modulus chain.
+  scale @2  :UInt32             # scale factor.
+}
+
+
+struct Functions {
+  function @0 :List(Function);   # The function overview.
+}
+
+
+strutct Function {
+  name @0 :Text;      # The name of the function.
+  inputs @1 :FuncParam;   # function input.
+  outputs @2 :FuncParam; # function output.
+}
+
+
+struct FuncParam {
+  name @0 :Text;    # The name of the input parameter or output.
+  type @1 :Bool;    # clear type or encrypt type.
+}
+
+
+struct GlobalParams {
+  mulCount @0 :UInt32;  # multiply numbers.
+  rotCount @1 :UInt32;  # rotate numbers.
+  bsCount @2  :UInt32;  # boostraping numbers.
 }
