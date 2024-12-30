@@ -36,9 +36,9 @@ struct KeysParams {
 
 
 struct Ckks {
-  poly_mod_dg @0 UInt32         #poly modulus degree.
-  coff_mod_ch @1 :List(UInt32)  #coff modulus chain.
-  scale @2  :UInt32             # scale factor.
+  polyModDegree @0 :UInt32;        # poly modulus degree.
+  coffModCh @1 :List(UInt32);  # coff modulus chain.
+  scale @2  :UInt32;             # scale factor.
 }
 
 
@@ -47,16 +47,17 @@ struct Functions {
 }
 
 
-strutct Function {
-  name @0 :Text;      # The name of the function.
+struct Function {
+  name @0 :Text;          # The name of the function.
   inputs @1 :FuncParam;   # function input.
-  outputs @2 :FuncParam; # function output.
+  outputs @2 :FuncParam;  # function output.
 }
 
 
 struct FuncParam {
   name @0 :Text;    # The name of the input parameter or output.
-  type @1 :Bool;    # clear type or encrypt type.
+  shape @1 :Shape;  # The shape of the params.
+  type @2 :Bool;    # clear type or encrypt type.
 }
 
 

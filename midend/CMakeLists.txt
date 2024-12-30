@@ -70,6 +70,16 @@ install(EXPORT aegis-protocol DESTINATION "./")
 
 
 # *********************************************************************
+#                          Aegis CPU Backend
+# *********************************************************************
+set(AEGIS_CPU_BACKEND_DIR "${PROJECT_SOURCE_DIR}/../backend/cpu")
+set(AEGIS_CPU_FHE_INCLUDE_DIR "${AEGIS_CPU_BACKEND_DIR}/FHE/include")
+add_subdirectory(${AEGIS_CPU_BACKEND_DIR} aegis-cpu)
+include_directories(${AEGIS_CPU_FHE_INCLUDE_DIR})
+message(STATUS "AEGIS_CPU_FHE_INCLUDE_DIR   ================> ${AEGIS_CPU_FHE_INCLUDE_DIR}")
+
+
+# *********************************************************************
 #                          Handle sub-dirs
 # *********************************************************************
 add_subdirectory(include)
