@@ -1,2 +1,8 @@
 # VSCODE
 .vscode/
+
+# temp build
+build/
+
+# third party
+third_party/
