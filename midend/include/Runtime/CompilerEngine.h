@@ -19,10 +19,42 @@ CPU,
 GPU,
 };
 
+/// Compile Mode
+enum COMPILE_MODE {
+  COMPILE,
+  TRANSPILER,
+};
+
+/// Specification of the exit stage of the compilation pipeline
+enum class TARGET {
+  /// Read sources and convert mlir operations to SECRET operations
+  SECRET,
+
+  /// Read sources and lower all SECRET operations to FHE operations
+  FHE,
+
+  /// Read sources and lower all FHE operations to the emitc dialect operations. 
+  EMITC,
+
+  /// Read sources and convert emitc dialect to c/cpp source code. 
+  CPP, 
+
+  /// compile cpp source code to a futur library
+  LIBRARY
+
+};
+
 
 /// Compilation options 
-struct CompileOptions {
-};
+typedef struct tagCompileOptions {
+  BACKEND_TYPE beType;
+  COMPILE_MODE mode; 
+
+  tagCompileOptions() {
+    beType = BACKEND_TYPE::CPU;
+    mode = COMPILE_MODE::COMPILE;
+  }
+} CompileOptions;
 
 
 /// Result of Compile
