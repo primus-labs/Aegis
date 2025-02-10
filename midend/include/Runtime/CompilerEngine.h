@@ -59,6 +59,10 @@ typedef struct tagCompileOptions {
 
 /// Result of Compile
 class CompileResult {
+  std::string outputDirPath;
+  std::string cppFileName;
+  std::string binFileName;
+  std::string progSpecFileName;
 };
 
 
