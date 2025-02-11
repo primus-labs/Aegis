@@ -26,6 +26,7 @@ cmake -G Ninja ../llvm \
 -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF
 
 cmake --build .
+make -j8
 
 
 echo "****************************************************"
@@ -40,6 +41,7 @@ cmake -G Ninja \
         -DLLVM_ENABLE_ASSERTIONS=ON \
         -DMLIR_DIR=${MLIR_DIR} \
         ..
+make -j8
 
 
 echo "****************************************************"
@@ -49,6 +51,7 @@ cd ../../openfhe-development
 mkdir -p build
 cd build
 cmake ..
+make -j8
 
 
 echo "****************************************************"

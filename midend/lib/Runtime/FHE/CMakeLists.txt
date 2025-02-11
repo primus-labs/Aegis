@@ -3,6 +3,7 @@ add_compile_options(-fexceptions)
 add_mlir_library(
     AegisRuntime
     CompilerEngine.cpp
+    FHEDataProcessor.cpp
 
     DEPENDS
     aegis-protocol

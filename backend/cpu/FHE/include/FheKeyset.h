@@ -1,23 +1,52 @@
 #ifndef CPU_FHE_OPENFHE_FHEKEYSET_H
 #define CPU_FHE_OPENFHE_FHEKEYSET_H
 
-#include "FheKey.h"
 #include <memory>
+#include <vector>
+#include <iostream>
+#include "FheKey.h"
+#include "openfhe.h"
 
+using namespace lbcrypto;
+
+namespace aegislang {
 
 class FheKeyset {
 private:
-    std::unique_ptr<FHESecretKey> pri_key;
-    std::unique_ptr<FHEPublicKey> pub_key;
-    std::unique_ptr<FHEComputationKey> eva_key;
+    std::shared_ptr<FHEPrivateKey> priKey; 
+    std::shared_ptr<FHEPublicKey> pubKey; 
+    std::shared_ptr<FHERelinKey> relinKey;
+    std::shared_ptr<FHERotateKey> rotKey; 
+    std::shared_ptr<FHEBootstrapKey> bsKey; 
 
 public:
-    FheKeyset():pri_key(nullptr), pub_key(nullptr), eva_key(nullptr) {}
+    FheKeyset(std::shared_ptr<FHEPrivateKey> PriKey, std::shared_ptr<FHEPublicKey> PubKey, std::shared_ptr<FHERelinKey> RelinKey,
+            std::shared_ptr<FHERotateKey> RotKey, std::shared_ptr<FHEBootstrapKey> BsKey)
+        : priKey(std::move(PriKey)), pubKey(std::move(PubKey)), relinKey(std::move(RelinKey)), 
+          rotKey(std::move(RotKey)), bsKey(std::move(BsKey)) {}
     
-    void addKey(KEY_TYPE keyType, std::unique_ptr<Key> key);
-    std::unique_ptr<Key> getKey(KEY_TYPE keyType) const;
+    std::shared_ptr<FHEPrivateKey> getPriKey() const {
+        return priKey;
+    }
+
+    std::shared_ptr<FHEPublicKey> getPubKey() const {
+        return pubKey;
+    }
+
+    std::shared_ptr<FHERelinKey> getRelinKey() const {
+        return relinKey;
+    }
+
+    std::shared_ptr<FHERotateKey> getRotateKey() const {
+        return rotKey;
+    }
+
+    std::shared_ptr<FHEBootstrapKey> getBootstrapKey() const {
+        return bsKey;
+    }
 };
 
+}
 
 #endif
 
