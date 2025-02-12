@@ -7,7 +7,6 @@
 
 namespace mlir {
 namespace aegis {
-namespace value {
 
 
 std::vector<size_t> Value::getDims() const {
@@ -18,6 +17,10 @@ std::vector<size_t> Value::getDims() const {
     } else if (auto tensor = getTensor<int32_t>()) {
         return tensor.value().dims;
     } else if (auto tensor = getTensor<int64_t>()) {
+        return tensor.value().dims;
+    } else if (auto tensor = getTensor<float>()) {
+        return tensor.value().dims;
+    } else if (auto tensor = getTensor<double>()) {
         return tensor.value().dims;
     } else {
         assert(false);
@@ -33,6 +36,10 @@ size_t Value::getLength() const {
         return tensor.value().values.size();
     } else if (auto tensor = getTensor<int64_t>()) {
         return tensor.value().values.size();
+    } else if (auto tensor = getTensor<float>()) {
+        return tensor.value().values.size();
+    } else if (auto tensor = getTensor<double>()) {
+        return tensor.value().values.size();
     } else {
         assert(false);
     }
@@ -46,6 +53,10 @@ bool Value::isScalar() const {
     } else if (auto tensor = getTensor<uint32_t>()) {
         return tensor.value().isScalar();
     } else if (auto tensor = getTensor<uint64_t>()) {
+        return tensor.value().isScalar();
+    } else if (auto tensor = getTensor<float>()) {
+        return tensor.value().isScalar();
+    } else if (auto tensor = getTensor<double>()) {
         return tensor.value().isScalar();
     } else {
         assert(false);
@@ -61,6 +72,10 @@ bool Value::operator==(const Value &x) const {
         return tensor == x.getTensor<int32_t>();
     } else if (auto tensor = getTensor<int64_t>()) {
         return tensor == x.getTensor<int64_t>();
+    } else if (auto tensor = getTensor<float>()) {
+        return tensor == x.getTensor<float>();
+    } else if (auto tensor = getTensor<double>()) {
+        return tensor == x.getTensor<double>();    
     } else {
         assert(false);
     }
@@ -92,11 +107,14 @@ std::string Value::toString() const {
         return printTypeWithTensor("uint32_t", *tensor);
     } else if (auto tensor = getTensor<uint64_t>(); tensor) {
         return printTypeWithTensor("uint64_t", *tensor);
+    } else if (auto tensor = getTensor<float>(); tensor) {
+        return printTypeWithTensor("float", *tensor);
+    } else if (auto tensor = getTensor<double>(); tensor) {
+        return printTypeWithTensor("double", *tensor);
     } else {
         assert(false);
     }
 }
 
-} // namespace value
 } // namespace aegis
 } // namespace mlir

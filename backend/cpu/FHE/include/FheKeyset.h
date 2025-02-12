@@ -19,12 +19,39 @@ private:
     std::shared_ptr<FHERotateKey> rotKey; 
     std::shared_ptr<FHEBootstrapKey> bsKey; 
 
-public:
+private:
     FheKeyset(std::shared_ptr<FHEPrivateKey> PriKey, std::shared_ptr<FHEPublicKey> PubKey, std::shared_ptr<FHERelinKey> RelinKey,
             std::shared_ptr<FHERotateKey> RotKey, std::shared_ptr<FHEBootstrapKey> BsKey)
         : priKey(std::move(PriKey)), pubKey(std::move(PubKey)), relinKey(std::move(RelinKey)), 
           rotKey(std::move(RotKey)), bsKey(std::move(BsKey)) {}
-    
+
+    // Delete the copy constructor and the assignment operator.
+    FheKeyset(const FheKeyset&) = delete;
+    FheKeyset& operator=(const FheKeyset&) = delete;
+
+public:
+    // static method to get the singleton instance.
+    static FheKeyset& getInstance() {
+        static FheKeyset instance(nullptr, nullptr, nullptr, nullptr, nullptr);
+        return instance;
+    }
+
+    // initialize the singleton instance.
+    static void initialize(std::shared_ptr<FHEPrivateKey> PriKey, std::shared_ptr<FHEPublicKey> PubKey,
+                           std::shared_ptr<FHERelinKey> RelinKey, std::shared_ptr<FHERotateKey> RotKey,
+                           std::shared_ptr<FHEBootstrapKey> BsKey) {
+        static std::once_flag flag;
+        std::call_once(flag, [&]() {
+            auto& instance = getInstance();
+            instance.priKey = std::move(PriKey);
+            instance.pubKey = std::move(PubKey);
+            instance.relinKey = std::move(RelinKey);
+            instance.rotKey = std::move(RotKey);
+            instance.bsKey = std::move(BsKey);
+        });
+    }
+
+public:
     std::shared_ptr<FHEPrivateKey> getPriKey() const {
         return priKey;
     }

@@ -2,7 +2,7 @@ add_compile_options(-fexceptions)
 
 add_library (
     aegis_cpu
-    KeysetBuilder.cpp
+    KeysetGenerator.cpp
 )
 
 target_link_libraries(aegis_cpu

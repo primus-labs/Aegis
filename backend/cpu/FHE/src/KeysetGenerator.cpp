@@ -1,8 +1,8 @@
-#include "KeysetBuilder.h"
+#include "KeysetGenerator.h"
 
 namespace aegislang {
 
-std::shared_ptr<FheKeyset> KeysetBuilder::generateFheKeyset(FheKeysetInfo ks_info) {
+void KeysetGenerator ::generateFheKeyset(FheKeysetInfo ks_info) {
     // Create crypto parameters
     CCParams<CryptoContextCKKSRNS> parameters;
     parameters.SetMultiplicativeDepth(ks_info.multDepth);
@@ -37,8 +37,8 @@ std::shared_ptr<FheKeyset> KeysetBuilder::generateFheKeyset(FheKeysetInfo ks_inf
     auto rotKey = std::make_shared<FHERotateKey>("");
     auto bsKey = std::make_shared<FHEBootstrapKey>("");
 
-    // return FheKeyset
-    return std::make_shared<FheKeyset>(priKey, pubKey, relinKey, rotKey, bsKey);
+    // Initialize the singleton FheKeyset
+    FheKeyset::initialize(priKey, pubKey, relinKey, rotKey, bsKey);
 }
 
 }  //namespace aegislang

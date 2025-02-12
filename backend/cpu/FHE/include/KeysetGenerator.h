@@ -18,9 +18,9 @@ struct FheKeysetInfo {
 };
 
 
-class KeysetBuilder {
+class KeysetGenerator  {
 public:
-    static std::shared_ptr<FheKeyset> generateFheKeyset(FheKeysetInfo ks_info);
+    static void generateFheKeyset(FheKeysetInfo ks_info);
 };
 
 }

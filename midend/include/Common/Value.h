@@ -18,7 +18,6 @@
 
 namespace mlir {
 namespace aegis {
-namespace value {
 
 template <typename T> 
 struct Tensor {
@@ -141,7 +140,8 @@ struct Tensor {
 struct Value {
 
     std::variant<Tensor<uint32_t>, Tensor<int32_t>,
-                 Tensor<uint64_t>, Tensor<int64_t>>  data;
+                 Tensor<uint64_t>, Tensor<int64_t>,
+                 Tensor<float>, Tensor<double>>  data;
 
     /// Constructor
     Value() = default;
@@ -149,6 +149,8 @@ struct Value {
     Value(Tensor<int32_t> data) : data(data){};
     Value(Tensor<uint64_t> data) : data(data){};
     Value(Tensor<int64_t> data) : data(data){};
+    Value(Tensor<float> data) : data(data){};
+    Value(Tensor<double> data) : data(data){};
 
     std::vector<size_t> getDims() const;
     size_t getLength() const;
@@ -181,7 +183,7 @@ struct Value {
     bool operator==(const Value &x) const;
 };
 
-} // namespace value
+
 } // namespace aegis
 } // namespace mlir
 
