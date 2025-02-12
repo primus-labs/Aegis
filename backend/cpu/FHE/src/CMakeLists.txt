@@ -15,6 +15,7 @@ target_include_directories(aegis_cpu PUBLIC ${AEGIS_CPU_FHE_INCLUDE_DIR})
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/pke/include)
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/binfhe/include)
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/core/include)
+target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/src/core)
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/third-party/cereal/include)
 
 get_target_property(INCLUDE_DIRS aegis_cpu INCLUDE_DIRECTORIES)

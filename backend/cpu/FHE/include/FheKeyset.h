@@ -73,7 +73,7 @@ public:
     }
 };
 
-}
+} // namespace aegislang
 
 #endif
 
