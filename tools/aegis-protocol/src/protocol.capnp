@@ -8,6 +8,9 @@
 
 @0xfdae028881631719;
 
+using Cxx = import "/capnp/c++.capnp";
+$Cxx.namespace("aegisprotocol");
+
 struct Shape{ 
   dimensions @0 :List(UInt32);  # The dimensions of the value.
 }
@@ -30,7 +33,7 @@ struct RawData {
 }
 
 
-struct KeysParams {
+struct KeyInfo {
   ckks @0 :Ckks;       # ckks params.
 }
 
@@ -61,8 +64,16 @@ struct FuncParam {
 }
 
 
-struct GlobalParams {
+struct GlobalInfo {
   mulCount @0 :UInt32;  # multiply numbers.
   rotCount @1 :UInt32;  # rotate numbers.
   bsCount @2  :UInt32;  # boostraping numbers.
+  level @3    :UInt32;  # encrypted levels.
+}
+
+
+struct ProgSpec {
+  keyInfo @0 :KeyInfo;      # key informations
+  funcsInfo @1 :Functions;   # function informations
+  globalInfo @2 :GlobalInfo;# global informations
 }

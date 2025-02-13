@@ -43,7 +43,8 @@ public:
 
     explicit ProtoMessage(const typename MsgType::Reader &reader) : msg(nullptr) {
         msgBuilder = new capnp::MallocMessageBuilder(
-                                std::min(reader.totalSize().wordCount, capnp::MAX_SEGMENT_WORDS),
+                                std::min(static_cast<uint64_t>(reader.totalSize().wordCount), 
+                                         static_cast<uint64_t>(capnp::MAX_SEGMENT_WORDS)),
                                 capnp::AllocationStrategy::FIXED_SIZE);
         assert(msgBuilder);
         msgBuilder->setRoot(reader);
@@ -52,8 +53,9 @@ public:
 
     ProtoMessage(const ProtoMessage &input) : msg(nullptr) {
         msgBuilder = new capnp::MallocMessageBuilder(
-                                std::min(input.msg.asReader().totalSize().wordCount,
-                                capnp::MAX_SEGMENT_WORDS), capnp::AllocationStrategy::FIXED_SIZE);
+                                std::min(static_cast<uint64_t>(input.msg.asReader().totalSize().wordCount),
+                                         static_cast<uint64_t>(capnp::MAX_SEGMENT_WORDS)), 
+                                capnp::AllocationStrategy::FIXED_SIZE);
         assert(msgBuilder);
         msgBuilder->setRoot(input.msg.asReader());
         msg = msgBuilder->getRoot<MsgType>();
@@ -71,7 +73,8 @@ public:
             delete msgBuilder;
         
         msgBuilder = new capnp::MallocMessageBuilder(
-                                std::min(reader.totalSize().wordCount, capnp::MAX_SEGMENT_WORDS),
+                                std::min(static_cast<uint64_t>(reader.totalSize().wordCount), 
+                                         static_cast<uint64_t>(capnp::MAX_SEGMENT_WORDS)),
                                 capnp::AllocationStrategy::FIXED_SIZE);
         assert(msgBuilder);
         msgBuilder->setRoot(reader);
@@ -86,8 +89,9 @@ public:
             }
 
             msgBuilder = new capnp::MallocMessageBuilder(
-                                    std::min(input.msg.asReader().totalSize().wordCount,
-                                    capnp::MAX_SEGMENT_WORDS), capnp::AllocationStrategy::FIXED_SIZE);
+                                    std::min(static_cast<uint64_t>(input.msg.asReader().totalSize().wordCount),
+                                             static_cast<uint64_t>(capnp::MAX_SEGMENT_WORDS)),
+                                    capnp::AllocationStrategy::FIXED_SIZE);
             assert(msgBuilder);
             msgBuilder->setRoot(input.msg.asReader());
             msg = msgBuilder->getRoot<MsgType>();

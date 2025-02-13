@@ -1,4 +1,5 @@
 #include "Runtime/FHE/FHEDataProcessor.h"
+#include "Common/ProgramSpec.h"
 // #include "../../backend/cpu/FHE/include/KeysetGenerator.h"
 
 
