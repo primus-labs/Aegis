@@ -34,14 +34,15 @@ struct RawData {
 
 
 struct KeyInfo {
-  ckks @0 :Ckks;       # ckks params.
-}
-
-
-struct Ckks {
-  polyModDegree @0 :UInt32;        # poly modulus degree.
-  coffModCh @1 :List(UInt32);  # coff modulus chain.
-  scale @2  :UInt32;             # scale factor.
+  polyModDegree @0 :UInt32;       # poly modulus degree.
+  coffModCh @1 :List(UInt32);     # coff modulus chain.
+  scale @2  :UInt32;              # scale factor.
+  multDepth @3 :UInt32;           # Multiplication depth
+  scaleModSize @4 :UInt32;        # Scale modulus size
+  batchSize @5 :UInt32;           # Batch size
+  galoisIndices @6 :List(Int32);  # Index list for Galois Key
+  enableBootstrapping @7 :Bool;   # Whether to enable bootstrapping
+  numSlot @8 :UInt32;             # number of slots
 }
 
 

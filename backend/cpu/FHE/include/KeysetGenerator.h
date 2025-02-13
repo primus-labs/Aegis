@@ -12,7 +12,7 @@ struct FheKeysetInfo {
     size_t multDepth;                       // Multiplication depth
     size_t scaleModSize;                    // Scale modulus size
     size_t batchSize;                       // Batch size
-    std::vector<int> galoisIndices;         // Index list for Galois Key
+    std::vector<int> galoisIndex;           // Index list for Galois Key
     bool enableBootstrapping;               // Whether to enable bootstrapping
     size_t numSlot;                         // number of slots
 };

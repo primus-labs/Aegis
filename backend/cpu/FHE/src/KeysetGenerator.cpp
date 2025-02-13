@@ -26,7 +26,7 @@ void KeysetGenerator ::generateFheKeyset(FheKeysetInfo ks_info) {
         cryptoContext->EvalMultKeyGen(keyPair.secretKey);
 
         // Gen Galois Key
-        cryptoContext->EvalRotateKeyGen(keyPair.secretKey, ks_info.galoisIndices);
+        cryptoContext->EvalRotateKeyGen(keyPair.secretKey, ks_info.galoisIndex);
 
         // Gen Bootstrapping Key
         if (ks_info.enableBootstrapping) {
