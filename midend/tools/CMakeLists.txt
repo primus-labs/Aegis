@@ -25,7 +25,10 @@ set(DEP_LIBS
 
 add_llvm_executable(aegiscompiler main.cpp)
 llvm_update_compile_flags(aegiscompiler)
-target_link_libraries(aegiscompiler PRIVATE ${DEP_LIBS})
+
+set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
+#link_directories(${OPENFHE_LIBRARY_PATH})
+target_link_libraries(aegiscompiler PRIVATE ${DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore)
 
 add_dependencies(aegiscompiler mlir-headers)
 

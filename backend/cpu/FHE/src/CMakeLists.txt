@@ -7,10 +7,10 @@ add_library (
 
 add_dependencies(aegis_cpu aegis-protocol)
 
-target_link_libraries(aegis_cpu
-    PUBLIC
-    openfhe
-)
+#target_link_libraries(aegis_cpu
+#    PUBLIC
+#    OPENFHEcore
+#)
 
 
 target_include_directories(aegis_cpu PUBLIC ${AEGIS_CPU_FHE_INCLUDE_DIR})
