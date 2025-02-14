@@ -28,6 +28,10 @@ public:
 
         return cryptoContext;
     }
+
+    CryptoContext<DCRTPoly> getCryptoContext() {
+        return cryptoContext;
+    }
 };
 
 } //namespace aegiscpu

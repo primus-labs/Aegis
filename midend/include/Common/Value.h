@@ -139,12 +139,18 @@ struct Tensor {
 /// A Value type for tensor data.
 struct Value {
 
-    std::variant<Tensor<uint32_t>, Tensor<int32_t>,
+    std::variant<Tensor<uint8_t>, Tensor<int8_t>,
+                 Tensor<uint16_t>, Tensor<int16_t>,
+                 Tensor<uint32_t>, Tensor<int32_t>,
                  Tensor<uint64_t>, Tensor<int64_t>,
                  Tensor<float>, Tensor<double>>  data;
 
     /// Constructor
     Value() = default;
+    Value(Tensor<uint8_t> data) : data(data){};
+    Value(Tensor<int8_t> data) : data(data){};
+    Value(Tensor<uint16_t> data) : data(data){};
+    Value(Tensor<int16_t> data) : data(data){};
     Value(Tensor<uint32_t> data) : data(data){};
     Value(Tensor<int32_t> data) : data(data){};
     Value(Tensor<uint64_t> data) : data(data){};
