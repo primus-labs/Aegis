@@ -3,7 +3,7 @@
 
 #include "openfhe.h"
 
-namespace aegislang {
+namespace aegiscpu {
 
 class CryptoContextMgr {
 private:
@@ -30,6 +30,6 @@ public:
     }
 };
 
-} //namespace aegislang
+} //namespace aegiscpu
 
 #endif

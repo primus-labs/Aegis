@@ -6,7 +6,7 @@
 
 using mlir::aegis::ProtoMessage;
 
-namespace aegislang {
+namespace aegiscpu {
 
 
 class KeysetGenerator  {
@@ -14,6 +14,6 @@ public:
     static void generate(ProtoMessage<aegisprotocol::KeyInfo>& keyInfo);
 };
 
-}
+} //namespace aegiscpu
 
 #endif

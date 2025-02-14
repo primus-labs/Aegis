@@ -3,7 +3,7 @@
 #include "Common/Protocol.h"
 
 
-namespace aegislang {
+namespace aegiscpu {
 
 void KeysetGenerator ::generate(ProtoMessage<aegisprotocol::KeyInfo>& keyInfo) {
     static std::once_flag initFlag;
@@ -52,4 +52,4 @@ void KeysetGenerator ::generate(ProtoMessage<aegisprotocol::KeyInfo>& keyInfo) {
     });
 }
 
-}  //namespace aegislang
+}  //namespace aegiscpu

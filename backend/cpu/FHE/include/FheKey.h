@@ -7,7 +7,7 @@
 
 using namespace lbcrypto;
 
-namespace aegislang {
+namespace aegiscpu {
 
 class FHEPrivateKey : public Key {
 private:
@@ -107,6 +107,6 @@ public:
     }
 };
 
-}
+}  //namespace aegiscpu
 
 #endif

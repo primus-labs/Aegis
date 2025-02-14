@@ -9,7 +9,7 @@
 
 using namespace lbcrypto;
 
-namespace aegislang {
+namespace aegiscpu {
 
 class FheKeyset {
 private:
@@ -73,7 +73,7 @@ public:
     }
 };
 
-} // namespace aegislang
+} // namespace aegiscpu
 
 #endif
 

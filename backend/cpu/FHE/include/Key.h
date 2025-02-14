@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string>
 
-namespace aegislang {
+namespace aegiscpu {
 
 class Key {
 public:
@@ -24,6 +24,6 @@ public:
     virtual void deserialize(const std::string& data) = 0;
 };
 
-}
+} //namespace aegiscpu
 
 #endif
