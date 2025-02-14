@@ -74,7 +74,7 @@ struct GlobalInfo {
 
 
 struct ProgSpec {
-  keyInfo @0 :KeyInfo;      # key informations
-  funcsInfo @1 :Functions;   # function informations
-  globalInfo @2 :GlobalInfo;# global informations
+  keyInfo @0 :KeyInfo;     # keyset informations
+  funcsInfo @1 :Functions;    # function informations
+  globalInfo @2 :GlobalInfo;  # global informations
 }

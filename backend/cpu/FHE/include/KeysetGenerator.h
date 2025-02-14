@@ -2,25 +2,16 @@
 #define CPU_FHE_KEYSETBUILDER_H
 
 #include "FheKeyset.h"
+#include "Common/Protocol.h"
+
+using mlir::aegis::ProtoMessage;
 
 namespace aegislang {
-
-struct FheKeysetInfo {
-    size_t polyModulusDegree;               // Polynomial modulus degree
-    std::vector<size_t> coefModulusChain;   // Coefficient modulus chain
-    size_t scale;                           // Scale factor
-    size_t multDepth;                       // Multiplication depth
-    size_t scaleModSize;                    // Scale modulus size
-    size_t batchSize;                       // Batch size
-    std::vector<int> galoisIndex;           // Index list for Galois Key
-    bool enableBootstrapping;               // Whether to enable bootstrapping
-    size_t numSlot;                         // number of slots
-};
 
 
 class KeysetGenerator  {
 public:
-    static void generateFheKeyset(FheKeysetInfo ks_info);
+    static void generate(ProtoMessage<aegisprotocol::KeyInfo>& keyInfo);
 };
 
 }

@@ -1,17 +1,19 @@
 #include "KeysetGenerator.h"
 #include "CryptoContextMgr.h"
+#include "Common/Protocol.h"
+
 
 namespace aegislang {
 
-void KeysetGenerator ::generateFheKeyset(FheKeysetInfo ks_info) {
+void KeysetGenerator ::generate(ProtoMessage<aegisprotocol::KeyInfo>& keyInfo) {
     static std::once_flag initFlag;
 
     std::call_once(initFlag, [&]() {
         // Create crypto parameters
         CCParams<CryptoContextCKKSRNS> parameters;
-        parameters.SetMultiplicativeDepth(ks_info.multDepth);
-        parameters.SetScalingModSize(ks_info.scaleModSize);
-        parameters.SetBatchSize(ks_info.batchSize);
+        parameters.SetMultiplicativeDepth(keyInfo.asReader().getMultDepth());
+        parameters.SetScalingModSize(keyInfo.asReader().getScaleModSize());
+        parameters.SetBatchSize(keyInfo.asReader().getBatchSize());
 
         // Create crypto context
         CryptoContext<DCRTPoly> cryptoContext = CryptoContextMgr::getInstance().getCryptoContext(parameters);
@@ -26,12 +28,16 @@ void KeysetGenerator ::generateFheKeyset(FheKeysetInfo ks_info) {
         cryptoContext->EvalMultKeyGen(keyPair.secretKey);
 
         // Gen Galois Key
-        cryptoContext->EvalRotateKeyGen(keyPair.secretKey, ks_info.galoisIndex);
+        std::vector<int> galoisIdx;
+        for (auto ind : keyInfo.asReader().getGaloisIndices()) {
+            galoisIdx.push_back(ind);
+        }
+        cryptoContext->EvalRotateKeyGen(keyPair.secretKey, galoisIdx);
 
         // Gen Bootstrapping Key
-        if (ks_info.enableBootstrapping) {
+        if (keyInfo.asReader().getEnableBootstrapping()) {
             cryptoContext->Enable(FHE);
-            cryptoContext->EvalBootstrapKeyGen(keyPair.secretKey, ks_info.numSlot);
+            cryptoContext->EvalBootstrapKeyGen(keyPair.secretKey, keyInfo.asReader().getNumSlot());
         }
 
         // create Key obj

@@ -5,6 +5,8 @@ add_library (
     KeysetGenerator.cpp
 )
 
+add_dependencies(aegis_cpu aegis-protocol)
+
 target_link_libraries(aegis_cpu
     PUBLIC
     openfhe
@@ -12,6 +14,7 @@ target_link_libraries(aegis_cpu
 
 
 target_include_directories(aegis_cpu PUBLIC ${AEGIS_CPU_FHE_INCLUDE_DIR})
+target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/pke/include)
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/binfhe/include)
 target_include_directories(aegis_cpu PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/core/include)
