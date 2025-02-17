@@ -27,9 +27,17 @@ struct RawInfo{
 }
 
 
+struct RawType{
+  isCiphertext  @0 :Bool;
+  isPlaintext @1 :Bool;
+  isConstant @2 :Bool;
+}
+
+
 struct RawData {
   payload @0 :Payload;  # The binary payload
   rawInfo @1 :RawInfo;  # The informations to parse the binary payload.
+  rawType @2 :RawType;  # The different possible type of raw data.
 }
 
 

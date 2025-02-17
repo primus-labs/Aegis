@@ -21,4 +21,24 @@ std::vector<uint8_t> encrypt(std::vector<T>& data) {
     return buffer;
 }
 
+
+std::vector<double> decrypte(std::vector<uint8_t>& data) {
+    CryptoContext<DCRTPoly> cc = CryptoContextMgr::getInstance().getCryptoContext();
+
+    //Deserialize output byte array into a ciphertext object.
+    std::stringstream ss;
+    ss.write(reinterpret_cast<char*>(data.data()), data.size());
+    Ciphertext<DCRTPoly> deserCiphertext;
+    Serial::Deserialize(deserCiphertext, ss, SerType::BINARY);
+
+    //get private key
+    PrivateKey<DCRTPoly> priKey = FheKeyset::getInstance().getPriKey()->getKey();
+
+    //decrypte
+    Plaintext ptValue;
+    cc->Decrypt(priKey, deserCiphertext, &ptValue);
+    ptValue->SetLength(data.size()/sizeof(double));
+    return ptValue->GetCKKSPackedValue()
+}
+
 } //namespace aegiscpu
