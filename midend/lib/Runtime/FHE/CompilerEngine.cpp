@@ -28,5 +28,23 @@ llvm::LLVMContext *CompileContext::getLLVMContext() {
 }
 
 
+CompileResult CompileContext::compile(mlir::ModuleOp module, TARGET target) {
+  //TODO
+  return CompileResult();
+}
+
+
+CompileResult CompileContext::compile(llvm::SourceMgr &sm, TARGET target) {
+  //TODO
+  return CompileResult();
+}
+
+
+CompileResult CompileContext::compile(llvm::StringRef s, TARGET target) {
+  //TODO
+  return CompileResult();
+}
+
+
 } // namespace aegis
 } // namespace mlir

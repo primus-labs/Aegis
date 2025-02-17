@@ -77,6 +77,11 @@ public:
 
   static std::shared_ptr<CompileContext> createContext();
 
+public:
+  CompileResult compile(mlir::ModuleOp module, TARGET target);
+  CompileResult compile(llvm::SourceMgr &sm, TARGET target);
+  CompileResult compile(llvm::StringRef s, TARGET target);
+
 protected:
   mlir::MLIRContext *mlirCtx;
   llvm::LLVMContext *llvmCtx;

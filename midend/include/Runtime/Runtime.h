@@ -2,7 +2,7 @@
 #define RUNTIME_RUNTIME_H
 
 #include <vector>
-#include "Value.h"
+#include "../Common/Value.h"
 
 namespace mlir {
 namespace aegis {
@@ -13,7 +13,7 @@ typedef struct tagRuntimeContext {
 
 class Runtime {
     virtual std::vector<Value> call(const std::vector<Value> &input) = 0;
-}
+};
 
 
 
