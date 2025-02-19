@@ -86,4 +86,10 @@ message(STATUS "AEGIS_CPU_FHE_INCLUDE_DIR   ================> ${AEGIS_CPU_FHE_IN
 add_subdirectory(include)
 add_subdirectory(lib)
 add_subdirectory(tools)
-add_subdirectory(tests)
+
+set(ENABLE_TESTS_BUILD TRUE)
+if(ENABLE_TESTS_BUILD)
+  message(STATUS "Enabling Aegis Tests")
+  enable_testing()
+  add_subdirectory(tests)
+endif()
