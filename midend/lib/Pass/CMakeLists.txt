@@ -1,2 +1,2 @@
 add_subdirectory(arith2secret)
-
+add_subdirectory(secret2fhe)
