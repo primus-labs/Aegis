@@ -157,15 +157,15 @@ def FHE_RotateOp: FHE_Op<"rotate", [Pure]> {
   let hasFolder = 1;
 }
 
-//def FHE_CmpOp: FHE_Op<"compare", []> {
-//  let summary = "LWE comparing operation";
-//
-//  let arguments = (ins Arith_CmpFPredicateAttr:$predicate,
-//                       AnyType:$lhs,
-//                       AnyType:$rhs);
-//  
-//  let results = (outs AnyType:$result);
-//}
+def FHE_CmpOp: FHE_Op<"compare", []> {
+  let summary = "LWE comparing operation";
+
+  let arguments = (ins Arith_CmpFPredicateAttr:$predicate,
+                       AnyType:$lhs,
+                       AnyType:$rhs);
+  
+  let results = (outs AnyType:$result);
+}
 
 def FHE_SelectOp: FHE_Op<"select", []> {
   let summary = "Replace arith.select with this operation";

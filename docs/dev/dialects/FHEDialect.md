@@ -36,6 +36,54 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `result` | any type
 
+### `fhe.compare` (aegis::fhe::CmpOp)
+
+_LWE comparing operation_
+
+
+Syntax:
+
+```
+operation ::= `fhe.compare` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>predicate</code></td><td>::mlir::arith::CmpFPredicateAttr</td><td><details><summary>allowed 64-bit signless integer cases: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15</summary>{{% markdown %}}Enum cases:
+* false (`AlwaysFalse`)
+* oeq (`OEQ`)
+* ogt (`OGT`)
+* oge (`OGE`)
+* olt (`OLT`)
+* ole (`OLE`)
+* one (`ONE`)
+* ord (`ORD`)
+* ueq (`UEQ`)
+* ugt (`UGT`)
+* uge (`UGE`)
+* ult (`ULT`)
+* ule (`ULE`)
+* une (`UNE`)
+* uno (`UNO`)
+* true (`AlwaysTrue`){{% /markdown %}}</details></td></tr>
+</table>
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `lhs` | any type
+| `rhs` | any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `result` | any type
+
 ### `fhe.define` (aegis::fhe::DefineOp)
 
 _Define a new ciphertext_
