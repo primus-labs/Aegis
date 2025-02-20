@@ -6,6 +6,8 @@ set(DEP_LIBS
         ${dialect_libs}
         ${conversion_libs}
         aegis_cpu
+        MLIREmitCDialect
+        MLIROptLib
         MLIRAnalysis
         MLIRCallInterfaces
         MLIRCastInterfaces
@@ -20,7 +22,7 @@ set(DEP_LIBS
         MLIRControlFlowInterfaces
         MLIRSideEffectInterfaces
         MLIRTargetLLVMIRExport
-        MLIRTransforms  
+        MLIRTransforms
         )
 
 add_llvm_executable(aegiscompiler main.cpp)

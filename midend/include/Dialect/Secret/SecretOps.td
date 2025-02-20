@@ -99,7 +99,7 @@ def Secret_AddPlainOp : Secret_Op<"add_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_SubOp : Secret_Op<"sub", [Pure]> {
@@ -138,7 +138,7 @@ def Secret_SubPlainOp : Secret_Op<"sub_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_NegOp : Secret_Op<"neg", [Pure]> {
@@ -200,7 +200,7 @@ def Secret_MulPlainOp : Secret_Op<"mul_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_DivOp : Secret_Op<"div", [Pure, Commutative]> {
@@ -245,7 +245,7 @@ def Secret_DivPlainOp : Secret_Op<"div_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_EqOp : Secret_Op<"eq", [Pure, Commutative]> {
@@ -284,7 +284,7 @@ def Secret_EqPlainOp : Secret_Op<"eq_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_NotEqOp : Secret_Op<"not_eq", [Pure, Commutative]> {
@@ -323,7 +323,7 @@ def Secret_NotEqPlainOp : Secret_Op<"not_eq_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_GreaterOp : Secret_Op<"greater", [Pure]> {
@@ -362,7 +362,7 @@ def Secret_GreaterPlainOp : Secret_Op<"greater_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_GreaterEqOp : Secret_Op<"greater_eq", [Pure]> {
@@ -401,7 +401,7 @@ def Secret_GreaterEqPlainOp : Secret_Op<"greater_eq_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_MaxOp : Secret_Op<"max", [Pure]> {
@@ -440,7 +440,7 @@ def Secret_MaxPlainOp : Secret_Op<"max_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_MinOp : Secret_Op<"min", [Pure]> {
@@ -479,7 +479,7 @@ def Secret_MinPlainOp : Secret_Op<"min_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_SelectOp: Secret_Op<"select", []> {
@@ -591,7 +591,7 @@ def Secret_ShlPlainOp : Secret_Op<"shl_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_ShrPlainOp : Secret_Op<"shr_plain", [Pure]> {
@@ -610,7 +610,7 @@ def Secret_ShrPlainOp : Secret_Op<"shr_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_SarPlainOp : Secret_Op<"sar_plain", [Pure]> {
@@ -629,7 +629,7 @@ def Secret_SarPlainOp : Secret_Op<"sar_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_LogicalAndOp : Secret_Op<"logical_and", [Pure, Commutative]> {
@@ -744,7 +744,7 @@ def Secret_PowPlainOp : Secret_Op<"pow_plain", [Pure]> {
         AnyTypeOf<[Secret,BatchedSecret]>:$output
     );
 
-    let hasFolder = 1;
+    //let hasFolder = 1;
 }
 
 def Secret_SqrtOp : Secret_Op<"sqrt", [Pure]> {
