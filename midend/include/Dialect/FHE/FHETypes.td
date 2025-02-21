@@ -119,9 +119,9 @@ def RLWECipherGrid: TypeDef<FHE_Dialect, "RLWECipherGrid"> {
 
   let description = "A type for RLWE Cipher, representing an encrypted grid (matrix) of plaintext values.";
 
-  let mnemonic = "lweciphermat";
+  let mnemonic = "rlweciphermat";
 
-  let summary = "lweciphermat";
+  let summary = "rlweciphermat";
 
   let parameters = (ins
       "Type":$plaintextType,
