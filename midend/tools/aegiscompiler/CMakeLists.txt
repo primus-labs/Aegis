@@ -23,6 +23,8 @@ set(DEP_LIBS
         MLIRSideEffectInterfaces
         MLIRTargetLLVMIRExport
         MLIRTransforms
+
+        AegisUnrollLoops
         )
 
 add_llvm_executable(aegiscompiler main.cpp)

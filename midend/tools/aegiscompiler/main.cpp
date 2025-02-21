@@ -15,6 +15,7 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/FHE/FHEDialect.h"
+#include "Pass/unroll/UnrollLoops.h"
 
 
 using namespace mlir;
@@ -25,7 +26,7 @@ using namespace fhe;
 
 void fhePipeline(OpPassManager &manager)
 {
-    // manager.addPass(std::make_unique<UnrollLoopsPass>());
+    manager.addPass(std::make_unique<UnrollLoopsPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass()); // this can greatly reduce the number of operations after unrolling
 }
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
     registerCanonicalizerPass();
     affine::registerAffineLoopUnrollPass();
     registerCSEPass();
-    // PassRegistration<UnrollLoopsPass>();
+    PassRegistration<UnrollLoopsPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Run fhe-level passes", fhePipeline);
 
