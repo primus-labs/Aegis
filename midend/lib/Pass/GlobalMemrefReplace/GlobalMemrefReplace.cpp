@@ -13,7 +13,7 @@
 #include "mlir/include/mlir/Dialect/SCF/IR/SCF.h"        
 #include "mlir/include/mlir/IR/BuiltinAttributeInterfaces.h"
 #include "Common/Utils.h"        
-#include "Pass/globalmemrefreplace/GlobalMemrefReplace.h"
+#include "Pass/GlobalMemrefReplace/GlobalMemrefReplace.h"
 
 #define DEBUG_TYPE "global-memref-replace"
 using namespace mlir;

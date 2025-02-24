@@ -6,7 +6,7 @@
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/Sequence.h"
-#include "Pass/lwe2rlwe/LowerLweToRlwe.h"
+#include "Pass/LweToRlwe/LowerLweToRlwe.h"
 #include "Dialect/FHE/FHEDialect.h"
 #include "Dialect/FHE/FHEOps.h"
 

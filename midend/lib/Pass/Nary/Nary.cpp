@@ -6,7 +6,7 @@
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "Pass/nary/Nary.h"
+#include "Pass/Nary/Nary.h"
 #include "Dialect/FHE/FHEDialect.h"
 #include "Dialect/FHE/FHEOps.h"
 

@@ -1,5 +1,4 @@
-#include "Pass/arith2secret/LowerArithToSecret.h"
-#include "Pass/secret2fhe/LowerSecretToFhe.h"
+#include "Pass/SecretToFhe/LowerSecretToFhe.h"
 
 
 using namespace mlir;

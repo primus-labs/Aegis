@@ -15,8 +15,8 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/FHE/FHEDialect.h"
-#include "Pass/unroll/UnrollLoops.h"
-#include "Pass/globalmemrefreplace/GlobalMemrefReplace.h"
+#include "Pass/Unroll/UnrollLoops.h"
+#include "Pass/GlobalMemrefReplace/GlobalMemrefReplace.h"
 
 
 using namespace mlir;

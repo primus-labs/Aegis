@@ -1,4 +1,4 @@
-#include "Pass/arith2secret/LowerArithToSecret.h"
+#include "Pass/ArithToSecret/LowerArithToSecret.h"
 #include <iostream>
 #include <memory>
 #include "mlir/Dialect/Affine/IR/AffineOps.h"

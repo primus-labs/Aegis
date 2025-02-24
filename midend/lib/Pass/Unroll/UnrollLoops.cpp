@@ -5,7 +5,7 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
-#include "Pass/unroll/UnrollLoops.h"
+#include "Pass/Unroll/UnrollLoops.h"
 
 using namespace mlir;
 
