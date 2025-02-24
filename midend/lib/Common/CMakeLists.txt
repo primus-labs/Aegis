@@ -3,6 +3,7 @@ add_compile_options(-fexceptions -fno-rtti)
 add_mlir_library(
     AegisCommon
     Value.cpp
+    Utils.cpp
 
     DEPENDS
     aegis-protocol

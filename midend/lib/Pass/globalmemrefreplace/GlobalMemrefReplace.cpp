@@ -11,45 +11,13 @@
 #include "mlir/include/mlir/Dialect/Arith/IR/Arith.h"    
 #include "mlir/include/mlir/Dialect/MemRef/IR/MemRef.h"  
 #include "mlir/include/mlir/Dialect/SCF/IR/SCF.h"        
-#include "mlir/include/mlir/IR/BuiltinAttributeInterfaces.h"            
+#include "mlir/include/mlir/IR/BuiltinAttributeInterfaces.h"
+#include "Common/Utils.h"        
 #include "Pass/globalmemrefreplace/GlobalMemrefReplace.h"
 
 #define DEBUG_TYPE "global-memref-replace"
 using namespace mlir;
-
-
-std::optional<std::vector<uint64_t>> materialize(
-    const affine::MemRefAccess& access) {
-  affine::AffineValueMap thisMap;
-  access.getAccessMap(&thisMap);
-  std::vector<uint64_t> accessIndices;
-  for (size_t i = 0; i < access.getRank(); ++i) {
-    // The access indices of the global memref *must* be constant,
-    // meaning that they cannot be a variable access (for example, a
-    // loop index) or symbolic, for example, an input symbol.
-    auto affineValue = thisMap.getResult(i);
-    if (affineValue.getKind() != AffineExprKind::Constant) {
-      return std::nullopt;
-    }
-    accessIndices.push_back(
-        (dyn_cast<mlir::AffineConstantExpr>(thisMap.getResult(i))).getValue());
-  }
-
-  return std::move(accessIndices);
-}
-
-// getFlattenedAccessIndex gets the flattened access index for MemRef access
-// given the MemRef type's shape. Returns a std::nullopt if the indices are not
-// constants (e.g. derived from inputs).
-std::optional<uint64_t> getFlattenedAccessIndex(
-    const affine::MemRefAccess& access, mlir::Type memRefType) {
-  auto accessIndices = materialize(access);
-  if (!accessIndices.has_value()) {
-    return std::nullopt;
-  }
-  return mlir::ElementsAttr::getFlattenedIndex(
-      memRefType, llvm::ArrayRef<uint64_t>(accessIndices.value()));
-}
+using namespace aegis;
 
 
 void GlobalMemrefReplacePass::getDependentDialects(mlir::DialectRegistry &registry) const
@@ -105,11 +73,10 @@ class GlobalMemrefLoweringPattern final : public mlir::ConversionPattern {
         // are unrolled) are sufficient to ensure we can statically
         // compute the load's input index.
         if (!isa<affine::AffineReadOpInterface>(user)) {
-          LLVM_DEBUG(
-              getGlobal.emitRemark()
-              << "GlobalMemrefLoweringPattern requires all global memref "
-                 "readers to be affine reads, but got "
-              << user);
+          LLVM_DEBUG(getGlobal.emitRemark()
+                    << "GlobalMemrefLoweringPattern requires all global memref "
+                       "readers to be affine reads, but got "
+                    << user);
           getGlobalRemoveable = false;
           continue;
         }
@@ -119,8 +86,7 @@ class GlobalMemrefLoweringPattern final : public mlir::ConversionPattern {
         affine::MemRefAccess readAccess(readOp);
 
         // Expand affine map from 'affineLoadOp'.
-        auto flattenedIndex =
-            getFlattenedAccessIndex(readAccess, readOp.getMemRefType());
+        auto flattenedIndex = getFlattenedAccessIndex(readAccess, readOp.getMemRefType());
         if (!flattenedIndex.has_value()) {
           LLVM_DEBUG(readOp->emitRemark()
                      << "GlobalMemrefLoweringPattern requires "

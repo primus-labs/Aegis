@@ -6,6 +6,7 @@ set(DEP_LIBS
         ${dialect_libs}
         ${conversion_libs}
         aegis_cpu
+
         MLIREmitCDialect
         MLIROptLib
         MLIRAnalysis
@@ -26,6 +27,8 @@ set(DEP_LIBS
 
         AegisUnrollLoops
         AegisGlobalMemrefReplace
+        
+        AegisCommon
         )
 
 add_llvm_executable(aegiscompiler main.cpp)
