@@ -62,3 +62,9 @@ mkdir -p build
 cd build
 cmake ../midend/ -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/
 make -j8
+
+
+echo "****************************************************"
+echo "**************       test aegis        *************"
+echo "****************************************************"
+make check-aegis

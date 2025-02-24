@@ -25,6 +25,7 @@ set(DEP_LIBS
         MLIRTransforms
 
         AegisUnrollLoops
+        AegisGlobalMemrefReplace
         )
 
 add_llvm_executable(aegiscompiler main.cpp)
