@@ -27,6 +27,7 @@ set(DEP_LIBS
 
         AegisUnrollLoops
         AegisGlobalMemrefReplace
+        AegisExpandMemrefCopy
         
         AegisCommon
         )

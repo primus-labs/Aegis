@@ -17,6 +17,7 @@
 #include "Dialect/FHE/FHEDialect.h"
 #include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/GlobalMemrefReplace/GlobalMemrefReplace.h"
+#include "Pass/ExpandMemrefCopy/ExpandMemrefCopy.h"
 
 
 using namespace mlir;
@@ -27,9 +28,12 @@ using namespace fhe;
 
 void fhePipeline(OpPassManager &manager)
 {
-    manager.addPass(std::make_unique<UnrollLoopsPass>());
+    manager.addPass(std::make_unique<ExpandMemrefCopyPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass()); // this can greatly reduce the number of operations after unrolling
+    manager.addPass(std::make_unique<UnrollLoopsPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<GlobalMemrefReplacePass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass()); 
@@ -76,6 +80,7 @@ int main(int argc, char **argv)
     registerCSEPass();
     PassRegistration<UnrollLoopsPass>();
     PassRegistration<GlobalMemrefReplacePass>();
+    PassRegistration<ExpandMemrefCopyPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Run fhe-level passes", fhePipeline);
 
