@@ -9,4 +9,4 @@ module {
     }
 }
 
-// CHECK-NOT: memref_copy
+// CHECK-NOT: memref.copy
