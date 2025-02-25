@@ -6,3 +6,5 @@ add_subdirectory(Nary)
 add_subdirectory(GlobalMemrefReplace)
 add_subdirectory(ExpandMemrefCopy)
 add_subdirectory(ForwardInsertToExtract)
+add_subdirectory(ForwardStoreToLoad)
+
