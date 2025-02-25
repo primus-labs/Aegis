@@ -19,6 +19,7 @@
 #include "Pass/GlobalMemrefReplace/GlobalMemrefReplace.h"
 #include "Pass/ExpandMemrefCopy/ExpandMemrefCopy.h"
 #include "Pass/ForwardInsertToExtract/ForwardInsertToExtract.h"
+#include "Pass/ForwardStoreToLoad/ForwardStoreToLoad.h"
 
 
 using namespace mlir;
@@ -39,6 +40,9 @@ void fhePipeline(OpPassManager &manager)
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass()); 
     manager.addPass(std::make_unique<ForwardInsertToExtractPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass()); 
+    manager.addPass(std::make_unique<ForwardStoreToLoadPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass()); 
 }
@@ -86,6 +90,7 @@ int main(int argc, char **argv)
     PassRegistration<GlobalMemrefReplacePass>();
     PassRegistration<ExpandMemrefCopyPass>();
     PassRegistration<ForwardInsertToExtractPass>();
+    PassRegistration<ForwardStoreToLoadPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Run fhe-level passes", fhePipeline);
 

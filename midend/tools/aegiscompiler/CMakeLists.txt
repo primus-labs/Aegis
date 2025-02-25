@@ -29,6 +29,7 @@ set(DEP_LIBS
         AegisGlobalMemrefReplace
         AegisExpandMemrefCopy
         AegisForwardInsertToExtract
+        AegisForwardStoreToLoad
         
         AegisCommon
         )
