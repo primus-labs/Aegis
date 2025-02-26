@@ -20,6 +20,7 @@
 #include "Pass/ExpandMemrefCopy/ExpandMemrefCopy.h"
 #include "Pass/ForwardInsertToExtract/ForwardInsertToExtract.h"
 #include "Pass/ForwardStoreToLoad/ForwardStoreToLoad.h"
+#include "Pass/ArithToSecret/LowerArithToSecret.h"
 
 
 using namespace mlir;
@@ -44,7 +45,8 @@ void fhePipeline(OpPassManager &manager)
     manager.addPass(createCSEPass()); 
     manager.addPass(std::make_unique<ForwardStoreToLoadPass>());
     manager.addPass(createCanonicalizerPass());
-    manager.addPass(createCSEPass()); 
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<LowerArithToSecretPass>());
 }
 
 
@@ -91,6 +93,7 @@ int main(int argc, char **argv)
     PassRegistration<ExpandMemrefCopyPass>();
     PassRegistration<ForwardInsertToExtractPass>();
     PassRegistration<ForwardStoreToLoadPass>();
+    PassRegistration<LowerArithToSecretPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Run fhe-level passes", fhePipeline);
 

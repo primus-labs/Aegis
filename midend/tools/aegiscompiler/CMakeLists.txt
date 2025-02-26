@@ -30,6 +30,7 @@ set(DEP_LIBS
         AegisExpandMemrefCopy
         AegisForwardInsertToExtract
         AegisForwardStoreToLoad
+        AegisLowerArithToSecret
         
         AegisCommon
         )
