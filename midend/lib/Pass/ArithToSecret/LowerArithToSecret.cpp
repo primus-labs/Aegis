@@ -11,19 +11,20 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/IR/PatternMatch.h"
-#include "llvm/ADT/DenseMap.h"
 #include "llvm/include/llvm/Support/Debug.h"
 #include "mlir/include/mlir/Support/LLVM.h" 
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/Secret/SecretOps.h"
 #include "Dialect/Secret/SecretTypes.h"
 #include "Pass/ArithToSecret/LowerArithToSecret.h"
+#include "Common/MetadataMgr.h"
 
 #define DEBUG_TYPE "arith-to-secret"
 
 using namespace mlir;
 using namespace aegis;
 using namespace secret;
+
 
 
 // Helper function to check if a value is encrypted
@@ -36,16 +37,36 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
 
     // If the value is a BlockArgument, check its attribute
     if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
-        if (auto funcOp = mlir::dyn_cast<func::FuncOp>(arg.getOwner()->getParentOp())) {
-            if (auto attr = funcOp.getArgAttr(arg.getArgNumber(), "type")) {
-                bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
-                cache[value] = result;
-                return result;
-            }
+        unsigned index = arg.getArgNumber();
+        std::string paramType = "param" + std::to_string(index) + ".type";
+        const MetadataMgr &metaMgr = MetadataMgr::getInstance();
+        auto attr = metaMgr.getMetadata(paramType);
+        if (!mlir::isa<StringAttr>(attr)){
+            cache[value] = false;
+            return false;
         }
+        bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
+        cache[value] = result;
+        return result;
 
-        cache[value] = false;
-        return false;
+        // auto strAttr = mlir::dyn_cast<mlir::StringAttr>(attr);
+        // if (strAttr) {
+        //     bool result = (strAttr.getValue() == "encrypted");
+        //     cache[value] = result;
+        // }
+        // else {
+        //     cache[value] = false;
+        // }
+        
+        // return cache[value];
+
+        // if (auto funcOp = mlir::dyn_cast<func::FuncOp>(arg.getOwner()->getParentOp())) {
+        //     if (auto attr = funcOp.getArgAttr(arg.getArgNumber(), "type")) {
+        //         bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
+        //         cache[value] = result;
+        //         return result;
+        //     }
+        // }
     }
 
     // If the value is an operation result, check its defining operation
@@ -181,8 +202,6 @@ struct ConvertMulOpPat : public OpRewritePattern<arith::MulFOp> {
 };
 
 
-
-
 void LowerArithToSecretPass::getDependentDialects(mlir::DialectRegistry &registry) const 
 {
     registry.insert<arith::ArithDialect>();
@@ -193,9 +212,25 @@ void LowerArithToSecretPass::getDependentDialects(mlir::DialectRegistry &registr
     registry.insert<memref::MemRefDialect>();
 }
 
+void LowerArithToSecretPass::collectAllMetadata(mlir::Operation *op) {
+    MetadataMgr &metaMgr = MetadataMgr::getInstance();
+    op->walk([&](mlir::Operation *op) {
+        if (op->getName().getStringRef() == "llvm.metadata") {
+            for (auto attr : op->getAttrs()) {
+                LLVM_DEBUG(llvm::dbgs() << " collect metadata name: " << attr.getName()
+                            << ", value:" << attr.getValue() << "\n");
+                metaMgr.addMetadata(attr.getName(), attr.getValue());
+            }
+        }
+    });
+}
+
 void LowerArithToSecretPass::runOnOperation() {
     MLIRContext *context = &getContext();
     RewritePatternSet patterns(context);
+
+    // Collect the module all metadata
+    collectAllMetadata(getOperation());
 
     // Add patterns for converting arithmetic operations to secret operations
     patterns.add<ConvertAddOpPat, ConvertSubOpPat, ConvertMulOpPat>(context);

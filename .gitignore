@@ -3,6 +3,7 @@
 
 # temp build
 build/
+debug_build/
 
 # third party
 third_party/

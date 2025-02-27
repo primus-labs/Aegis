@@ -4,6 +4,7 @@ add_mlir_library(
     AegisCommon
     Value.cpp
     Utils.cpp
+    MetadataMgr.cpp
 
     DEPENDS
     aegis-protocol
