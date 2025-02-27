@@ -107,7 +107,7 @@ Effects: `MemoryEffects::Effect{}`
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or lweciphermat
+| `output` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or rlweciphermat
 
 ### `fhe.encode` (aegis::fhe::EncodeOp)
 
@@ -204,7 +204,7 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `vector` | lweciphervec or lweciphermat or rlwecipher or lweciphermat
+| `vector` | lweciphervec or lweciphermat or rlwecipher or rlweciphermat
 
 #### Results:
 
@@ -785,12 +785,12 @@ A type for RLWE Cipher
 
 ### RLWECipherGridType
 
-lweciphermat
+rlweciphermat
 
 Syntax:
 
 ```
-!fhe.lweciphermat<
+!fhe.rlweciphermat<
   Type,   # plaintextType
   int,   # row
   int   # column

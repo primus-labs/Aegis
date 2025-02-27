@@ -74,12 +74,12 @@ def Secret_AddOp : Secret_Op<"add", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -93,10 +93,10 @@ def Secret_AddPlainOp : Secret_Op<"add_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -113,12 +113,12 @@ def Secret_SubOp : Secret_Op<"sub", [Pure]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -132,10 +132,10 @@ def Secret_SubPlainOp : Secret_Op<"sub_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -151,9 +151,9 @@ def Secret_NegOp : Secret_Op<"neg", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
 }
@@ -172,12 +172,12 @@ def Secret_MulOp : Secret_Op<"mul", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -194,10 +194,10 @@ def Secret_MulPlainOp : Secret_Op<"mul_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -217,12 +217,12 @@ def Secret_DivOp : Secret_Op<"div", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -239,10 +239,10 @@ def Secret_DivPlainOp : Secret_Op<"div_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -259,12 +259,12 @@ def Secret_EqOp : Secret_Op<"eq", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -278,10 +278,10 @@ def Secret_EqPlainOp : Secret_Op<"eq_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -298,12 +298,12 @@ def Secret_NotEqOp : Secret_Op<"not_eq", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -317,10 +317,10 @@ def Secret_NotEqPlainOp : Secret_Op<"not_eq_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -337,12 +337,12 @@ def Secret_GreaterOp : Secret_Op<"greater", [Pure]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -356,10 +356,10 @@ def Secret_GreaterPlainOp : Secret_Op<"greater_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -376,12 +376,12 @@ def Secret_GreaterEqOp : Secret_Op<"greater_eq", [Pure]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -395,10 +395,10 @@ def Secret_GreaterEqPlainOp : Secret_Op<"greater_eq_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -415,12 +415,12 @@ def Secret_MaxOp : Secret_Op<"max", [Pure]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -434,10 +434,10 @@ def Secret_MaxPlainOp : Secret_Op<"max_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -454,12 +454,12 @@ def Secret_MinOp : Secret_Op<"min", [Pure]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -473,10 +473,10 @@ def Secret_MinPlainOp : Secret_Op<"min_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -510,12 +510,12 @@ def Secret_BitwiseAndOp : Secret_Op<"bitwise_and", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -530,12 +530,12 @@ def Secret_BitwiseOrOp : Secret_Op<"bitwise_or", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -550,12 +550,12 @@ def Secret_BitwiseXorOp : Secret_Op<"bitwise_xor", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -569,9 +569,9 @@ def Secret_BitwiseInvertOp : Secret_Op<"bitwise_invert", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -585,10 +585,10 @@ def Secret_ShlPlainOp : Secret_Op<"shl_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -604,10 +604,10 @@ def Secret_ShrPlainOp : Secret_Op<"shr_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -623,10 +623,10 @@ def Secret_SarPlainOp : Secret_Op<"sar_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -643,12 +643,12 @@ def Secret_LogicalAndOp : Secret_Op<"logical_and", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -663,12 +663,12 @@ def Secret_LogicalOrOp : Secret_Op<"logical_or", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -683,12 +683,12 @@ def Secret_LogicalXorOp : Secret_Op<"logical_xor", [Pure, Commutative]> {
     }];
 
     let arguments = (ins
-        AnyTypeOf<[Secret,BatchedSecret]>:$lhs,
-        AnyTypeOf<[Secret,BatchedSecret]>:$rhs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$lhs,
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$rhs
     );
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -702,9 +702,9 @@ def Secret_LogicalNotOp : Secret_Op<"logical_not", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -722,9 +722,9 @@ def Secret_AbsOp : Secret_Op<"abs", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -738,10 +738,10 @@ def Secret_PowPlainOp : Secret_Op<"pow_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
 
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 
     //let hasFolder = 1;
@@ -757,9 +757,9 @@ def Secret_SqrtOp : Secret_Op<"sqrt", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -773,9 +773,9 @@ def Secret_RsqrtOp : Secret_Op<"rsqrt", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -789,9 +789,9 @@ def Secret_ExpOp : Secret_Op<"exp", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -805,9 +805,9 @@ def Secret_Exp2Op : Secret_Op<"exp2", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -821,9 +821,9 @@ def Secret_LogOp : Secret_Op<"log", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -837,9 +837,9 @@ def Secret_Log2Op : Secret_Op<"log2", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -853,9 +853,9 @@ def Secret_Log10Op : Secret_Op<"log10", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 
@@ -869,9 +869,9 @@ def Secret_Log1pOp : Secret_Op<"log1p", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,BatchedSecret]>:$a);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
     let results = (outs
-        AnyTypeOf<[Secret,BatchedSecret]>:$output
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
     );
 }
 

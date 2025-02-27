@@ -27,13 +27,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.add` (aegis::secret::AddOp)
 
@@ -54,14 +54,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.add_plain` (aegis::secret::AddPlainOp)
 
@@ -82,14 +82,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.bitwise_and` (aegis::secret::BitwiseAndOp)
 
@@ -110,14 +110,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.bitwise_invert` (aegis::secret::BitwiseInvertOp)
 
@@ -138,13 +138,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.bitwise_or` (aegis::secret::BitwiseOrOp)
 
@@ -165,14 +165,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.bitwise_xor` (aegis::secret::BitwiseXorOp)
 
@@ -193,14 +193,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.conceal` (aegis::secret::ConcealOp)
 
@@ -261,14 +261,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.div_plain` (aegis::secret::DivPlainOp)
 
@@ -292,14 +292,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.eq` (aegis::secret::EqOp)
 
@@ -320,14 +320,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.eq_plain` (aegis::secret::EqPlainOp)
 
@@ -348,14 +348,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.exp2` (aegis::secret::Exp2Op)
 
@@ -376,13 +376,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.exp` (aegis::secret::ExpOp)
 
@@ -403,13 +403,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.greater_eq` (aegis::secret::GreaterEqOp)
 
@@ -430,14 +430,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.greater_eq_plain` (aegis::secret::GreaterEqPlainOp)
 
@@ -458,14 +458,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.greater` (aegis::secret::GreaterOp)
 
@@ -486,14 +486,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.greater_plain` (aegis::secret::GreaterPlainOp)
 
@@ -514,14 +514,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.log10` (aegis::secret::Log10Op)
 
@@ -542,13 +542,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.log1p` (aegis::secret::Log1pOp)
 
@@ -569,13 +569,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.log2` (aegis::secret::Log2Op)
 
@@ -596,13 +596,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.log` (aegis::secret::LogOp)
 
@@ -623,13 +623,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.logical_and` (aegis::secret::LogicalAndOp)
 
@@ -650,14 +650,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.logical_not` (aegis::secret::LogicalNotOp)
 
@@ -678,13 +678,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.logical_or` (aegis::secret::LogicalOrOp)
 
@@ -705,14 +705,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.logical_xor` (aegis::secret::LogicalXorOp)
 
@@ -733,14 +733,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.max` (aegis::secret::MaxOp)
 
@@ -761,14 +761,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.max_plain` (aegis::secret::MaxPlainOp)
 
@@ -789,14 +789,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.min` (aegis::secret::MinOp)
 
@@ -817,14 +817,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.min_plain` (aegis::secret::MinPlainOp)
 
@@ -845,14 +845,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.mul` (aegis::secret::MulOp)
 
@@ -876,14 +876,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.mul_plain` (aegis::secret::MulPlainOp)
 
@@ -907,14 +907,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.neg` (aegis::secret::NegOp)
 
@@ -935,13 +935,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.not_eq` (aegis::secret::NotEqOp)
 
@@ -962,14 +962,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.not_eq_plain` (aegis::secret::NotEqPlainOp)
 
@@ -990,14 +990,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.pow_plain` (aegis::secret::PowPlainOp)
 
@@ -1018,14 +1018,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.reveal` (aegis::secret::RevealOp)
 
@@ -1083,13 +1083,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.sar_plain` (aegis::secret::SarPlainOp)
 
@@ -1110,14 +1110,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.select` (aegis::secret::SelectOp)
 
@@ -1161,14 +1161,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.shr_plain` (aegis::secret::ShrPlainOp)
 
@@ -1189,14 +1189,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.sqrt` (aegis::secret::SqrtOp)
 
@@ -1217,13 +1217,13 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.sub` (aegis::secret::SubOp)
 
@@ -1244,14 +1244,14 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `lhs` | A secret value or Batched Secret
-| `rhs` | A secret value or Batched Secret
+| `lhs` | A secret value or Batched Secret or Batched Secret
+| `rhs` | A secret value or Batched Secret or Batched Secret
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.sub_plain` (aegis::secret::SubPlainOp)
 
@@ -1272,39 +1272,16 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `a` | A secret value or Batched Secret
+| `a` | A secret value or Batched Secret or Batched Secret
 | `b` | integer
 
 #### Results:
 
 | Result | Description |
 | :----: | ----------- |
-| `output` | A secret value or Batched Secret
+| `output` | A secret value or Batched Secret or Batched Secret
 
 <!-- Autogenerated by mlir-tblgen; don't manually edit -->
-### BatchedSecretType
-
-Batched Secret
-
-Syntax:
-
-```
-!secret.batched_secret<
-  Type,   # plaintextType
-  int   # size
->
-```
-
-A generic wrapper around another MLIR type, representing an batch encrypted value
-but not specifying the manner of encryption. 
-
-#### Parameters:
-
-| Parameter | C++ type | Description |
-| :-------: | :-------: | ----------- |
-| plaintextType | `Type` |  |
-| size | `int` |  |
-
 ### SecretType
 
 A secret value
@@ -1325,4 +1302,52 @@ but not specifying the manner of encryption.
 | Parameter | C++ type | Description |
 | :-------: | :-------: | ----------- |
 | valueType | `Type` |  |
+
+### SecretMatrixType
+
+Batched Secret
+
+Syntax:
+
+```
+!secret.secret_matrix<
+  Type,   # plaintextType
+  int,   # row
+  int   # col
+>
+```
+
+A generic wrapper around another MLIR type, representing an batch(matrix) encrypted value
+but not specifying the manner of encryption. 
+
+#### Parameters:
+
+| Parameter | C++ type | Description |
+| :-------: | :-------: | ----------- |
+| plaintextType | `Type` |  |
+| row | `int` |  |
+| col | `int` |  |
+
+### SecretVectorType
+
+Batched Secret
+
+Syntax:
+
+```
+!secret.secret_vector<
+  Type,   # plaintextType
+  int   # size
+>
+```
+
+A generic wrapper around another MLIR type, representing an batch(vector) encrypted value
+but not specifying the manner of encryption. 
+
+#### Parameters:
+
+| Parameter | C++ type | Description |
+| :-------: | :-------: | ----------- |
+| plaintextType | `Type` |  |
+| size | `int` |  |
 

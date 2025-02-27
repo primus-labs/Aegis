@@ -22,16 +22,16 @@ namespace mlir {
 namespace aegis {
 namespace secret {
 
-SecretType BatchedSecretType::getCorrespondingSecretType() const
-{
-    return SecretType::get(getContext(), getPlaintextType());
-}
+// SecretType SecretVectorType::getCorrespondingSecretType() const
+// {
+//     return SecretType::get(getContext(), getPlaintextType());
+// }
 
-BatchedSecretType BatchedSecretType::get(::mlir::MLIRContext *context, ::mlir::Type plaintextType)
-{
-    assert(false && "This really should not be used!");
-    return get(context, plaintextType, -1);
-}
+// SecretVectorType SecretVectorType::get(::mlir::MLIRContext *context, ::mlir::Type plaintextType)
+// {
+//     assert(false && "This really should not be used!");
+//     return get(context, plaintextType, -1);
+// }
 
 
 }  // namespace secret

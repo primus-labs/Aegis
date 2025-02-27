@@ -25,16 +25,16 @@ def Secret : Secret_Type<"Secret", "secret"> {
 }
 
 
-def BatchedSecret : TypeDef<Secret_Dialect, "BatchedSecret">  {
+def SecretVector : TypeDef<Secret_Dialect, "SecretVector">  {
   let summary = "Batched Secret";
 
   let description = [{
-    A generic wrapper around another MLIR type, representing an batch encrypted value
+    A generic wrapper around another MLIR type, representing an batch(vector) encrypted value
     but not specifying the manner of encryption. 
   }];
 
   // Types are written as "!<dialect_name>.<type_mnemonic>" in textal MLIR representation
-  let mnemonic = "batched_secret";
+  let mnemonic = "secret_vector";
 
 
   let parameters = (ins
@@ -42,12 +42,33 @@ def BatchedSecret : TypeDef<Secret_Dialect, "BatchedSecret">  {
       "int":$size
   );
 
-  let extraClassDeclaration = [{
-        SecretType getCorrespondingSecretType() const;
-        static BatchedSecretType get(::mlir::MLIRContext *context, ::mlir::Type plaintextType);
-  }];
+  //let extraClassDeclaration = [{
+  //      SecretType getCorrespondingSecretType() const;
+  //      static SecretVectorType get(::mlir::MLIRContext *context, ::mlir::Type plaintextType);
+  //}];
 
   let assemblyFormat = "`<` $size `x` $plaintextType `>`";
+}
+
+
+def SecretMatrix : TypeDef<Secret_Dialect, "SecretMatrix">  {
+  let summary = "Batched Secret";
+
+  let description = [{
+    A generic wrapper around another MLIR type, representing an batch(matrix) encrypted value
+    but not specifying the manner of encryption. 
+  }];
+
+  // Types are written as "!<dialect_name>.<type_mnemonic>" in textal MLIR representation
+  let mnemonic = "secret_matrix";
+
+  let parameters = (ins
+      "Type":$plaintextType,
+      "int":$row,
+      "int":$col
+  );
+
+  let assemblyFormat = "`<` $row `x` $col `x` $plaintextType `>`";
 }
 
 
