@@ -46,7 +46,7 @@ Value FHEDataProcessor::publicInput(Value &arg) {
 
 Value FHEDataProcessor::processOutput(Value &output) {
     auto tensor = output.getTensor<uint8_t>().value();
-    std::vector<double> res = aegiscpu::decrypte(tensor.values);
+    std::vector<double> res = aegiscpu::decrypt(tensor.values);
     Tensor<double> resBuf(res, output.getDims());
     return Value(resBuf);
 }

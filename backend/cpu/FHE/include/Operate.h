@@ -5,7 +5,7 @@
 namespace aegiscpu {
 
 std::vector<uint8_t> encrypt(std::vector<double>& data);
-std::vector<double> decrypte(std::vector<uint8_t>& data);
+std::vector<double> decrypt(std::vector<uint8_t>& data);
 
 } //namespace aegiscpu
 

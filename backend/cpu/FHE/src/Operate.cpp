@@ -22,7 +22,7 @@ std::vector<uint8_t> encrypt(std::vector<T>& data) {
 }
 
 
-std::vector<double> decrypte(std::vector<uint8_t>& data) {
+std::vector<double> decrypt(std::vector<uint8_t>& data) {
     CryptoContext<DCRTPoly> cc = CryptoContextMgr::getInstance().getCryptoContext();
 
     //Deserialize output byte array into a ciphertext object.
@@ -34,7 +34,7 @@ std::vector<double> decrypte(std::vector<uint8_t>& data) {
     //get private key
     PrivateKey<DCRTPoly> priKey = FheKeyset::getInstance().getPriKey()->getKey();
 
-    //decrypte
+    //decrypt
     Plaintext ptValue;
     cc->Decrypt(priKey, deserCiphertext, &ptValue);
     ptValue->SetLength(data.size()/sizeof(double));
