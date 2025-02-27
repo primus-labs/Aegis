@@ -41,32 +41,13 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
         std::string paramType = "param" + std::to_string(index) + ".type";
         const MetadataMgr &metaMgr = MetadataMgr::getInstance();
         auto attr = metaMgr.getMetadata(paramType);
-        if (!mlir::isa<StringAttr>(attr)){
+        if (!attr || !mlir::isa<StringAttr>(attr)){
             cache[value] = false;
             return false;
         }
         bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
         cache[value] = result;
         return result;
-
-        // auto strAttr = mlir::dyn_cast<mlir::StringAttr>(attr);
-        // if (strAttr) {
-        //     bool result = (strAttr.getValue() == "encrypted");
-        //     cache[value] = result;
-        // }
-        // else {
-        //     cache[value] = false;
-        // }
-        
-        // return cache[value];
-
-        // if (auto funcOp = mlir::dyn_cast<func::FuncOp>(arg.getOwner()->getParentOp())) {
-        //     if (auto attr = funcOp.getArgAttr(arg.getArgNumber(), "type")) {
-        //         bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
-        //         cache[value] = result;
-        //         return result;
-        //     }
-        // }
     }
 
     // If the value is an operation result, check its defining operation
