@@ -9,6 +9,9 @@ add_mlir_library(
     LowerSecretToFhe.cpp
 
     DEPENDS
+    mlir-headers
+    AegisSecretIncGen
+    AegisFHEIncGen
     secret2fhe
 )
 
