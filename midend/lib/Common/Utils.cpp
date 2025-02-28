@@ -51,6 +51,27 @@ std::optional<uint64_t> getFlattenedAccessIndex(const affine::MemRefAccess& acce
     return mlir::ElementsAttr::getFlattenedIndex(memRefType, llvm::ArrayRef<uint64_t>(accessIndices.value()));
 }
 
+
+int64_t calcFlattenIndex(llvm::ArrayRef<int64_t> indices, llvm::ArrayRef<int64_t> strides, int64_t offset) {
+    int64_t index = offset;
+    for (size_t i = 0; i < strides.size(); ++i) {
+        index += indices[i] * strides[i];
+    }
+    
+    return index;
+}
+
+llvm::SmallVector<int64_t> calcUnflattenIndex(int64_t index, llvm::ArrayRef<int64_t> strides, int64_t offset) {
+    llvm::SmallVector<int64_t> indices;
+    int64_t idx = index - offset;
+    for (int64_t stride : strides) {
+        indices.push_back(idx / stride);
+        idx = idx % stride;
+    }
+
+    return indices;
+}
+
 } // namespace aegis
 } // namespace mlir
 

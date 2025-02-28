@@ -2,9 +2,11 @@ add_subdirectory(ArithToSecret)
 add_subdirectory(SecretToFhe)
 add_subdirectory(LweToRlwe)
 add_subdirectory(Unroll)
+add_subdirectory(UnrollAndMemOpt)
 add_subdirectory(Nary)
 add_subdirectory(GlobalMemrefReplace)
 add_subdirectory(ExpandMemrefCopy)
 add_subdirectory(ForwardInsertToExtract)
 add_subdirectory(ForwardStoreToLoad)
+
 

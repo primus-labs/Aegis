@@ -23,6 +23,13 @@ std::optional<std::vector<uint64_t>> extractStaticIndices(const affine::MemRefAc
 // Returns a std::nullopt if the indices are not constants (e.g. derived from inputs).
 std::optional<uint64_t> getFlattenedAccessIndex(const affine::MemRefAccess &access, mlir::Type memRefType);
 
+
+// calc index for a memref with strided and offset data.
+int64_t calcFlattenIndex(llvm::ArrayRef<int64_t> indices, llvm::ArrayRef<int64_t> strides, int64_t offset);
+
+// calc a unflatten ndex for a memref with strided and offset data.
+llvm::SmallVector<int64_t> calcUnflattenIndex(int64_t index, llvm::ArrayRef<int64_t> strides, int64_t offset);
+
 } // namespace aegis
 } // namespace mlir
 
