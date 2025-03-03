@@ -26,7 +26,6 @@ using namespace aegis;
 using namespace secret;
 
 
-
 // Helper function to check if a value is encrypted
 bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
     // Check if the value is already in the cache
@@ -78,110 +77,319 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
     return false;
 }
 
-// Pattern to convert arith.add to secret.add or secret.add_plain
-struct ConvertAddOpPat : public OpRewritePattern<arith::AddFOp> {
-    using OpRewritePattern<arith::AddFOp>::OpRewritePattern;
 
-    LogicalResult matchAndRewrite(arith::AddFOp op, PatternRewriter &rewriter) const override {
-        Value lhs = op.getLhs();
-        Value rhs = op.getRhs();
+// Transform arith::SelectOp into secret corresponding op(secret::SelectOp)
+// and Convert the data type of input/output of the operators
+class ArithSelectPattern final : public OpConversionPattern<arith::SelectOp>
+{
+protected:
+    using OpConversionPattern<arith::SelectOp>::typeConverter;
 
-        llvm::DenseMap<Value, bool> cache;
-        bool lhsEncrypted = isEncrypted(lhs, cache);
-        bool rhsEncrypted = isEncrypted(rhs, cache);
+public:
+    using OpConversionPattern<arith::SelectOp>::OpConversionPattern;
 
-        if (!lhsEncrypted && !rhsEncrypted) {
+    LogicalResult matchAndRewrite(arith::SelectOp op, typename arith::SelectOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destType = typeConverter->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "convert the " <<  op.getType() << " failure.\n");
             return failure();
         }
 
-        if (lhsEncrypted && !mlir::isa<SecretType>(lhs.getType())) {
-            lhs = rewriter.create<ConcealOp>(op.getLoc(), SecretType::get(op.getContext(), lhs.getType()), lhs);
-        }
-        if (rhsEncrypted && !mlir::isa<SecretType>(rhs.getType())) {
-            rhs = rewriter.create<ConcealOp>(op.getLoc(), SecretType::get(op.getContext(), rhs.getType()), rhs);
-        }
-
-        if (lhsEncrypted && rhsEncrypted) {
-            rewriter.replaceOpWithNewOp<AddOp>(op, SecretType::get(op.getContext(), op.getType()), lhs, rhs);
-        } else {
-            rewriter.replaceOpWithNewOp<AddPlainOp>(op, SecretType::get(op.getContext(), op.getType()), lhs, rhs);
-        }
-
-        return success();
-    }
-};
-
-
-// Pattern to convert arith.sub to secret.sub
-struct ConvertSubOpPat : public OpRewritePattern<arith::SubFOp> {
-    using OpRewritePattern<arith::SubFOp>::OpRewritePattern;
-
-    LogicalResult matchAndRewrite(arith::SubFOp op, PatternRewriter &rewriter) const override {
-        Value lhs = op.getLhs();
-        Value rhs = op.getRhs();
-
-        llvm::DenseMap<Value, bool> cache;
-        bool lhsEncrypted = isEncrypted(lhs, cache);
-        bool rhsEncrypted = isEncrypted(rhs, cache);
-
-        if (!lhsEncrypted && !rhsEncrypted) {
+        Value trueVal = op.getTrueValue();
+        Value falseVal = op.getFalseValue();
+        Value cond = op.getCondition();
+        auto trueDestTy = typeConverter->convertType(trueVal.getType());
+        auto falseDestTy = typeConverter->convertType(falseVal.getType());
+        auto conDestTy = typeConverter->convertType(cond.getType());
+        if (!trueDestTy || !falseDestTy || !conDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "trueDestTy=" << trueDestTy << ",falseDestTy=" << falseDestTy << ",conDestTy=" << conDestTy << "/n");
             return failure();
         }
 
-        if (lhsEncrypted && !mlir::isa<SecretType>(lhs.getType())) {
-            lhs = rewriter.create<ConcealOp>(op.getLoc(), SecretType::get(op.getContext(), lhs.getType()), lhs);
-        }
-        if (rhsEncrypted && !mlir::isa<SecretType>(rhs.getType())) {
-            rhs = rewriter.create<ConcealOp>(op.getLoc(), SecretType::get(op.getContext(), rhs.getType()), rhs);
-        }
+        auto material_true = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), trueDestTy, trueVal);
+        auto material_false = typeConverter->materializeTargetConversion(rewriter, op.getLoc(),falseDestTy, falseVal);
+        auto material_cond = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), conDestTy, cond);
+        LLVM_DEBUG(llvm::dbgs() << "material_true=" << material_true << "material_false" << material_false
+                                << "material_cond" << material_cond << "\n");
 
-        if (lhsEncrypted && rhsEncrypted) {
-            rewriter.replaceOpWithNewOp<SubOp>(op, SecretType::get(op.getContext(), op.getType()), lhs, rhs);
-        } else {
-            rewriter.replaceOpWithNewOp<SubPlainOp>(op, SecretType::get(op.getContext(), op.getType()), lhs, rhs);
-        }
-
+        rewriter.replaceOpWithNewOp<secret::SelectOp>(op, destType, material_cond, material_true, material_false);
         return success();
-    }
+    };
 };
 
 
-// Pattern to convert arith.mul to secret.mul or secret.mul_plain
-struct ConvertMulOpPat : public OpRewritePattern<arith::MulFOp> {
-    using OpRewritePattern<arith::MulFOp>::OpRewritePattern;
+// Transform arith::AddFOp/MulFOp/SubFOp into corresponding secret ops(SecretMulOp/SecretAddOp/SecretSubOp) 
+// and convert the data type of input/output of the ops.
+template <typename OpType>
+class ArithGeneralPattern final : public OpConversionPattern<OpType>
+{
+protected:
+    using OpConversionPattern<OpType>::typeConverter;
 
-    LogicalResult matchAndRewrite(arith::MulFOp op, PatternRewriter &rewriter) const override {
-        Value lhs = op.getLhs();
-        Value rhs = op.getRhs();
+public:
+    using OpConversionPattern<OpType>::OpConversionPattern;
 
-        llvm::DenseMap<Value, bool> cache;
-        bool lhsEncrypted = isEncrypted(lhs, cache);
-        bool rhsEncrypted = isEncrypted(rhs, cache);
+    bool isZeroValue(Value v) const {
+        if (auto constantOp = v.getDefiningOp<secret::CastOp>().getOperand().getDefiningOp<arith::ConstantOp>())
+        {
+            if (auto floatAttr = mlir::dyn_cast<FloatAttr>(constantOp.getValue()))
+            {
+                return floatAttr.getValue().isZero();
+            }
+            else if (auto intAttr = mlir::dyn_cast<IntegerAttr>(constantOp.getValue()))
+            {
+                return intAttr.getValue().isZero();
+            }
+        }
+        
+        return false;
+    }
 
-        // If both operands are clear, no conversion is needed
-        if (!lhsEncrypted && !rhsEncrypted) {
+    bool isOneValue(Value v) const {
+        if (auto constantOp = v.getDefiningOp<secret::CastOp>().getOperand().getDefiningOp<arith::ConstantOp>())
+        {
+            if (auto intAttr = mlir::dyn_cast<IntegerAttr>(constantOp.getValue()))
+            {
+                return intAttr.getValue().isOne();
+            }
+        }
+        
+        return false;
+    }
+
+    LogicalResult matchAndRewrite(OpType op, typename OpType::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destType = typeConverter->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op " << op << "\n");
             return failure();
         }
 
-        // Convert operands to Secret type if necessary
-        if (lhsEncrypted && !mlir::isa<SecretType>(lhs.getType())) {
-            lhs = rewriter.create<ConcealOp>(op.getLoc(), SecretType::get(op.getContext(), lhs.getType()), lhs);
-        }
-        if (rhsEncrypted && !mlir::isa<SecretType>(rhs.getType())) {
-            rhs = rewriter.create<ConcealOp>(op.getLoc(), SecretType::get(op.getContext(), rhs.getType()), rhs);
+        // Materialize the operands where necessary
+        llvm::SmallVector<Value> materialized_ops;
+        for (Value o : op.getOperands())
+        {
+            LLVM_DEBUG(llvm::dbgs() << o << "\n");
+            auto opDestTy = typeConverter->convertType(o.getType());
+            if (!opDestTy) {
+                LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << op << "\n");
+                return failure();
+            }
+
+            if (o.getType() != opDestTy)
+            {
+                auto new_operand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
+                assert(new_operand && "Type Conversion must be not fail");
+                materialized_ops.push_back(new_operand);
+                LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << new_operand << "\n");
+            }
+            else
+            {
+                materialized_ops.push_back(o);
+            }
         }
 
-        // Create the appropriate secret operation
-        if (lhsEncrypted && rhsEncrypted) {
-            rewriter.replaceOpWithNewOp<MulOp>(op, SecretType::get(op.getContext(), op.getType()), lhs, rhs);
-        } else {
-            rewriter.replaceOpWithNewOp<MulPlainOp>(op, SecretType::get(op.getContext(), op.getType()), lhs, rhs);
+        // Deal with multiplications
+        if (std::is_same<OpType, arith::MulFOp>())
+        {
+            Value lhs = materialized_ops[0];
+            Value rhs = materialized_ops[1];
+            if (isOneValue(lhs))
+            {
+                rewriter.replaceOp(op, rhs);
+                if (lhs.use_empty())
+                {
+                    rewriter.eraseOp(lhs.getDefiningOp());
+                }
+                return success();
+            }
+            else if (isOneValue(rhs))
+            {
+                rewriter.replaceOp(op, lhs);
+                if (rhs.use_empty())
+                {
+                    rewriter.eraseOp(rhs.getDefiningOp());
+                }
+                return success();
+            }
+            else
+            {
+                llvm::DenseMap<Value, bool> cache;
+                bool bEncLhs = isEncrypted(lhs, cache);
+                bool bEncRhs = isEncrypted(rhs, cache);
+                if (bEncLhs && bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::MulOp>(op, TypeRange(destType), materialized_ops);
+                }
+                else if (bEncLhs && !bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), materialized_ops);
+                }
+                else if (!bEncLhs && bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), rhs, lhs);
+                }
+
+                return success();
+            }
+        }      
+        
+        // Deal with additions
+        else if (std::is_same<OpType, arith::AddFOp>())
+        {
+            Value lhs = materialized_ops[0];
+            Value rhs = materialized_ops[1];
+            if (isZeroValue(lhs))
+            {
+                rewriter.replaceOp(op, rhs);
+                auto srcVal = lhs.getDefiningOp<secret::CastOp>().getOperand();       
+                if (lhs.use_empty())
+                {
+                    rewriter.eraseOp(lhs.getDefiningOp());
+                }
+                if (srcVal.use_empty())
+                {
+                    rewriter.eraseOp(srcVal.getDefiningOp());
+                }
+                return success();
+            }
+            else if (isZeroValue(rhs))
+            {
+                rewriter.replaceOp(op, lhs);
+                auto srcVal = rhs.getDefiningOp<secret::CastOp>().getOperand();
+                if (rhs.use_empty())
+                {
+                    rewriter.eraseOp(rhs.getDefiningOp());
+                }
+                if (srcVal.use_empty())
+                {
+                    rewriter.eraseOp(srcVal.getDefiningOp());
+                }
+                return success();
+            }
+            else
+            {
+                llvm::DenseMap<Value, bool> cache;
+                bool bEncLhs = isEncrypted(lhs, cache);
+                bool bEncRhs = isEncrypted(rhs, cache);
+                if (bEncLhs && bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::AddOp>(op, TypeRange(destType), materialized_ops);
+                }
+                else if (bEncLhs && !bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), materialized_ops);
+                }
+                else if (!bEncLhs && bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), rhs, lhs);
+                }
+                return success();
+            }
         }
+
+        // Deal with substractions
+        else if (std::is_same<OpType, arith::SubFOp>())
+        {
+            Value lhs = materialized_ops[0];
+            Value rhs = materialized_ops[1];
+            if (isZeroValue(rhs))
+            {
+                rewriter.replaceOp(op, lhs);
+                if (rhs.use_empty())
+                {
+                    rewriter.eraseOp(rhs.getDefiningOp());
+                }
+                return success();
+            }
+            else
+            {
+                llvm::DenseMap<Value, bool> cache;
+                bool bEncLhs = isEncrypted(lhs, cache);
+                bool bEncRhs = isEncrypted(rhs, cache);
+                if (bEncLhs && bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::SubOp>(op, TypeRange(destType), materialized_ops);
+                }
+                else if (bEncLhs && !bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::SubPlainOp>(op, TypeRange(destType), materialized_ops);
+                }
+                else if (!bEncLhs && bEncRhs) {
+                    // create negop and then create addplain op.
+                    // eg: 3 - encryt(2) => negop(encryt(2)) + 3
+                    if (isZeroValue(lhs)) {
+                        rewriter.replaceOpWithNewOp<secret::NegOp>(op, TypeRange(destType), rhs);
+                    }
+                    else {
+                        auto new_lhs = rewriter.create<secret::NegOp>(op.getLoc(), rhs.getType(), rhs);
+                        rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), new_lhs, lhs);
+                    }
+                }
+                
+                return success();
+            }
+        }
+
+        return failure();
+    };
+};
+
+// Transform arith::CmpFOp into secret::cmpOp, 
+// and Convert the data type of input/output of the ops
+class ArithCmpPattern final : public OpConversionPattern<arith::CmpFOp>
+{
+public:
+    using OpConversionPattern<arith::CmpFOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(arith::CmpFOp op, typename arith::CmpFOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destType = this->getTypeConverter()->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op " << op << "\n");
+            return failure();
+        }
+        
+        // Materialize the operands where necessary
+        auto lhs = op.getLhs();
+        auto rhs = op.getRhs();
+        Value new_lhs, new_rhs;
+
+        // Convert the type of operands(inputs)
+        auto lhsOpType = typeConverter->convertType(lhs.getType());
+        if (!lhsOpType) {
+            LLVM_DEBUG(llvm::dbgs() << "the lhs value " << lhs << " convert type fail.\n");
+            return failure();
+        }
+        if (lhs.getType() != lhsOpType)
+        {
+            new_lhs = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), lhsOpType, lhs);
+            assert(new_lhs && "Type Conversion must be not fail");
+        }
+        else
+        {
+            new_lhs = lhs;
+        }
+
+        auto rhsOpType = typeConverter->convertType(rhs.getType());
+        if (!rhsOpType) {
+            LLVM_DEBUG(llvm::dbgs() << "the rhs value " << lhs << " convert type fail.\n");
+            return failure();
+        }
+        if (rhs.getType() != rhsOpType)
+        {
+            new_rhs = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), rhsOpType, rhs);
+            assert(new_rhs && "Type Conversion must be not fail");
+        }
+        else
+        {
+            new_rhs = rhs;
+        }
+
+        arith::CmpFPredicate predicate = op.getPredicate();
+        rewriter.replaceOpWithNewOp<secret::CmpOp>(op, TypeRange(destType), predicate, new_lhs, new_rhs);
 
         return success();
     }
+    
 };
-
 
 void LowerArithToSecretPass::getDependentDialects(mlir::DialectRegistry &registry) const 
 {
@@ -207,16 +415,172 @@ void LowerArithToSecretPass::collectAllMetadata(mlir::Operation *op) {
 }
 
 void LowerArithToSecretPass::runOnOperation() {
-    MLIRContext *context = &getContext();
-    RewritePatternSet patterns(context);
-
     // Collect the module all metadata
     collectAllMetadata(getOperation());
 
-    // Add patterns for converting arithmetic operations to secret operations
-    patterns.add<ConvertAddOpPat, ConvertSubOpPat, ConvertMulOpPat>(context);
+    auto type_converter = TypeConverter();
 
-    if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns)))) {
+    // Add type converter to convert plaintext data type to secret & secretvect & secretmatrix type
+    type_converter.addConversion([&](Type t) {
+        if (mlir::isa<Float32Type>(t))
+            return std::optional<Type>(SecretType::get(&getContext(), t));
+        else if (mlir::isa<IntegerType>(t))
+            return std::optional<Type>(SecretType::get(&getContext(), Float32Type::getF32(&getContext())));
+        else if (mlir::isa<MemRefType>(t))
+        {
+            auto new_t = mlir::cast<MemRefType>(t);
+            if (new_t.hasStaticShape() && new_t.getShape().size() == 1) {
+                int sizes = new_t.getShape().front();
+                return std::optional<Type>(SecretVectorType::get(&getContext(), new_t.getElementType(), sizes));
+            }
+            else if (new_t.hasStaticShape() && new_t.getShape().size() == 2) {
+                int row = new_t.getShape().front();
+                int col = new_t.getShape().back();
+                return std::optional<Type>(SecretMatrixType::get(&getContext(), new_t.getElementType(), row, col));
+            }
+            else {
+                LLVM_DEBUG(llvm::dbgs() << t << "\n");
+                return std::optional<Type>(t);
+            }
+        }
+        else {
+            return std::optional<Type>(t);
+        }
+    });
+
+    type_converter.addTargetMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
+        if (auto ot = mlir::dyn_cast_or_null<SecretType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto old_type = vs.front().getType();
+            if (mlir::dyn_cast_or_null<Float32Type>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+            else if (mlir::dyn_cast_or_null<IntegerType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+        }
+        else if (auto ot = mlir::dyn_cast_or_null<SecretVectorType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto old_type = vs.front().getType();
+            if (mlir::dyn_cast_or_null<MemRefType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+        }
+        else if (auto ot = mlir::dyn_cast_or_null<SecretMatrixType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto old_type = vs.front().getType();
+            if (mlir::dyn_cast_or_null<MemRefType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+        }
+        return std::optional<Value>(std::nullopt);
+    });
+
+    type_converter.addArgumentMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
+        if (auto ot = mlir::dyn_cast_or_null<SecretType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto old_type = vs.front().getType();
+            if (mlir::dyn_cast_or_null<Float32Type>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+            else if (mlir::dyn_cast_or_null<IntegerType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+        }
+        else if (auto ot = mlir::dyn_cast_or_null<SecretVectorType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto old_type = vs.front().getType();
+            if (mlir::dyn_cast_or_null<MemRefType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+        }
+        else if (auto ot = mlir::dyn_cast_or_null<SecretMatrixType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto old_type = vs.front().getType();
+            if (mlir::dyn_cast_or_null<MemRefType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            }
+        }
+        return std::optional<Value>(std::nullopt);
+    });
+
+    type_converter.addSourceMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
+        if (auto bst = mlir::dyn_cast_or_null<Float32Type>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            auto old_type = vs.front().getType();
+            if (auto ot = mlir::dyn_cast_or_null<SecretType>(old_type))
+            {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, bst, vs));
+            }
+        }
+        else if (auto bst = mlir::dyn_cast_or_null<IntegerType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            auto old_type = vs.front().getType();
+            if (auto ot = mlir::dyn_cast_or_null<SecretType>(old_type))
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, bst, vs));
+        }
+        else if (auto bst = mlir::dyn_cast_or_null<MemRefType>(t))
+        {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            auto old_type = vs.front().getType();
+            if (auto ot = mlir::dyn_cast_or_null<SecretVectorType>(old_type))
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, bst, vs));
+            else if (auto ot = mlir::dyn_cast_or_null<SecretMatrixType>(old_type))
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, bst, vs));
+        }
+        return std::optional<Value>(std::nullopt);
+    });
+
+
+    ConversionTarget target(getContext());
+    IRRewriter rewriter(&getContext());
+    target.addLegalDialect<affine::AffineDialect, func::FuncDialect, scf::SCFDialect, arith::ArithDialect>();
+    target.addLegalDialect<memref::MemRefDialect>();
+    target.addLegalDialect<SecretDialect>();
+    target.addLegalOp<ModuleOp>();
+    target.addIllegalOp<arith::MulFOp>();
+    target.addIllegalOp<arith::AddFOp>();
+    target.addIllegalOp<arith::SubFOp>();
+    target.addIllegalOp<arith::CmpFOp>();
+    target.addIllegalOp<memref::AllocaOp>();
+
+    //Convert arith::select to secret::select.
+    mlir::RewritePatternSet selectPatSet(&getContext());
+    ConversionTarget target_2(getContext());
+    target_2.addLegalDialect<SecretDialect>();
+    target_2.addLegalDialect<affine::AffineDialect, func::FuncDialect, scf::SCFDialect, arith::ArithDialect>();
+    target_2.addLegalDialect<memref::MemRefDialect>();
+    target_2.addLegalOp<ModuleOp>();
+    target_2.addIllegalOp<arith::SelectOp>();
+
+    selectPatSet.add<ArithSelectPattern>(type_converter, selectPatSet.getContext()); 
+    if (mlir::failed(mlir::applyPartialConversion(getOperation(), target_2, std::move(selectPatSet)))) {
+        LLVM_DEBUG(llvm::dbgs() << "apply ArithSelectPattern fail.\n");
+        signalPassFailure();
+    }
+    
+    // Convert arith::mulf,addf,subf... to secret::mul,addf,subf...
+    mlir::RewritePatternSet arithPatSet(&getContext());
+    arithPatSet.add<ArithGeneralPattern<arith::MulFOp>, ArithGeneralPattern<arith::AddFOp>, ArithGeneralPattern<arith::SubFOp>,
+                    ArithCmpPattern> (type_converter, arithPatSet.getContext());
+    if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(arithPatSet)))) {
+        LLVM_DEBUG(llvm::dbgs() << "apply arithtPatternSet(mulf,addf,subf...) fail.\n");
         signalPassFailure();
     }
 }

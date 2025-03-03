@@ -6,6 +6,7 @@
 #include <mlir/IR/BuiltinTypes.h>
 #include <mlir/Interfaces/ControlFlowInterfaces.h>
 #include <mlir/Interfaces/SideEffectInterfaces.h>
+#include "mlir/Dialect/Arith/IR/Arith.h"
 
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/Secret/SecretTypes.h"

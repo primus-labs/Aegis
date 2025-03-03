@@ -7,6 +7,8 @@ include "mlir/IR/BuiltinAttributeInterfaces.td"
 include "mlir/Interfaces/ControlFlowInterfaces.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/Dialect/Arith/IR/ArithBase.td"
+include "mlir/Dialect/Arith/IR/ArithOpsInterfaces.td"
 
 
 class Secret_Op<string mnemonic, list<Trait> traits = []> :
@@ -57,6 +59,15 @@ def Secret_RevealOp : Secret_Op<"reveal", [Pure]> {
         // Builder to infer output type from the input type
         OpBuilder<(ins "Value":$secret)>
     ];
+}
+
+def Secret_CastOp: Secret_Op<"cast", [Pure]> {
+  let summary = "No-op operation used to preserve consistency of type system during type conversion";
+
+  let arguments = (ins AnyType:$input);
+  let results = (outs AnyType:$result);
+
+  let hasFolder = 1;
 }
 
 
@@ -480,6 +491,16 @@ def Secret_MinPlainOp : Secret_Op<"min_plain", [Pure]> {
     );
 
     //let hasFolder = 1;
+}
+
+def Secret_CmpOp: Secret_Op<"compare", []> {
+  let summary = "The comparing operation";
+
+  let arguments = (ins Arith_CmpFPredicateAttr:$predicate,
+                       AnyType:$lhs,
+                       AnyType:$rhs);
+  
+  let results = (outs AnyType:$result);
 }
 
 def Secret_SelectOp: Secret_Op<"select", []> {

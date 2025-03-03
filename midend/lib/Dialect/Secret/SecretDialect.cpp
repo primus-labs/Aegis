@@ -17,6 +17,26 @@ namespace aegis {
 namespace secret {
 
 
+/// simplifies away castop(castop(x)) to x if the types work
+::mlir::OpFoldResult secret::CastOp::fold(secret::CastOp::FoldAdaptor adaptor)
+{
+    if (auto m_op = getInput().getDefiningOp<secret::CastOp>()) {
+        if (m_op.getInput().getType() == getResult().getType())
+            return m_op.getInput();
+        
+        if (auto mm_op = m_op.getInput().getDefiningOp<secret::CastOp>()) {
+            if (mm_op.getInput().getType() == getResult().getType())
+                return mm_op.getInput();
+        }
+    }
+    else if (getInput().getType() == getResult().getType()) {
+        return getInput();
+    }
+
+    return {};
+}
+
+
 /*****************************************************************************/
 // Secret dialect.
 // Dialect construction: there is one instance per context and it registers its
