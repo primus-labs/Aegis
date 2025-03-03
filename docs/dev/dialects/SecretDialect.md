@@ -202,6 +202,70 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | A secret value or Batched Secret or Batched Secret
 
+### `secret.cast` (aegis::secret::CastOp)
+
+_No-op operation used to preserve consistency of type system during type conversion_
+
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `input` | any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `result` | any type
+
+### `secret.compare` (aegis::secret::CmpOp)
+
+_The comparing operation_
+
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>predicate</code></td><td>::mlir::arith::CmpFPredicateAttr</td><td><details><summary>allowed 64-bit signless integer cases: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15</summary>{{% markdown %}}Enum cases:
+* false (`AlwaysFalse`)
+* oeq (`OEQ`)
+* ogt (`OGT`)
+* oge (`OGE`)
+* olt (`OLT`)
+* ole (`OLE`)
+* one (`ONE`)
+* ord (`ORD`)
+* ueq (`UEQ`)
+* ugt (`UGT`)
+* uge (`UGE`)
+* ult (`ULT`)
+* ule (`ULE`)
+* une (`UNE`)
+* uno (`UNO`)
+* true (`AlwaysTrue`){{% /markdown %}}</details></td></tr>
+</table>
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `lhs` | any type
+| `rhs` | any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `result` | any type
+
 ### `secret.conceal` (aegis::secret::ConcealOp)
 
 _Convert a non-secret value into a secret_
