@@ -56,7 +56,7 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
         Operation *op = opResult.getDefiningOp();
 
         // If the value is an constop, then return false.
-        if (auto arg = mlir::dyn_cast<arith::ConstantOp>(op)) {
+        if (auto const_op = mlir::dyn_cast<arith::ConstantOp>(op)) {
             cache[value] = false;
             return false;
         }
