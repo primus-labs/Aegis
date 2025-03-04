@@ -34,16 +34,18 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
         return it->second;
     }
 
-    // If the value is a BlockArgument, check its attribute
+    // If the value is a BlockArgument, check its attribute.
+    // If the BlockArgument value no metadata, then default param is encrypted.
     if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
         unsigned index = arg.getArgNumber();
         std::string paramType = "param" + std::to_string(index) + ".type";
         const MetadataMgr &metaMgr = MetadataMgr::getInstance();
         auto attr = metaMgr.getMetadata(paramType);
-        if (!attr || !mlir::isa<StringAttr>(attr)){
-            cache[value] = false;
-            return false;
+        if (!attr || !mlir::isa<StringAttr>(attr)) {
+            cache[value] = true;
+            return true;
         }
+
         bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
         cache[value] = result;
         return result;
@@ -53,11 +55,17 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
     if (auto opResult = mlir::dyn_cast<OpResult>(value)) {
         Operation *op = opResult.getDefiningOp();
 
-        // If the operation is a secret operation, the result is encrypted
-        if (isa<SecretDialect>(op->getDialect())) {
-            cache[value] = true;
-            return true;
+        // If the value is an constop, then return false.
+        if (auto arg = mlir::dyn_cast<arith::ConstantOp>(op)) {
+            cache[value] = false;
+            return false;
         }
+
+        // If the operation is a secret operation, the result is encrypted
+        // if (isa<SecretDialect>(op->getDialect())) {
+        //     cache[value] = true;
+        //     return true;
+        // }
 
         // For any operation, check if any of its operands is encrypted
         for (Value operand : op->getOperands()) {
@@ -65,16 +73,16 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
                 cache[value] = true;
                 return true;
             }
+            else {
+                cache[value] = false;
+                return false;
+            }
         }
-
-        // Default to false if no conditions are met
-        cache[value] = false;
-        return false;
     }
 
-    // Default to false if the value is neither a BlockArgument nor an OpResult
-    cache[value] = false;
-    return false;
+    // Default to true if the value is neither a BlockArgument nor an OpResult
+    cache[value] = true;
+    return true;
 }
 
 
@@ -112,8 +120,8 @@ public:
         auto material_true = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), trueDestTy, trueVal);
         auto material_false = typeConverter->materializeTargetConversion(rewriter, op.getLoc(),falseDestTy, falseVal);
         auto material_cond = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), conDestTy, cond);
-        LLVM_DEBUG(llvm::dbgs() << "material_true=" << material_true << "material_false" << material_false
-                                << "material_cond" << material_cond << "\n");
+        LLVM_DEBUG(llvm::dbgs() << "material_true=" << material_true << "material_false=" << material_false
+                                << "material_cond=" << material_cond << "\n");
 
         rewriter.replaceOpWithNewOp<secret::SelectOp>(op, destType, material_cond, material_true, material_false);
         return success();
@@ -175,6 +183,7 @@ public:
         for (Value o : op.getOperands())
         {
             LLVM_DEBUG(llvm::dbgs() << o << "\n");
+            llvm::errs() << o << "\n";
             auto opDestTy = typeConverter->convertType(o.getType());
             if (!opDestTy) {
                 LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << op << "\n");
@@ -226,10 +235,10 @@ public:
                     rewriter.replaceOpWithNewOp<secret::MulOp>(op, TypeRange(destType), materialized_ops);
                 }
                 else if (bEncLhs && !bEncRhs) {
-                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), materialized_ops);
+                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), lhs, op.getOperand(1));
                 }
                 else if (!bEncLhs && bEncRhs) {
-                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), rhs, lhs);
+                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), rhs, op.getOperand(0));
                 }
 
                 return success();
@@ -278,10 +287,10 @@ public:
                     rewriter.replaceOpWithNewOp<secret::AddOp>(op, TypeRange(destType), materialized_ops);
                 }
                 else if (bEncLhs && !bEncRhs) {
-                    rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), materialized_ops);
+                    rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), lhs, op.getOperand(1));
                 }
                 else if (!bEncLhs && bEncRhs) {
-                    rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), rhs, lhs);
+                    rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), rhs, op.getOperand(0));
                 }
                 return success();
             }
@@ -310,17 +319,17 @@ public:
                     rewriter.replaceOpWithNewOp<secret::SubOp>(op, TypeRange(destType), materialized_ops);
                 }
                 else if (bEncLhs && !bEncRhs) {
-                    rewriter.replaceOpWithNewOp<secret::SubPlainOp>(op, TypeRange(destType), materialized_ops);
+                    rewriter.replaceOpWithNewOp<secret::SubPlainOp>(op, TypeRange(destType), lhs, op.getOperand(1));
                 }
                 else if (!bEncLhs && bEncRhs) {
                     // create negop and then create addplain op.
-                    // eg: 3 - encryt(2) => negop(encryt(2)) + 3
+                    // eg: 3 - encrypt(2) => negop(encrypt(2)) + 3
                     if (isZeroValue(lhs)) {
                         rewriter.replaceOpWithNewOp<secret::NegOp>(op, TypeRange(destType), rhs);
                     }
                     else {
                         auto new_lhs = rewriter.create<secret::NegOp>(op.getLoc(), rhs.getType(), rhs);
-                        rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), new_lhs, lhs);
+                        rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), new_lhs, op.getOperand(0));
                     }
                 }
                 

@@ -104,7 +104,7 @@ def Secret_AddPlainOp : Secret_Op<"add_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -143,7 +143,7 @@ def Secret_SubPlainOp : Secret_Op<"sub_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -205,7 +205,7 @@ def Secret_MulPlainOp : Secret_Op<"mul_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -250,7 +250,7 @@ def Secret_DivPlainOp : Secret_Op<"div_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -289,7 +289,7 @@ def Secret_EqPlainOp : Secret_Op<"eq_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -328,7 +328,7 @@ def Secret_NotEqPlainOp : Secret_Op<"not_eq_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -367,7 +367,7 @@ def Secret_GreaterPlainOp : Secret_Op<"greater_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -406,7 +406,7 @@ def Secret_GreaterEqPlainOp : Secret_Op<"greater_eq_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -445,7 +445,7 @@ def Secret_MaxPlainOp : Secret_Op<"max_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
@@ -484,7 +484,7 @@ def Secret_MinPlainOp : Secret_Op<"min_plain", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyInteger:$b);
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a, AnyTypeOf<[AnyInteger, AnyFloat]>:$b);
 
     let results = (outs
         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
