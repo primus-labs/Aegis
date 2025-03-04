@@ -83,7 +83,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -357,7 +357,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -413,7 +413,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -523,7 +523,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -579,7 +579,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -854,7 +854,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -910,7 +910,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -972,7 +972,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -1055,7 +1055,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
@@ -1337,7 +1337,7 @@ Effects: `MemoryEffects::Effect{}`
 | Operand | Description |
 | :-----: | ----------- |
 | `a` | A secret value or Batched Secret or Batched Secret
-| `b` | integer
+| `b` | integer or floating-point
 
 #### Results:
 
