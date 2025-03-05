@@ -568,26 +568,12 @@ void LowerArithToSecretPass::runOnOperation() {
     target.addIllegalOp<arith::SubFOp>();
     target.addIllegalOp<arith::CmpFOp>();
     target.addIllegalOp<memref::AllocaOp>();
-
-    //Convert arith::select to secret::select.
-    mlir::RewritePatternSet selectPatSet(&getContext());
-    ConversionTarget target_2(getContext());
-    target_2.addLegalDialect<SecretDialect>();
-    target_2.addLegalDialect<affine::AffineDialect, func::FuncDialect, scf::SCFDialect, arith::ArithDialect>();
-    target_2.addLegalDialect<memref::MemRefDialect>();
-    target_2.addLegalOp<ModuleOp>();
-    target_2.addIllegalOp<arith::SelectOp>();
-
-    selectPatSet.add<ArithSelectPattern>(type_converter, selectPatSet.getContext()); 
-    if (mlir::failed(mlir::applyPartialConversion(getOperation(), target_2, std::move(selectPatSet)))) {
-        LLVM_DEBUG(llvm::dbgs() << "apply ArithSelectPattern fail.\n");
-        signalPassFailure();
-    }
+    target.addIllegalOp<arith::SelectOp>();
     
     // Convert arith::mulf,addf,subf... to secret::mul,addf,subf...
     mlir::RewritePatternSet arithPatSet(&getContext());
     arithPatSet.add<ArithGeneralPattern<arith::MulFOp>, ArithGeneralPattern<arith::AddFOp>, ArithGeneralPattern<arith::SubFOp>,
-                    ArithCmpPattern> (type_converter, arithPatSet.getContext());
+                    ArithCmpPattern, ArithSelectPattern> (type_converter, arithPatSet.getContext());
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(arithPatSet)))) {
         LLVM_DEBUG(llvm::dbgs() << "apply arithtPatternSet(mulf,addf,subf...) fail.\n");
         signalPassFailure();
