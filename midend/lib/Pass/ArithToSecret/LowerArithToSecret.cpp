@@ -183,7 +183,6 @@ public:
         for (Value o : op.getOperands())
         {
             LLVM_DEBUG(llvm::dbgs() << o << "\n");
-            llvm::errs() << o << "\n";
             auto opDestTy = typeConverter->convertType(o.getType());
             if (!opDestTy) {
                 LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << op << "\n");
@@ -411,6 +410,8 @@ void LowerArithToSecretPass::getDependentDialects(mlir::DialectRegistry &registr
 }
 
 void LowerArithToSecretPass::collectAllMetadata(mlir::Operation *op) {
+    llvm::SmallVector<mlir::Operation*> opsToErase;
+
     MetadataMgr &metaMgr = MetadataMgr::getInstance();
     op->walk([&](mlir::Operation *op) {
         if (op->getName().getStringRef() == "llvm.metadata") {
@@ -419,8 +420,16 @@ void LowerArithToSecretPass::collectAllMetadata(mlir::Operation *op) {
                             << ", value:" << attr.getValue() << "\n");
                 metaMgr.addMetadata(attr.getName(), attr.getValue());
             }
+
+            // Mark the operation for deletion (do not delete immediately).
+            opsToErase.push_back(op);
         }
     });
+
+    // Safely delete all marked llvm.metadata ops.
+    for (mlir::Operation *op : opsToErase) {
+        op->erase();
+    }
 }
 
 void LowerArithToSecretPass::runOnOperation() {
