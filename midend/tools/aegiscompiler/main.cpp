@@ -1,4 +1,6 @@
 #include <iostream>
+#include <iostream>
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
@@ -22,6 +24,7 @@
 #include "Pass/ForwardInsertToExtract/ForwardInsertToExtract.h"
 #include "Pass/ForwardStoreToLoad/ForwardStoreToLoad.h"
 #include "Pass/ArithToSecret/LowerArithToSecret.h"
+#include "Pass/FuncToSecret/LowerFuncToSecret.h"
 
 
 using namespace mlir;
@@ -51,7 +54,23 @@ void fhePipeline(OpPassManager &manager)
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerArithToSecretPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<LowerFuncToSecretPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
 }
+
+void mpcPipeline(OpPassManager &manager)
+{
+    llvm::errs() << "MPC pipeline is currently not supported.\n";
+}
+
+void zkpPipeline(OpPassManager &manager)
+{
+    llvm::errs() << "ZKP pipeline is currently not supported.\n";
+}
+
 
 
 int main(int argc, char **argv)
@@ -60,8 +79,8 @@ int main(int argc, char **argv)
     context.enableMultithreading();
 
     mlir::DialectRegistry registry;
-    registry.insert<SecretDialect>();
-    registry.insert<FHEDialect>();
+    registry.insert<secret::SecretDialect>();
+    registry.insert<fhe::FHEDialect>();
     registry.insert<func::FuncDialect>();
     registry.insert<affine::AffineDialect>();
     registry.insert<tensor::TensorDialect>();
@@ -70,8 +89,8 @@ int main(int argc, char **argv)
     registry.insert<func::FuncDialect>();
     registry.insert<linalg::LinalgDialect>();
 
-    context.loadDialect<SecretDialect>();
-    context.loadDialect<FHEDialect>();
+    context.loadDialect<secret::SecretDialect>();
+    context.loadDialect<fhe::FHEDialect>();
     context.loadDialect<func::FuncDialect>();
     context.loadDialect<affine::AffineDialect>();
     context.loadDialect<tensor::TensorDialect>();
@@ -99,6 +118,7 @@ int main(int argc, char **argv)
     PassRegistration<ForwardInsertToExtractPass>();
     PassRegistration<ForwardStoreToLoadPass>();
     PassRegistration<LowerArithToSecretPass>();
+    PassRegistration<LowerFuncToSecretPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Run fhe-level passes", fhePipeline);
 

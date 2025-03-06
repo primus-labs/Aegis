@@ -13,12 +13,34 @@
 #include "Dialect/Secret/SecretOps.h"
 #include "Dialect/Secret/SecretTypes.h"
 #include "Pass/FuncToSecret/LowerFuncToSecret.h"
+#include "Common/MetadataMgr.h"
 
 #define DEBUG_TYPE "func-to-secret"
 
 using namespace mlir;
 using namespace aegis;
 using namespace secret;
+
+// Helper function to check if a value(func params) is encrypted
+bool isArgEncrypted(Value value) {
+    // If the value is a BlockArgument, check its attribute.
+    // If the BlockArgument value no metadata, then default param is encrypted.
+    if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
+        unsigned index = arg.getArgNumber();
+        std::string paramType = "param" + std::to_string(index) + ".type";
+        const MetadataMgr &metaMgr = MetadataMgr::getInstance();
+        auto attr = metaMgr.getMetadata(paramType);
+        if (!attr || !mlir::isa<StringAttr>(attr)) {
+            return true;
+        }
+
+        bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
+        return result;
+    }
+
+    // Return true in others.
+    return true;
+}
 
 
 // Transform func::CallOp to secret::CallOp and 
@@ -97,22 +119,38 @@ public:
             return failure();
         }
 
+        // Iterate through all parameters and process them one by one.
         TypeConverter::SignatureConversion signatureConversion(op.getFunctionType().getNumInputs());
-        if (typeConverter->convertSignatureArgs(op.getFunctionType().getInputs(), signatureConversion).failed()) {
-            LLVM_DEBUG(llvm::dbgs() << "call convertSignatureArgs fail for function argument op type( " << op.getFunctionType().getInputs() << " )\n");
-            return failure();
+        for (auto [index, arg] : llvm::enumerate(op.getRegion().getArguments())) {
+            Type originalType = op.getFunctionType().getInput(index);
+            
+            if (isArgEncrypted(arg)) {
+                SmallVector<Type> destTypes;
+                if (failed(typeConverter->convertType(originalType, destTypes))) {
+                    LLVM_DEBUG(llvm::dbgs() << "all convertType fail for type("  << originalType << " )\n");
+                    return failure();
+                }
+                signatureConversion.addInputs(index, destTypes);
+            } 
+            else {
+                signatureConversion.addInputs(index, {originalType});
+            }
         }
 
         auto newFuncTy = FunctionType::get(getContext(), signatureConversion.getConvertedTypes(), newResTypes);
-
         rewriter.startOpModification(op);
         op.setType(newFuncTy);
         for (BlockArgument arg : op.getRegion().getArguments()) {
+            if (!isArgEncrypted(arg)) {
+                //skip the clear argument.
+                continue;
+            }
+
             auto oldType = arg.getType();
             auto newType = typeConverter->convertType(oldType);
             if (!newType) {
                 LLVM_DEBUG(llvm::dbgs() << "call convertType fail for type( " << oldType << " )\n");
-                return failure(); 
+                return failure();
             }
 
             arg.setType(newType);
@@ -120,10 +158,11 @@ public:
             {
                 rewriter.setInsertionPointToStart(&op.getBody().getBlocks().front());
                 auto cast_op = typeConverter->materializeSourceConversion(rewriter, arg.getLoc(), oldType, arg);
-                arg.replaceAllUsesExcept(cast_op, cast_op.getDefiningOp());
+                arg.replaceAllUsesExcept(cast_op, cast_op.getDefiningOp());      
             }
         }
         rewriter.finalizeOpModification(op);
+        // op.print(llvm::errs());
 
         return success();
     }
@@ -290,10 +329,12 @@ void LowerFuncToSecretPass::runOnOperation() {
                 return false;
         }
 
-        for (auto t : fop.getFunctionType().getInputs()) {
-            if (!type_converter.isLegal(t))
-                return false;
-        }
+        // Since function parameters may be marked as built-in types based on metadata, 
+        // their legality is not checked here.
+        // for (auto t : fop.getFunctionType().getInputs()) {
+        //     if (!type_converter.isLegal(t))
+        //         return false;
+        // }
         for (auto t : fop.getFunctionType().getResults()) {
             if (!type_converter.isLegal(t))
                 return false;
