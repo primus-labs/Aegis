@@ -4,11 +4,19 @@
 #include <cstdint>
 #include <vector>
 #include <optional>
-#include "llvm/include/llvm/ADT/ArrayRef.h"     
+#include "llvm/include/llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/DenseMap.h"   
 #include "llvm/include/llvm/ADT/SmallVector.h"  
+#include "mlir/IR/Value.h"
 #include "mlir/include/mlir/IR/Types.h"   
 #include "mlir/include/mlir/Dialect/Affine/Utils.h"     
 #include "mlir/include/mlir/Dialect/Affine/Analysis/AffineAnalysis.h"          
+
+
+#define PARAM_ATTR_NAME     "onnx.name"
+#define PARAM_ATTR_TYPE     "onnx.type"
+#define ENCRYPTED           "encrypted"
+#define CLEAR               "clear"
 
 
 namespace mlir {
@@ -27,8 +35,17 @@ std::optional<uint64_t> getFlattenedAccessIndex(const affine::MemRefAccess &acce
 // calc index for a memref with strided and offset data.
 int64_t calcFlattenIndex(llvm::ArrayRef<int64_t> indices, llvm::ArrayRef<int64_t> strides, int64_t offset);
 
+
 // calc a unflatten ndex for a memref with strided and offset data.
 llvm::SmallVector<int64_t> calcUnflattenIndex(int64_t index, llvm::ArrayRef<int64_t> strides, int64_t offset);
+
+
+// Helper function to check if a value is encrypted
+bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache);
+
+
+// Helper function to check if a value(func params) is encrypted
+bool isArgEncrypted(Value value);
 
 } // namespace aegis
 } // namespace mlir

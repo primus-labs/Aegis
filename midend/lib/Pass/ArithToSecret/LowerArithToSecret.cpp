@@ -18,6 +18,7 @@
 #include "Dialect/Secret/SecretTypes.h"
 #include "Pass/ArithToSecret/LowerArithToSecret.h"
 #include "Common/MetadataMgr.h"
+#include "Common/Utils.h"
 
 #define DEBUG_TYPE "arith-to-secret"
 
@@ -25,65 +26,6 @@ using namespace mlir;
 using namespace aegis;
 using namespace secret;
 
-
-// Helper function to check if a value is encrypted
-bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
-    // Check if the value is already in the cache
-    auto it = cache.find(value);
-    if (it != cache.end()) {
-        return it->second;
-    }
-
-    // If the value is a BlockArgument, check its attribute.
-    // If the BlockArgument value no metadata, then default param is encrypted.
-    if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
-        unsigned index = arg.getArgNumber();
-        std::string paramType = "param" + std::to_string(index) + ".type";
-        const MetadataMgr &metaMgr = MetadataMgr::getInstance();
-        auto attr = metaMgr.getMetadata(paramType);
-        if (!attr || !mlir::isa<StringAttr>(attr)) {
-            cache[value] = true;
-            return true;
-        }
-
-        bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
-        cache[value] = result;
-        return result;
-    }
-
-    // If the value is an operation result, check its defining operation
-    if (auto opResult = mlir::dyn_cast<OpResult>(value)) {
-        Operation *op = opResult.getDefiningOp();
-
-        // If the value is an constop, then return false.
-        if (auto const_op = mlir::dyn_cast<arith::ConstantOp>(op)) {
-            cache[value] = false;
-            return false;
-        }
-
-        // If the operation is a secret operation, the result is encrypted
-        // if (isa<SecretDialect>(op->getDialect())) {
-        //     cache[value] = true;
-        //     return true;
-        // }
-
-        // For any operation, check if any of its operands is encrypted
-        for (Value operand : op->getOperands()) {
-            if (isEncrypted(operand, cache)) {
-                cache[value] = true;
-                return true;
-            }
-            else {
-                cache[value] = false;
-                return false;
-            }
-        }
-    }
-
-    // Default to true if the value is neither a BlockArgument nor an OpResult
-    cache[value] = true;
-    return true;
-}
 
 
 // Transform arith::SelectOp into secret corresponding op(secret::SelectOp)
@@ -409,33 +351,7 @@ void LowerArithToSecretPass::getDependentDialects(mlir::DialectRegistry &registr
     registry.insert<memref::MemRefDialect>();
 }
 
-void LowerArithToSecretPass::collectAllMetadata(mlir::Operation *op) {
-    llvm::SmallVector<mlir::Operation*> opsToErase;
-
-    MetadataMgr &metaMgr = MetadataMgr::getInstance();
-    op->walk([&](mlir::Operation *op) {
-        if (op->getName().getStringRef() == "llvm.metadata") {
-            for (auto attr : op->getAttrs()) {
-                LLVM_DEBUG(llvm::dbgs() << " collect metadata name: " << attr.getName()
-                            << ", value:" << attr.getValue() << "\n");
-                metaMgr.addMetadata(attr.getName(), attr.getValue());
-            }
-
-            // Mark the operation for deletion (do not delete immediately).
-            opsToErase.push_back(op);
-        }
-    });
-
-    // Safely delete all marked llvm.metadata ops.
-    for (mlir::Operation *op : opsToErase) {
-        op->erase();
-    }
-}
-
 void LowerArithToSecretPass::runOnOperation() {
-    // Collect the module all metadata
-    collectAllMetadata(getOperation());
-
     auto type_converter = TypeConverter();
 
     // Add type converter to convert plaintext data type to secret & secretvect & secretmatrix type

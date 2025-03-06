@@ -14,6 +14,7 @@
 #include "Dialect/Secret/SecretTypes.h"
 #include "Pass/FuncToSecret/LowerFuncToSecret.h"
 #include "Common/MetadataMgr.h"
+#include "Common/Utils.h"
 
 #define DEBUG_TYPE "func-to-secret"
 
@@ -21,26 +22,6 @@ using namespace mlir;
 using namespace aegis;
 using namespace secret;
 
-// Helper function to check if a value(func params) is encrypted
-bool isArgEncrypted(Value value) {
-    // If the value is a BlockArgument, check its attribute.
-    // If the BlockArgument value no metadata, then default param is encrypted.
-    if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
-        unsigned index = arg.getArgNumber();
-        std::string paramType = "param" + std::to_string(index) + ".type";
-        const MetadataMgr &metaMgr = MetadataMgr::getInstance();
-        auto attr = metaMgr.getMetadata(paramType);
-        if (!attr || !mlir::isa<StringAttr>(attr)) {
-            return true;
-        }
-
-        bool result = (mlir::cast<StringAttr>(attr).getValue() == "encrypted");
-        return result;
-    }
-
-    // Return true in others.
-    return true;
-}
 
 
 // Transform func::CallOp to secret::CallOp and 

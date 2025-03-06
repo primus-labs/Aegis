@@ -7,6 +7,7 @@
 #include <mutex>
 #include <memory>
 
+
 namespace mlir {
 namespace aegis {
 
@@ -16,10 +17,10 @@ public:
     static MetadataMgr &getInstance();
 
     // Add metadata
-    void addMetadata(llvm::StringRef key, mlir::Attribute value);
+    void addMetadata(llvm::StringRef key, llvm::StringRef value);
 
     // Get metadata
-    mlir::Attribute getMetadata(llvm::StringRef key) const;
+    llvm::StringRef getMetadata(llvm::StringRef key) const;
 
     // Remove metadata
     void removeMetadata(llvm::StringRef key);
@@ -36,7 +37,7 @@ private:
     MetadataMgr() = default;
 
     // Map to store metadata
-    llvm::DenseMap<llvm::StringRef, mlir::Attribute> metadataMap;
+    llvm::DenseMap<llvm::StringRef, llvm::StringRef> metadataMap;
 
     // Mutex to ensure thread safety
     mutable std::mutex mutex;

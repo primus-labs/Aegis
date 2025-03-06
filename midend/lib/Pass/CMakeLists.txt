@@ -1,3 +1,4 @@
+add_subdirectory(CollectMetadata)
 add_subdirectory(ArithToSecret)
 add_subdirectory(FuncToSecret)
 add_subdirectory(SecretToFhe)

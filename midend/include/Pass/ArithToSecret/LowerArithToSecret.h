@@ -1,9 +1,7 @@
 #ifndef PASS_ARITH2SECRET_LOWERARITHTOSECRET_H
 #define PASS_ARITH2SECRET_LOWERARITHTOSECRET_H
 
-#include "llvm/ADT/DenseMap.h"
-#include "llvm/ADT/StringRef.h"
-#include "mlir/IR/Attributes.h"
+
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"

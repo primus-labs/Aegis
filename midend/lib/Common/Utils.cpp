@@ -13,6 +13,9 @@
 #include "mlir/include/mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/include/mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/include/mlir/Dialect/Affine/IR/AffineValueMap.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "Common/Utils.h"
+#include "Common/MetadataMgr.h"
 
 
 namespace mlir {
@@ -61,6 +64,7 @@ int64_t calcFlattenIndex(llvm::ArrayRef<int64_t> indices, llvm::ArrayRef<int64_t
     return index;
 }
 
+
 llvm::SmallVector<int64_t> calcUnflattenIndex(int64_t index, llvm::ArrayRef<int64_t> strides, int64_t offset) {
     llvm::SmallVector<int64_t> indices;
     int64_t idx = index - offset;
@@ -71,6 +75,97 @@ llvm::SmallVector<int64_t> calcUnflattenIndex(int64_t index, llvm::ArrayRef<int6
 
     return indices;
 }
+
+
+bool isArgEncrypted(Value value) {
+    // If the value is a BlockArgument, check its attribute.
+    // If the BlockArgument value no metadata, then default param is encrypted.
+    if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
+        auto funcOp = mlir::dyn_cast<func::FuncOp>(arg.getOwner()->getParentOp());
+        assert(funcOp);
+
+        const MetadataMgr &metaMgr = MetadataMgr::getInstance();
+        unsigned idx = arg.getArgNumber();
+        if (auto nameAttr = funcOp.getArgAttr(idx, PARAM_ATTR_NAME)) {
+            if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
+                bool bClear = (metaMgr.getMetadata(strAttr.getValue()) == CLEAR);
+                return !bClear;
+            }
+        }
+        else {
+            // default set type as encrypted
+            return true;
+        }
+    }
+
+    // Return true in others.
+    return true;
+}
+
+
+bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
+    // Check if the value is already in the cache
+    auto it = cache.find(value);
+    if (it != cache.end()) {
+        return it->second;
+    }
+
+    // If the value is a BlockArgument, check its attribute.
+    // If the BlockArgument value no metadata, then default param is encrypted.
+    if (auto arg = mlir::dyn_cast<BlockArgument>(value)) {
+        auto funcOp = mlir::dyn_cast<func::FuncOp>(arg.getOwner()->getParentOp());
+        assert(funcOp);
+
+        const MetadataMgr &metaMgr = MetadataMgr::getInstance();
+        unsigned idx = arg.getArgNumber();
+        if (auto nameAttr = funcOp.getArgAttr(idx, PARAM_ATTR_NAME)) {
+            if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
+                bool bClear = (metaMgr.getMetadata(strAttr.getValue()) == CLEAR);
+                cache[value] = !bClear;
+                return !bClear;
+            }
+        }
+        else {
+            // can't find argument attrbute, default set argument type as encrypted.
+            cache[value] = true;
+            return true;
+        }
+    }
+
+    // If the value is an operation result, check its defining operation
+    if (auto opResult = mlir::dyn_cast<OpResult>(value)) {
+        Operation *op = opResult.getDefiningOp();
+
+        // If the value is an constop, then return false.
+        if (auto const_op = mlir::dyn_cast<arith::ConstantOp>(op)) {
+            cache[value] = false;
+            return false;
+        }
+
+        // If the operation is a secret operation, the result is encrypted
+        // if (isa<SecretDialect>(op->getDialect())) {
+        //     cache[value] = true;
+        //     return true;
+        // }
+
+        // For any operation, check if any of its operands is encrypted
+        for (Value operand : op->getOperands()) {
+            if (isEncrypted(operand, cache)) {
+                cache[value] = true;
+                return true;
+            }
+            else {
+                cache[value] = false;
+                return false;
+            }
+        }
+    }
+
+    // Default to true if the value is neither a BlockArgument nor an OpResult
+    cache[value] = true;
+    return true;
+}
+
 
 } // namespace aegis
 } // namespace mlir
