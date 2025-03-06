@@ -17,6 +17,7 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/FHE/FHEDialect.h"
+#include "mlir/Dialect/Affine/Passes.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
 #include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/GlobalMemrefReplace/GlobalMemrefReplace.h"
@@ -43,6 +44,8 @@ void fhePipeline(OpPassManager &manager)
     manager.addPass(std::make_unique<UnrollLoopAndMemOptPass>());
     manager.addPass(createCanonicalizerPass()); 
     manager.addPass(createCSEPass());
+    manager.addPass(affine::createSimplifyAffineStructuresPass());
+    manager.addPass(createLowerAffinePass());
     manager.addPass(std::make_unique<UnrollLoopsPass>());
     manager.addPass(createCanonicalizerPass()); // this can greatly reduce the number of operations after unrolling
     manager.addPass(createCSEPass());
@@ -111,7 +114,6 @@ int main(int argc, char **argv)
 
     registerCanonicalizerPass();
     affine::registerAffineLoopUnrollPass();
-    registerCSEPass();
     PassRegistration<UnrollLoopAndMemOptPass>();
     PassRegistration<UnrollLoopsPass>();
     PassRegistration<GlobalMemrefReplacePass>();
