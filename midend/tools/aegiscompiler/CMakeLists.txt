@@ -33,6 +33,7 @@ set(DEP_LIBS
         AegisForwardStoreToLoad
         AegisLowerArithToSecret
         AegisLowerFuncToSecret
+        AegisCollectMetadata
         
         AegisCommon
         )

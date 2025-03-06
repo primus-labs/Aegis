@@ -23,6 +23,7 @@
 #include "Pass/ExpandMemrefCopy/ExpandMemrefCopy.h"
 #include "Pass/ForwardInsertToExtract/ForwardInsertToExtract.h"
 #include "Pass/ForwardStoreToLoad/ForwardStoreToLoad.h"
+#include "Pass/CollectMetadata/CollectMetadata.h"
 #include "Pass/ArithToSecret/LowerArithToSecret.h"
 #include "Pass/FuncToSecret/LowerFuncToSecret.h"
 
@@ -35,6 +36,7 @@ using namespace fhe;
 
 void fhePipeline(OpPassManager &manager)
 {
+    manager.addPass(std::make_unique<CollectMetadataPass>()); // this pass must run first.
     manager.addPass(std::make_unique<ExpandMemrefCopyPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass()); 
@@ -70,7 +72,6 @@ void zkpPipeline(OpPassManager &manager)
 {
     llvm::errs() << "ZKP pipeline is currently not supported.\n";
 }
-
 
 
 int main(int argc, char **argv)
@@ -119,6 +120,7 @@ int main(int argc, char **argv)
     PassRegistration<ForwardStoreToLoadPass>();
     PassRegistration<LowerArithToSecretPass>();
     PassRegistration<LowerFuncToSecretPass>();
+    PassRegistration<CollectMetadataPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Run fhe-level passes", fhePipeline);
 

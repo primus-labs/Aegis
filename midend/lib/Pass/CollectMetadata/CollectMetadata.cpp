@@ -25,14 +25,14 @@ void CollectMetadataPass::collectAllMetadata(func::FuncOp funcOp)
         if (auto nameAttr = funcOp.getArgAttr(i, PARAM_ATTR_NAME)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
                 nameAttrVal = strAttr.getValue();
-                llvm::outs() << funcOp.getName() << " argument " << i << "'th (" << PARAM_ATTR_NAME << "," << nameAttrVal << "\n";
+                //llvm::outs() << funcOp.getName() << " function argument " << i << "'th (" << PARAM_ATTR_NAME << "," << nameAttrVal << ")\n";
             }
         }
 
         // Get type attribute and value then save
         if (auto typeAttr = funcOp.getArgAttr(i, PARAM_ATTR_TYPE)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(typeAttr)) {
-                llvm::outs() << funcOp.getName() << " argument " << i << "'th (" << PARAM_ATTR_TYPE << "," << strAttr.getValue() << "\n";
+                //llvm::outs() << funcOp.getName() << " function argument " << i << "'th (" << PARAM_ATTR_TYPE << "," << strAttr.getValue() << ")\n";
                 metaMgr.addMetadata(nameAttrVal, strAttr.getValue());
             }
         }
