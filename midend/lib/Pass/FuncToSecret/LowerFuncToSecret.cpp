@@ -9,6 +9,7 @@
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "llvm/include/llvm/Support/Debug.h"
 #include "mlir/include/mlir/Support/LLVM.h" 
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/Secret/SecretOps.h"
 #include "Dialect/Secret/SecretTypes.h"
@@ -298,6 +299,12 @@ void LowerFuncToSecretPass::runOnOperation() {
     target.addLegalDialect<affine::AffineDialect, func::FuncDialect, scf::SCFDialect, arith::ArithDialect>();
     target.addLegalDialect<secret::SecretDialect>();
     target.addLegalOp<ModuleOp>();
+    // target.addLegalDialect<memref::MemRefDialect>();
+    target.addLegalOp<memref::GlobalOp>();
+    target.addLegalOp<memref::GetGlobalOp>();
+    target.addLegalOp<memref::LoadOp>();
+    target.addLegalOp<memref::StoreOp>();
+    target.addLegalOp<memref::AllocOp>();
     target.addIllegalOp<func::CallOp>();
     target.addDynamicallyLegalOp<func::FuncOp>([&](Operation *op) {
         auto fop = llvm::dyn_cast<func::FuncOp>(op);

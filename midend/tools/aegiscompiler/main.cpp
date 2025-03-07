@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     PassRegistration<LowerFuncToSecretPass>();
     PassRegistration<CollectMetadataPass>();
 
-    PassPipelineRegistration<>("fhe-pass", "Converts MLIR operations into FHE operations", fhePipeline);
+    PassPipelineRegistration<>("fhe-pass", "Converts MLIR operations to FHE operations", fhePipeline);
 
     return asMainReturnCode(MlirOptMain(argc, argv, "AEGIS optimizer\n", registry));
 }

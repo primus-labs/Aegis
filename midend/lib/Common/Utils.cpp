@@ -13,6 +13,7 @@
 #include "mlir/include/mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/include/mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/include/mlir/Dialect/Affine/IR/AffineValueMap.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "Common/Utils.h"
 #include "Common/MetadataMgr.h"
@@ -138,6 +139,12 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
 
         // If the value is an constop, then return false.
         if (auto const_op = mlir::dyn_cast<arith::ConstantOp>(op)) {
+            cache[value] = false;
+            return false;
+        }
+
+        // If the value is an get_global op, then return false.
+        if (auto getGlobal = mlir::dyn_cast<memref::GetGlobalOp>(op)) {
             cache[value] = false;
             return false;
         }
