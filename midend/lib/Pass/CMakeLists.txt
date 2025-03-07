@@ -1,6 +1,7 @@
 add_subdirectory(CollectMetadata)
 add_subdirectory(ArithToSecret)
 add_subdirectory(FuncToSecret)
+add_subdirectory(MemrefToSecret)
 add_subdirectory(SecretToFhe)
 add_subdirectory(LweToRlwe)
 add_subdirectory(Unroll)
