@@ -896,4 +896,61 @@ def Secret_Log1pOp : Secret_Op<"log1p", [Pure]> {
     );
 }
 
+
+def Secret_LoadOp : Secret_Op<"load", [Pure]> {
+    let summary = "read an element from a memory.";
+
+    let description = [{
+        Example:
+        ```mlir
+        %0 = "secret.load" %A[%1]: (!Secete.SecretVector<i32>)
+        %3 = "secret.load" %A[%1, %2] : (!Secete.SecretMatrix<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyType:$memref, Variadic<AnyType>:$indices);
+    let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$result);
+}
+
+def Secret_StoreOp : Secret_Op<"store", [Pure]> {
+    let summary = "Store a value to a memory location given by indices.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.store" %0, %A[%1]: (!Secete.SecretVector<i32>) 
+        "secret.store" %0, %A[%1, 5]: (!Secete.SecretMatrix<i32>) 
+        ```
+    }];
+
+    let arguments = (ins AnyType:$value, AnyType:$memref, Variadic<AnyType>:$index);
+    let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$result);
+}
+
+def Secret_AllocOp : Secret_Op<"alloc", [Pure]> {
+    let summary = "The `alloc` operation allocates a region of memory.";
+
+    let description = [{
+        Example:
+        ```mlir
+        %0 = memref.alloc() : (!Secete.SecretVector<i32>) 
+        ```
+    }];
+
+    let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output);
+}
+
+def Secret_DeallocOp : Secret_Op<"dealloc", [Pure]> {
+    let summary = "The `dealloc` operation frees the region of memory referenced.";
+
+    let description = [{
+        Example:
+        ```mlir
+        memref.dealloc %0 : (!Secete.SecretVector<i32>) 
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$memref);
+}
+
 #endif  // DIALECT_SECRET_SECRETOPS_TD_

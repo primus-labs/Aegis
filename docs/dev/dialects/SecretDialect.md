@@ -91,6 +91,27 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | A secret value or Batched Secret or Batched Secret
 
+### `secret.alloc` (aegis::secret::AllocOp)
+
+_The `alloc` operation allocates a region of memory._
+
+Example:
+```mlir
+%0 = memref.alloc() : (!Secete.SecretVector<i32>) 
+```
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | A secret value or Batched Secret or Batched Secret
+
 ### `secret.bitwise_and` (aegis::secret::BitwiseAndOp)
 
 _Elementwise computes the bitwise AND of secret value x and y._
@@ -302,6 +323,27 @@ Effects: `MemoryEffects::Effect{}`
 | Result | Description |
 | :----: | ----------- |
 | `output` | A secret value
+
+### `secret.dealloc` (aegis::secret::DeallocOp)
+
+_The `dealloc` operation frees the region of memory referenced._
+
+Example:
+```mlir
+memref.dealloc %0 : (!Secete.SecretVector<i32>) 
+```
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `memref` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.div` (aegis::secret::DivOp)
 
@@ -586,6 +628,35 @@ Effects: `MemoryEffects::Effect{}`
 | Result | Description |
 | :----: | ----------- |
 | `output` | A secret value or Batched Secret or Batched Secret
+
+### `secret.load` (aegis::secret::LoadOp)
+
+_Read an element from a memory._
+
+Example:
+```mlir
+%0 = "secret.load" %A[%1]: (!Secete.SecretVector<i32>)
+%3 = "secret.load" %A[%1, %2] : (!Secete.SecretMatrix<i32>)
+```
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `memref` | any type
+| `indices` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `result` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.log10` (aegis::secret::Log10Op)
 
@@ -1288,6 +1359,36 @@ Effects: `MemoryEffects::Effect{}`
 | Result | Description |
 | :----: | ----------- |
 | `output` | A secret value or Batched Secret or Batched Secret
+
+### `secret.store` (aegis::secret::StoreOp)
+
+_Store a value to a memory location given by indices._
+
+Example:
+```mlir
+"secret.store" %0, %A[%1]: (!Secete.SecretVector<i32>) 
+"secret.store" %0, %A[%1, 5]: (!Secete.SecretMatrix<i32>) 
+```
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `value` | any type
+| `memref` | any type
+| `index` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `result` | A secret value or Batched Secret or Batched Secret
 
 ### `secret.sub` (aegis::secret::SubOp)
 
