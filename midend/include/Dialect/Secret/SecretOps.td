@@ -909,7 +909,7 @@ def Secret_LoadOp : Secret_Op<"load", [Pure]> {
     }];
 
     let arguments = (ins AnyType:$memref, Variadic<AnyType>:$indices);
-    let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$result);
+    let results = (outs AnyType:$result);
 }
 
 def Secret_StoreOp : Secret_Op<"store", [Pure]> {
@@ -924,7 +924,7 @@ def Secret_StoreOp : Secret_Op<"store", [Pure]> {
     }];
 
     let arguments = (ins AnyType:$value, AnyType:$memref, Variadic<AnyType>:$index);
-    let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$result);
+    let results = (outs AnyType:$result);
 }
 
 def Secret_AllocOp : Secret_Op<"alloc", [Pure]> {
