@@ -9,9 +9,8 @@ add_mlir_library(
     LowerFuncToSecret.cpp
 
     DEPENDS
-    mlir-headers
-    AegisSecretIncGen
     func2secret
+    AegisSecretIncGen
 )
 
 target_include_directories(AegisLowerFuncToSecret PUBLIC ${PROJECT_SOURCE_DIR}/include)

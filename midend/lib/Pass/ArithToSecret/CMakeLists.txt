@@ -9,9 +9,8 @@ add_mlir_library(
     LowerArithToSecret.cpp
 
     DEPENDS
-    mlir-headers
-    AegisSecretIncGen
     arith2secret
+    AegisSecretIncGen
 )
 
 target_include_directories(AegisLowerArithToSecret PUBLIC ${PROJECT_SOURCE_DIR}/include)

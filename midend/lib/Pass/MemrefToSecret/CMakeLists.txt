@@ -9,9 +9,8 @@ add_mlir_library(
     LowerMemrefToSecret.cpp
 
     DEPENDS
-    mlir-headers
-    AegisSecretIncGen
     memref2secret
+    AegisSecretIncGen
 )
 
 target_include_directories(AegisLowerMemrefToSecret PUBLIC ${PROJECT_SOURCE_DIR}/include)

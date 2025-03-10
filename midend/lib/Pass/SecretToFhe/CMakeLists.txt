@@ -9,10 +9,9 @@ add_mlir_library(
     LowerSecretToFhe.cpp
 
     DEPENDS
-    mlir-headers
+    secret2fhe
     AegisSecretIncGen
     AegisFHEIncGen
-    secret2fhe
 )
 
 target_include_directories(AegisLowerSecretToFhe PUBLIC ${PROJECT_SOURCE_DIR}/include)

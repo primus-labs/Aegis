@@ -4,7 +4,6 @@ add_mlir_library(
     Nary.cpp
 
     DEPENDS
-    mlir-headers
     AegisFHEIncGen
 )
 

@@ -12,7 +12,6 @@ add_mlir_dialect_library(
     #${PROJECT_SOURCE_DIR}/include/Dialect/Secret
 
     DEPENDS
-    mlir-headers
     AegisSecretIncGen
 
     LINK_LIBS

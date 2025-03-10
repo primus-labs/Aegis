@@ -4,7 +4,6 @@ add_mlir_library(
     LowerLweToRlwe.cpp
 
     DEPENDS
-    mlir-headers
     AegisFHEIncGen
 )
 

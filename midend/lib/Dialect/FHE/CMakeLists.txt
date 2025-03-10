@@ -8,7 +8,6 @@ add_mlir_dialect_library(
     FHEOps.cpp
 
     DEPENDS
-    mlir-headers
     AegisFHEIncGen
 
     LINK_LIBS
