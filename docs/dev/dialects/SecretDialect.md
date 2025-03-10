@@ -112,6 +112,27 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | A secret value or Batched Secret or Batched Secret
 
+### `secret.alloca` (aegis::secret::AllocaOp)
+
+_The `alloca` operation allocates memory on the stack, to be automatically released_
+
+Example:
+```mlir
+%0 = memref.alloca() : (!Secete.SecretVector<i32>) 
+```
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | A secret value or Batched Secret or Batched Secret
+
 ### `secret.bitwise_and` (aegis::secret::BitwiseAndOp)
 
 _Elementwise computes the bitwise AND of secret value x and y._
@@ -656,7 +677,7 @@ Effects: `MemoryEffects::Effect{}`
 
 | Result | Description |
 | :----: | ----------- |
-| `result` | A secret value or Batched Secret or Batched Secret
+| `result` | any type
 
 ### `secret.log10` (aegis::secret::Log10Op)
 
@@ -1388,7 +1409,7 @@ Effects: `MemoryEffects::Effect{}`
 
 | Result | Description |
 | :----: | ----------- |
-| `result` | A secret value or Batched Secret or Batched Secret
+| `result` | any type
 
 ### `secret.sub` (aegis::secret::SubOp)
 
