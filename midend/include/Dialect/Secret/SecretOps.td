@@ -953,4 +953,17 @@ def Secret_DeallocOp : Secret_Op<"dealloc", [Pure]> {
     let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$memref);
 }
 
+def Secret_AllocaOp : Secret_Op<"alloca", [Pure]> {
+    let summary = "The `alloca` operation allocates memory on the stack, to be automatically released";
+
+    let description = [{
+        Example:
+        ```mlir
+        %0 = memref.alloca() : (!Secete.SecretVector<i32>) 
+        ```
+    }];
+
+    let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output);
+}
+
 #endif  // DIALECT_SECRET_SECRETOPS_TD_

@@ -33,6 +33,11 @@ public:
     using OpConversionPattern<memref::LoadOp>::OpConversionPattern;
 
     LogicalResult matchAndRewrite(memref::LoadOp op, typename memref::LoadOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+        llvm::DenseMap<Value, bool> cache;
+        if (!isEncrypted(op.getMemRef(), cache)) {
+            return success();
+        }
+
         auto destTy = this->getTypeConverter()->convertType(op.getType());
         if (!destTy) {
             LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
@@ -82,6 +87,11 @@ public:
 
     LogicalResult matchAndRewrite(memref::StoreOp op, typename memref::StoreOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
     {
+        llvm::DenseMap<Value, bool> cache;
+        if (!isEncrypted(op.getMemRef(), cache)) {
+            return success();
+        }
+
         Type elementTy = op.getMemRef().getType();
         if (mlir::isa<MemRefType>(elementTy)) {
             elementTy = mlir::cast<MemRefType>(elementTy).getElementType();
@@ -128,6 +138,11 @@ public:
 
     LogicalResult matchAndRewrite(affine::AffineLoadOp op, typename affine::AffineLoadOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
     {
+        llvm::DenseMap<Value, bool> cache;
+        if (!isEncrypted(op.getMemRef(), cache)) {
+            return success();
+        }
+
         auto destTy = this->getTypeConverter()->convertType(op.getType());
         if (!destTy) {
             LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
@@ -180,6 +195,11 @@ public:
 
     LogicalResult matchAndRewrite(affine::AffineStoreOp op, typename affine::AffineStoreOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
     {
+        llvm::DenseMap<Value, bool> cache;
+        if (!isEncrypted(op.getMemRef(), cache)) {
+            return success();
+        }
+        
         Type elementTy = op.getMemRef().getType();
         if (mlir::isa<MemRefType>(elementTy)) {
             elementTy = mlir::cast<MemRefType>(elementTy).getElementType();
@@ -216,6 +236,87 @@ public:
         }
         
         LLVM_DEBUG(llvm::dbgs() << "run AffineStorePattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform memref::AllocaOp to secret::AllocaOp
+class MemrefAllocaPattern final : public OpConversionPattern<memref::AllocaOp>
+{
+public:
+    using OpConversionPattern<memref::AllocaOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::AllocaOp op, typename memref::AllocaOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destType = this->getTypeConverter()->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
+            return failure();
+        }
+        
+        rewriter.replaceOpWithNewOp<secret::AllocaOp>(op, destType);
+
+        LLVM_DEBUG(llvm::dbgs() << "run MemrefAllocaPattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform memref::AllocOp to secret::AllocOp
+class MemrefAllocPattern final : public OpConversionPattern<memref::AllocOp>
+{
+public:
+    using OpConversionPattern<memref::AllocOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::AllocOp op, typename memref::AllocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destType = this->getTypeConverter()->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
+            return failure();
+        }
+        
+        rewriter.replaceOpWithNewOp<secret::AllocOp>(op, destType);
+
+        LLVM_DEBUG(llvm::dbgs() << "run MemrefAllocPattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform memref::DeallocOp to secret::DeallocOp
+class MemrefDeallocPattern final : public OpConversionPattern<memref::DeallocOp>
+{
+public:
+    using OpConversionPattern<memref::DeallocOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::DeallocOp op, typename memref::DeallocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        Value new_operand;
+        auto o = op.getOperand();
+        LLVM_DEBUG(llvm::dbgs() << o << "\n");
+        auto opDestTy = typeConverter->convertType(o.getType());
+        if (!opDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << op << "\n");
+            return failure();
+        }
+
+        if (o.getType() != opDestTy)
+        {
+            new_operand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
+            assert(new_operand && "Type Conversion must be not fail");
+            LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << new_operand << "\n");
+        }
+        else
+        {
+            new_operand = o;
+        }
+        
+        
+        rewriter.replaceOpWithNewOp<secret::DeallocOp>(op, new_operand);
+
+        LLVM_DEBUG(llvm::dbgs() << "run MemrefDeallocPattern success.\n");
         return success();
     }
 };
@@ -316,11 +417,13 @@ void LowerMemrefToSecretPass::runOnOperation() {
     target.addLegalOp<ModuleOp>();
     target.addIllegalOp<memref::LoadOp>();
     target.addIllegalOp<memref::StoreOp>();
+    target.addIllegalOp<memref::AllocOp>();
     target.addIllegalOp<affine::AffineLoadOp>();
     target.addIllegalOp<affine::AffineStoreOp>();
     
     mlir::RewritePatternSet patterns(&getContext());
-    patterns.add<MemrefLoadPattern, MemrefStorePattern, AffineLoadPattern, AffineStorePattern>(type_converter, patterns.getContext()); 
+    patterns.add<MemrefLoadPattern, MemrefStorePattern, AffineLoadPattern, AffineStorePattern,
+                MemrefAllocaPattern, MemrefAllocPattern, MemrefDeallocPattern>(type_converter, patterns.getContext()); 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(patterns)))) {
         signalPassFailure();
     }
