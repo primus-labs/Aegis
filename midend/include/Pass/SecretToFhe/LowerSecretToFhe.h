@@ -14,7 +14,7 @@ struct LowerSecretToFhePass : public mlir::PassWrapper<LowerSecretToFhePass, mli
 
     mlir::StringRef getArgument() const final
     {
-        return "secret2fhe";
+        return "secret-to-fhe";
     }
 };
 

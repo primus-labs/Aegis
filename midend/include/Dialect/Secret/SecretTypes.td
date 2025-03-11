@@ -20,8 +20,8 @@ def Secret : Secret_Type<"Secret", "secret"> {
     but not specifying the manner of encryption. 
   }];
 
-  let parameters = (ins "Type":$valueType);
-  let assemblyFormat = "`<` $valueType `>`";
+  let parameters = (ins "Type":$plaintextType);
+  let assemblyFormat = "`<` $plaintextType `>`";
 }
 
 

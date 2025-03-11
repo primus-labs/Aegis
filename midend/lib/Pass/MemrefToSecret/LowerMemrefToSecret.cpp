@@ -44,7 +44,7 @@ public:
             return failure();
         }
 
-        if (auto st = mlir::dyn_cast_or_null<Float32Type>(destTy)) {
+        if (auto st = mlir::dyn_cast_or_null<FloatType>(destTy)) {
             auto memrefTy = mlir::dyn_cast<MemRefType>(op.getMemRef().getType());
             if (!memrefTy || !memrefTy.hasStaticShape()) {
                 LLVM_DEBUG(llvm::dbgs() << "memrefTy:" << memrefTy << ", has static shape:" << memrefTy.hasStaticShape());
@@ -101,7 +101,7 @@ public:
             return failure();
         }
 
-        if (auto st = mlir::dyn_cast_or_null<Float32Type>(elementTy)) {
+        if (auto st = mlir::dyn_cast_or_null<FloatType>(elementTy)) {
             auto memrefTy = mlir::dyn_cast<MemRefType>(op.getMemRef().getType());
             if (!memrefTy || !memrefTy.hasStaticShape()) {
                 LLVM_DEBUG(llvm::dbgs() << "memrefTy:" << memrefTy << ", has static shape:" << memrefTy.hasStaticShape());
@@ -149,7 +149,7 @@ public:
             return failure();
         }
         
-        if (auto st = mlir::dyn_cast_or_null<Float32Type>(destTy))
+        if (auto st = mlir::dyn_cast_or_null<FloatType>(destTy))
         {
             auto memrefTy = mlir::dyn_cast<MemRefType>(op.getMemRef().getType());
             if (!memrefTy || !memrefTy.hasStaticShape()) {
@@ -205,7 +205,7 @@ public:
             elementTy = mlir::cast<MemRefType>(elementTy).getElementType();
         }
 
-        if (auto st = mlir::dyn_cast_or_null<Float32Type>(elementTy)) {
+        if (auto st = mlir::dyn_cast_or_null<FloatType>(elementTy)) {
             auto memrefTy = mlir::dyn_cast<MemRefType>(op.getMemRef().getType());
             if (!memrefTy || !memrefTy.hasStaticShape()) {
                 LLVM_DEBUG(llvm::dbgs() << "memrefTy:" << memrefTy << ", has static shape:" << memrefTy.hasStaticShape());
