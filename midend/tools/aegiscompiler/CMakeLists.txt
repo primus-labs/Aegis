@@ -34,6 +34,7 @@ set(DEP_LIBS
         AegisLowerArithToSecret
         AegisLowerFuncToSecret
         AegisLowerMemrefToSecret
+        AegisLowerSecretToFhe
         AegisCollectMetadata
         
         AegisCommon

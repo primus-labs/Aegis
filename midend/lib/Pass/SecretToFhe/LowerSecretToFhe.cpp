@@ -279,7 +279,7 @@ void LowerSecretToFhePass::runOnOperation() {
                            arith::ArithDialect, memref::MemRefDialect>();
     target.addLegalDialect<fhe::FHEDialect>();
     target.addLegalOp<ModuleOp>();
-    target.addIllegalDialect<secret::SecretDialect>();
+    // target.addIllegalDialect<secret::SecretDialect>();
     // target.addIllegalOp<secret::MulOp, secret::MulPlainOp>();
     // target.addIllegalOp<secret::AddOp, secret::AddPlainOp>();
     // target.addIllegalOp<secret::SubOp, secret::SubPlainOp>();
