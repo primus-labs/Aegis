@@ -4,8 +4,6 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "Dialect/Secret/SecretDialect.h"
-#include "Dialect/FHE/FHEDialect.h"
 
 
 struct LowerSecretToFhePass : public mlir::PassWrapper<LowerSecretToFhePass, mlir::OperationPass<mlir::ModuleOp>>

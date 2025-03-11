@@ -93,12 +93,10 @@ def FHE_InsertexOp : FHE_Op<"insertex", []> {
   // let results = (outs AnyType:$result);
 }
 
-
 def FHE_LWEAddOp : FHE_Op<"lweadd", [Pure]> {
   let summary = "LWECipher addition operation";
   let description = [{
-    The "add" operation performs element-wise addition between two tensors.
-    The shapes of the tensor operands are expected to match.
+    The "add" operation performs element-wise addition between two lweciphers.
   }];
 
   // let arguments = (ins LWECipher:$lhs, LWECipher:$rhs);
@@ -107,10 +105,31 @@ def FHE_LWEAddOp : FHE_Op<"lweadd", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_LWESubOp : FHE_Op<"lwesub", [Pure]> {
-  let summary = "LWECipher addition operation";
+def FHE_LWEAddPlainOp : FHE_Op<"lweaddplain", [Pure]> {
+  let summary = "LWECipher addition operation(lwecipher vs plain)";
   let description = [{
-    The "sub" operation performs element-wise addition between two tensors.
+    The "add" operation performs element-wise addition between lwecipher and plain.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_LWESubOp : FHE_Op<"lwesub", [Pure]> {
+  let summary = "LWECipher subtraction operation";
+  let description = [{
+    The "sub" operation performs element-wise subtraction between two lweciphers.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+  let results = (outs AnyType:$output);
+}
+
+def FHE_LWESubPlainOp : FHE_Op<"lwesubplain", [Pure]> {
+  let summary = "LWECipher subtraction operation(lwecipher vs plain)";
+  let description = [{
+    The "sub" operation performs element-wise subtraction between lwecipher and plain.
     The shapes of the tensor operands are expected to match.
   }];
 
@@ -121,8 +140,7 @@ def FHE_LWESubOp : FHE_Op<"lwesub", [Pure]> {
 def FHE_LWEMulOp : FHE_Op<"lwemul", [Pure]> {
   let summary = "LWECipher multiplication operation";
   let description = [{
-    The "mul" operation performs element-wise multiplication between two tensors.
-    The shapes of the tensor operands are expected to match.
+    The "mul" operation performs element-wise multiplication between two lweciphers.
   }];
 
   let arguments = (ins Variadic<AnyType>:$x);
@@ -130,11 +148,75 @@ def FHE_LWEMulOp : FHE_Op<"lwemul", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_RLWEMulOp : FHE_Op<"rlwemul", [Pure]> {
-  let summary = "LWECipher multiplication operation";
+def FHE_LWEMulPlainOp : FHE_Op<"lwemulplain", [Pure]> {
+  let summary = "LWECipher multiplication operation(lwecipher vs plain)";
   let description = [{
-    The "mul" operation performs element-wise multiplication between two tensors.
+    The "mul" operation performs element-wise multiplication between lwecipher and plain.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEAddOp : FHE_Op<"rlweadd", [Pure]> {
+  let summary = "RLWECipher addition operation";
+  let description = [{
+    The "add" operation performs element-wise addition between two rlweciphers.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEAddPlainOp : FHE_Op<"rlweaddplain", [Pure]> {
+  let summary = "RLWECipher addition operation(rlwecipher vs plain)";
+  let description = [{
+    The "add" operation performs element-wise addition between rlwecipher and plain.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWESubOp : FHE_Op<"rlwesub", [Pure]> {
+  let summary = "RLWECipher subtraction operation";
+  let description = [{
+    The "sub" operation performs element-wise subtraction between two rlweciphers.
     The shapes of the tensor operands are expected to match.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWESubPlainOp : FHE_Op<"rlwesubplain", [Pure]> {
+  let summary = "RLWECipher subtraction operation(rlwecipher vs plain)";
+  let description = [{
+    The "sub" operation performs element-wise subtraction between rlwecipher and plain.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEMulOp : FHE_Op<"rlwemul", [Pure]> {
+  let summary = "RLWECipher multiplication operation";
+  let description = [{
+    The "mul" operation performs element-wise multiplication between two rlweciphers.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEMulPlainOp : FHE_Op<"rlwemulplain", [Pure]> {
+  let summary = "RLWECipher multiplication operation(rlwecipher vs plain)";
+  let description = [{
+    The "mul" operation performs element-wise multiplication between rlwecipher and plain.
   }];
 
   let arguments = (ins Variadic<AnyType>:$x);

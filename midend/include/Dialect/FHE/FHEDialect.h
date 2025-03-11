@@ -1,5 +1,5 @@
-#ifndef DIALECT_FHE_SECRETDIALECT_H
-#define DIALECT_FHE_SECRETDIALECT_H
+#ifndef DIALECT_FHE_FHEDIALECT_H
+#define DIALECT_FHE_FHEDIALECT_H
 
 
 #include "mlir/IR/BuiltinTypes.h"

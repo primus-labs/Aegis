@@ -1,5 +1,5 @@
-#ifndef DIALECT_SECRET_SECRETOPS_H
-#define DIALECT_SECRET_SECRETOPS_H
+#ifndef DIALECT_FHE_FHEOPS_H
+#define DIALECT_FHE_FHEOPS_H
 
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>

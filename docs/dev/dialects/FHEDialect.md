@@ -427,8 +427,38 @@ Syntax:
 operation ::= `fhe.lweadd` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
-The "add" operation performs element-wise addition between two tensors.
-The shapes of the tensor operands are expected to match.
+The "add" operation performs element-wise addition between two lweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.lweaddplain` (aegis::fhe::LWEAddPlainOp)
+
+_LWECipher addition operation(lwecipher vs plain)_
+
+
+Syntax:
+
+```
+operation ::= `fhe.lweaddplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "add" operation performs element-wise addition between lwecipher and plain.
 
 Traits: `AlwaysSpeculatableImplTrait`
 
@@ -459,8 +489,38 @@ Syntax:
 operation ::= `fhe.lwemul` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
-The "mul" operation performs element-wise multiplication between two tensors.
-The shapes of the tensor operands are expected to match.
+The "mul" operation performs element-wise multiplication between two lweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.lwemulplain` (aegis::fhe::LWEMulPlainOp)
+
+_LWECipher multiplication operation(lwecipher vs plain)_
+
+
+Syntax:
+
+```
+operation ::= `fhe.lwemulplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "mul" operation performs element-wise multiplication between lwecipher and plain.
 
 Traits: `AlwaysSpeculatableImplTrait`
 
@@ -482,7 +542,7 @@ Effects: `MemoryEffects::Effect{}`
 
 ### `fhe.lwesub` (aegis::fhe::LWESubOp)
 
-_LWECipher addition operation_
+_LWECipher subtraction operation_
 
 
 Syntax:
@@ -491,8 +551,101 @@ Syntax:
 operation ::= `fhe.lwesub` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
-The "sub" operation performs element-wise addition between two tensors.
+The "sub" operation performs element-wise subtraction between two lweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.lwesubplain` (aegis::fhe::LWESubPlainOp)
+
+_LWECipher subtraction operation(lwecipher vs plain)_
+
+
+Syntax:
+
+```
+operation ::= `fhe.lwesubplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "sub" operation performs element-wise subtraction between lwecipher and plain.
 The shapes of the tensor operands are expected to match.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.rlweadd` (aegis::fhe::RLWEAddOp)
+
+_RLWECipher addition operation_
+
+
+Syntax:
+
+```
+operation ::= `fhe.rlweadd` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "add" operation performs element-wise addition between two rlweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.rlweaddplain` (aegis::fhe::RLWEAddPlainOp)
+
+_RLWECipher addition operation(rlwecipher vs plain)_
+
+
+Syntax:
+
+```
+operation ::= `fhe.rlweaddplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "add" operation performs element-wise addition between rlwecipher and plain.
 
 Traits: `AlwaysSpeculatableImplTrait`
 
@@ -514,7 +667,7 @@ Effects: `MemoryEffects::Effect{}`
 
 ### `fhe.rlwemul` (aegis::fhe::RLWEMulOp)
 
-_LWECipher multiplication operation_
+_RLWECipher multiplication operation_
 
 
 Syntax:
@@ -523,8 +676,101 @@ Syntax:
 operation ::= `fhe.rlwemul` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
-The "mul" operation performs element-wise multiplication between two tensors.
+The "mul" operation performs element-wise multiplication between two rlweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.rlwemulplain` (aegis::fhe::RLWEMulPlainOp)
+
+_RLWECipher multiplication operation(rlwecipher vs plain)_
+
+
+Syntax:
+
+```
+operation ::= `fhe.rlwemulplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "mul" operation performs element-wise multiplication between rlwecipher and plain.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.rlwesub` (aegis::fhe::RLWESubOp)
+
+_RLWECipher subtraction operation_
+
+
+Syntax:
+
+```
+operation ::= `fhe.rlwesub` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "sub" operation performs element-wise subtraction between two rlweciphers.
 The shapes of the tensor operands are expected to match.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
+### `fhe.rlwesubplain` (aegis::fhe::RLWESubPlainOp)
+
+_RLWECipher subtraction operation(rlwecipher vs plain)_
+
+
+Syntax:
+
+```
+operation ::= `fhe.rlwesubplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "sub" operation performs element-wise subtraction between rlwecipher and plain.
 
 Traits: `AlwaysSpeculatableImplTrait`
 
