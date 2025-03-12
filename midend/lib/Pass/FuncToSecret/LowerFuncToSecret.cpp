@@ -171,13 +171,8 @@ public:
         }
 
         rewriter.setInsertionPoint(op);
-        Value retVal;
-        if (auto dt = mlir::dyn_cast_or_null<secret::SecretVectorType>(destTy)){
-            retVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getOperands());
-        }
-        else {
-            retVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getOperands());
-        }
+        Value retVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getOperands());
+        assert(retVal);
         rewriter.replaceOpWithNewOp<func::ReturnOp>(op, retVal);
 
         return success();
