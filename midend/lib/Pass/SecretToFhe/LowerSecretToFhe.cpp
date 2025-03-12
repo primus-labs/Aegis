@@ -31,6 +31,46 @@ using namespace aegis;
 // using namespace mlir::aegis::fhe;
 
 
+class ArithNegPattern final : public OpConversionPattern<secret::NegOp> 
+{
+protected:
+    using OpConversionPattern<secret::NegOp>::typeConverter;
+
+public:
+    using OpConversionPattern<secret::NegOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::NegOp op, typename secret::NegOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destType = typeConverter->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op " << op << "\n");
+            return failure();
+        }
+ 
+        Value opVal = op.getOperand();
+        auto opDestTy = typeConverter->convertType(opVal.getType());
+        if (!opDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << opVal << "\n");
+            return failure();
+        }
+
+        Value newOpVal = opVal;
+        if (opVal.getType() != opDestTy)
+        {
+            auto new_operand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, opVal);
+            assert(new_operand && "Type Conversion must be not fail");
+            newOpVal = new_operand;
+            LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << new_operand << "\n");
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::LWENegOp>(op, destType, newOpVal);
+        return success();
+    }
+};
+
+
 // Transform secret::AddOp/AddPlainOp/MulOp/MulPlain/SubOp/SubPlain into corresponding fhe ops(FHEMulOp/FHEAddOp/FHESubOp...) 
 // and convert the data type of input/output of the ops.
 template <typename OpType>
@@ -310,7 +350,8 @@ void LowerSecretToFhePass::runOnOperation() {
     mlir::RewritePatternSet secretPatSet(&getContext());
     secretPatSet.add<ArithBasicPattern<secret::MulOp>, ArithBasicPattern<secret::MulPlainOp>, 
                      ArithBasicPattern<secret::AddOp>, ArithBasicPattern<secret::AddPlainOp>,
-                     ArithBasicPattern<secret::SubOp>, ArithBasicPattern<secret::SubPlainOp>>
+                     ArithBasicPattern<secret::SubOp>, ArithBasicPattern<secret::SubPlainOp>,
+                     ArithNegPattern>
                      (type_converter, secretPatSet.getContext());
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(secretPatSet)))) {
         signalPassFailure();

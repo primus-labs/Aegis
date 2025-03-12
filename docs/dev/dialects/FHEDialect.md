@@ -540,6 +540,37 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
+### `fhe.lweneg` (aegis::fhe::LWENegOp)
+
+_LWECipher negative operation_
+
+
+Syntax:
+
+```
+operation ::= `fhe.lweneg` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "neg" operation applies element-wise negation for lweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
 ### `fhe.lwesub` (aegis::fhe::LWESubOp)
 
 _LWECipher subtraction operation_

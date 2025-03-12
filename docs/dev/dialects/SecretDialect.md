@@ -1476,7 +1476,7 @@ Syntax:
 
 ```
 !secret.secret<
-  Type   # valueType
+  Type   # plaintextType
 >
 ```
 
@@ -1487,7 +1487,7 @@ but not specifying the manner of encryption.
 
 | Parameter | C++ type | Description |
 | :-------: | :-------: | ----------- |
-| valueType | `Type` |  |
+| plaintextType | `Type` |  |
 
 ### SecretMatrixType
 

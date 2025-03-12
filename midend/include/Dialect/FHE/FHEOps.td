@@ -137,6 +137,16 @@ def FHE_LWESubPlainOp : FHE_Op<"lwesubplain", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
+def FHE_LWENegOp : FHE_Op<"lweneg", [Pure]> {
+  let summary = "LWECipher negative operation";
+  let description = [{
+    The "neg" operation applies element-wise negation for lweciphers.
+  }];
+
+  let arguments = (ins AnyType:$x);
+  let results = (outs AnyType:$output);
+}
+
 def FHE_LWEMulOp : FHE_Op<"lwemul", [Pure]> {
   let summary = "LWECipher multiplication operation";
   let description = [{
