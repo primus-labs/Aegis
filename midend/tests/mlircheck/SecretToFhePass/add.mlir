@@ -19,13 +19,39 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
   //   return %alloc_0 : memref<8xf32>
   // }
 
-  func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+
+  func.func @main_add(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
                         %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
     %5 = arith.addf %arg0, %arg1 :  f32
     return %5 : f32
+
+    // CHECK-NOT: arith.addf
+    // CHECK-NOT: secret.add
+    // CHECK: fhe.lweadd
+  }
+
+
+  func.func @main_add_encrypt_vs_clear(%arg0: f32 {onnx.name = "input_x2", onnx.type = "encrypted"}, 
+                                       %arg1: f32 {onnx.name = "input_y2", onnx.type = "clear"}) -> f32 {
+    %5 = arith.addf %arg0, %arg1 :  f32
+    return %5 : f32
+
+    // CHECK-NOT: arith.addf
+    // CHECK-NOT: secret.addplain
+    // CHECK: fhe.lweaddplain
+  }
+
+
+  func.func @main_add_clear_vs_encrypt(%arg0: f32 {onnx.name = "input_x3", onnx.type = "clear"}, 
+                                       %arg1: f32 {onnx.name = "input_y3", onnx.type = "encrypted"}) -> f32 {
+    %5 = arith.addf %arg0, %arg1 :  f32
+    return %5 : f32
+
+    // CHECK-NOT: arith.addf
+    // CHECK-NOT: secret.addplain
+    // CHECK: fhe.lweaddplain
   }
 }
 
-// CHECK-NOT: arith.addf
-// CHECK-NOT: secret.add
-// CHECK: fhe.lweadd
+
+
