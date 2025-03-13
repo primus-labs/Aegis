@@ -387,10 +387,8 @@ void LowerArithToSecretPass::runOnOperation() {
         if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
-            }
-            else if (mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
+            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
+                mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
         }
@@ -417,10 +415,8 @@ void LowerArithToSecretPass::runOnOperation() {
         if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
-            }
-            else if (mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
+            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
+                mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
         }

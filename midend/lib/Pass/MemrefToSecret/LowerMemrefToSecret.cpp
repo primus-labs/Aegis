@@ -69,7 +69,18 @@ public:
             }
 
             SmallVector<Value, 8> indices(adaptor.getIndices());
-            rewriter.replaceOpWithNewOp<secret::LoadOp>(op, destTy, secretVal, indices);
+            auto secretLoadTy = SecretType::get(getContext(), destTy);
+            auto secretLoadOp = rewriter.replaceOpWithNewOp<secret::LoadOp>(op, secretLoadTy, secretVal, indices);
+
+            // Handle all associated secret.cast operations.
+            for (auto user : llvm::make_early_inc_range(op->getUsers())) {
+                if (auto castOp = dyn_cast<secret::CastOp>(user)) {
+                    if (castOp.getType() == secretLoadTy) {
+                        rewriter.replaceOp(castOp, secretLoadOp.getResult());
+                    }
+                }
+            }
+
             LLVM_DEBUG(llvm::dbgs() << "run MemRefLoadPattern success.\n");
             return success();
         }
@@ -108,21 +119,24 @@ public:
                 return failure();
             }
 
-            Value secretVal;
+            Value secretArrVal;
             if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 1) {
                 int sizes = memrefTy.getShape().front();
-                secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
+                secretArrVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretVectorType::get(getContext(), st, sizes), op.getMemRef());
             }
             else if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 2) {
                 int row = memrefTy.getShape().front();
                 int col = memrefTy.getShape().back();
-                secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
+                secretArrVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretMatrixType::get(getContext(), st, row, col), op.getMemRef());
             }
 
             SmallVector<Value, 8> indices(adaptor.getIndices());
-            rewriter.replaceOpWithNewOp<secret::StoreOp>(op, secretVal.getType(), op.getValueToStore(), secretVal, indices);
+            auto memValToStore = op.getValueToStore();
+            auto secretValToStroe = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(), 
+                                                            SecretType::get(getContext(), memValToStore.getType()), memValToStore);
+            rewriter.replaceOpWithNewOp<secret::StoreOp>(op, secretArrVal.getType(), secretValToStroe, secretArrVal, indices);
         }
         
         LLVM_DEBUG(llvm::dbgs() << "run MemrefStorePattern success.\n");
@@ -352,18 +366,26 @@ void LowerMemrefToSecretPass::runOnOperation() {
     });
 
     type_converter.addTargetMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto ot = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
+        if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
-            auto oldTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(oldTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            auto srcTy = vs.front().getType();
+            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
+                mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
         }
-        else if (auto ot = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
+        else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
-            auto oldTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(oldTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, ot, vs));
+            auto srcTy = vs.front().getType();
+            if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            }
+        }
+        else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto srcTy = vs.front().getType();
+            if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
         }
 
