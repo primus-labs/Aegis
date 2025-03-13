@@ -97,7 +97,7 @@ _The `alloc` operation allocates a region of memory._
 
 Example:
 ```mlir
-%0 = memref.alloc() : (!Secete.SecretVector<i32>) 
+%0 = secret.alloc() : (!Secete.SecretVector<i32>) 
 ```
 
 Traits: `AlwaysSpeculatableImplTrait`
@@ -118,7 +118,7 @@ _The `alloca` operation allocates memory on the stack, to be automatically relea
 
 Example:
 ```mlir
-%0 = memref.alloca() : (!Secete.SecretVector<i32>) 
+%0 = secret.alloca() : (!Secete.SecretVector<i32>) 
 ```
 
 Traits: `AlwaysSpeculatableImplTrait`
@@ -351,7 +351,7 @@ _The `dealloc` operation frees the region of memory referenced._
 
 Example:
 ```mlir
-memref.dealloc %0 : (!Secete.SecretVector<i32>) 
+secret.dealloc %0 : (!Secete.SecretVector<i32>) 
 ```
 
 Traits: `AlwaysSpeculatableImplTrait`
@@ -1401,9 +1401,9 @@ Effects: `MemoryEffects::Effect{}`
 
 | Operand | Description |
 | :-----: | ----------- |
-| `value` | any type
+| `valueToStore` | any type
 | `memref` | any type
-| `index` | variadic of any type
+| `indices` | variadic of any type
 
 #### Results:
 

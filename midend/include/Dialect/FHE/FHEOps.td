@@ -26,17 +26,50 @@ class FHE_Op<string mnemonic, list<Trait> traits = []> :
     let assemblyFormat = [{`(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)}];
 }
 
-
-def FHE_DefineOp : FHE_Op<"define", [Pure]> {
-  let summary = "Define a new ciphertext";
+def FHE_AllocOp : FHE_Op<"alloc", [Pure]> {
+  let summary = "allocation ciphertext operation on heap memory";
 
   let description = [{
-    Convert variable assignment in C program to ciphertext definition in FHE porgram
+    The `alloc` operation allocates a region of memory, as specified by its memref type.
+
+    Example:
+      ```mlir
+      %0 = fhe.alloc() : !Fhe.LWEChiperVector<64xi32>
+      ```
+  }];
+
+  let results = (outs FHE_Type:$output);
+}
+
+def FHE_AllocaOp : FHE_Op<"alloca", [Pure]> {
+  let summary = "allocation ciphertext operation on stack memory";
+
+  let description = [{
+    The `alloca` operation allocates memory on the stack, to be automatically released.
+
+    Example:
+      ```mlir
+      %0 = fhe.alloca() : !Fhe.LWEChiperVector<64xi32>
+      ```
   }];
 
   // let arguments = (ins AnyType:$input);
 
   let results = (outs FHE_Type:$output);
+}
+
+def FHE_DeallocOp : FHE_Op<"dealloc", [Pure]> {
+    let summary = "memory deallocation operation";
+
+    let description = [{
+      The `dealloc` operation frees the region of memory referenced.
+      Example:
+      ```mlir
+      fhe.dealloc %0 : !he.LWEChiperVector<64xi32>
+      ```
+    }];
+
+    let arguments = (ins FHE_Type:$memref);
 }
 
 def FHE_EncodeOp : FHE_Op<"encode", [Pure]> {

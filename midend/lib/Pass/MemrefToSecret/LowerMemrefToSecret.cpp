@@ -293,7 +293,7 @@ public:
 
     LogicalResult matchAndRewrite(memref::DeallocOp op, typename memref::DeallocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
     {
-        Value new_operand;
+        Value newOperand;
         auto o = op.getOperand();
         LLVM_DEBUG(llvm::dbgs() << o << "\n");
         auto opDestTy = typeConverter->convertType(o.getType());
@@ -302,19 +302,17 @@ public:
             return failure();
         }
 
-        if (o.getType() != opDestTy)
-        {
-            new_operand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
-            assert(new_operand && "Type Conversion must be not fail");
-            LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << new_operand << "\n");
+        if (o.getType() != opDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
+            assert(newOperand && "Type Conversion must be not fail");
+            LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << newOperand << "\n");
         }
-        else
-        {
-            new_operand = o;
+        else {
+            newOperand = o;
         }
         
         
-        rewriter.replaceOpWithNewOp<secret::DeallocOp>(op, new_operand);
+        rewriter.replaceOpWithNewOp<secret::DeallocOp>(op, newOperand);
 
         LLVM_DEBUG(llvm::dbgs() << "run MemrefDeallocPattern success.\n");
         return success();

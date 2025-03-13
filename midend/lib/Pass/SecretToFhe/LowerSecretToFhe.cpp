@@ -200,8 +200,8 @@ public:
         op.setType(newFuncTy);
         for (BlockArgument arg : op.getRegion().getArguments()) {
             if (!(mlir::isa<secret::SecretType>(arg.getType()) ||
-                mlir::isa<secret::SecretVectorType>(arg.getType()) ||
-                mlir::isa<secret::SecretMatrixType>(arg.getType()))) {
+                  mlir::isa<secret::SecretVectorType>(arg.getType()) ||
+                  mlir::isa<secret::SecretMatrixType>(arg.getType()))) {
                 continue;
             }
 
@@ -255,6 +255,143 @@ public:
         return success();
     }
 };
+
+
+// Transform the secret::LoadOp to fhe::ExtractOp, convert secret type to LWECipher type.
+class SecretLoadPattern final : public OpConversionPattern<secret::LoadOp> {
+public:
+    using OpConversionPattern<secret::LoadOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::LoadOp op, typename secret::LoadOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override {
+        auto srcTy = op.getMemref().getType();
+        if (!(mlir::isa<secret::SecretType>(srcTy) ||
+              mlir::isa<secret::SecretVectorType>(srcTy) ||
+              mlir::isa<secret::SecretMatrixType>(srcTy))) {
+            return success();
+        }
+
+        auto destTy = this->getTypeConverter()->convertType(srcTy);
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "convert type " << srcTy << " failure.\n");
+            return failure();
+        }
+        auto fheVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
+
+        SmallVector<Value, 8> indices(adaptor.getIndices());
+        rewriter.replaceOpWithNewOp<fhe::ExtractOp>(op, destTy, fheVal, indices);
+        LLVM_DEBUG(llvm::dbgs() << "run SecretLoadPattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform secret::StoreOp to fhe::InsertOp, convert secret type to LWECipher type.
+class SecretStorePattern final : public OpConversionPattern<secret::StoreOp> {
+public:
+    using OpConversionPattern<secret::StoreOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::StoreOp op, typename secret::StoreOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto srcTy = op.getMemref().getType();
+        if (!(mlir::isa<secret::SecretType>(srcTy) ||
+              mlir::isa<secret::SecretVectorType>(srcTy) ||
+              mlir::isa<secret::SecretMatrixType>(srcTy))) {
+            return success();
+        }
+
+        auto destTy = this->getTypeConverter()->convertType(srcTy);
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "convert type " << srcTy << " failure.\n");
+            return failure();
+        }
+
+        auto fheArrVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
+        auto fheValToStore = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getValueToStore());
+        SmallVector<Value, 8> indices(adaptor.getIndices());
+        rewriter.replaceOpWithNewOp<fhe::InsertOp>(op, fheArrVal.getType(), fheValToStore, fheArrVal, indices);
+        
+        LLVM_DEBUG(llvm::dbgs() << "run SecretStorePattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform secret::AllocaOp to fhe::AllocaOp.
+class SecretAllocaPattern final : public OpConversionPattern<secret::AllocaOp>
+{
+public:
+    using OpConversionPattern<secret::AllocaOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::AllocaOp op, typename secret::AllocaOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destType = this->getTypeConverter()->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
+            return failure();
+        }
+        
+        rewriter.replaceOpWithNewOp<fhe::AllocaOp>(op, destType);
+
+        LLVM_DEBUG(llvm::dbgs() << "run SecretAllocaPattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform secret::AllocOp to secret::AllocOp.
+class SecretAllocPattern final : public OpConversionPattern<secret::AllocOp>
+{
+public:
+    using OpConversionPattern<secret::AllocOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::AllocOp op, typename secret::AllocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destType = this->getTypeConverter()->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
+            return failure();
+        }
+        
+        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destType);
+
+        LLVM_DEBUG(llvm::dbgs() << "run SecretAllocPattern success.\n");
+        return success();
+    }
+};
+
+
+// Transform secret::DeallocOp to fhe::DeallocOp.
+class SecretDeallocPattern final : public OpConversionPattern<secret::DeallocOp>
+{
+public:
+    using OpConversionPattern<secret::DeallocOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::DeallocOp op, typename secret::DeallocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        Value newOperand;
+        auto o = op.getOperand();
+        auto opDestTy = typeConverter->convertType(o.getType());
+        if (!opDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << op << "\n");
+            return failure();
+        }
+
+        if (o.getType() != opDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
+            assert(newOperand && "Type Conversion must be not fail");
+            LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << newOperand << "\n");
+        }
+        else {
+            newOperand = o;
+        }  
+        
+        rewriter.replaceOpWithNewOp<fhe::DeallocOp>(op, newOperand);
+
+        LLVM_DEBUG(llvm::dbgs() << "run SecretDeallocPattern success.\n");
+        return success();
+    }
+};
+
 
 
 void LowerSecretToFhePass::getDependentDialects(mlir::DialectRegistry &registry) const 
@@ -442,6 +579,8 @@ void LowerSecretToFhePass::runOnOperation() {
     target.addIllegalOp<secret::MulOp, secret::MulPlainOp>();
     target.addIllegalOp<secret::AddOp, secret::AddPlainOp>();
     target.addIllegalOp<secret::SubOp, secret::SubPlainOp, secret::NegOp>();
+    target.addIllegalOp<secret::LoadOp, secret::StoreOp>();
+    target.addIllegalOp<secret::AllocaOp, secret::AllocOp, secret::DeallocOp>();
     target.addIllegalOp<func::CallOp>();
     target.addDynamicallyLegalOp<func::FuncOp>([&](Operation *op) {
         auto fop = llvm::dyn_cast<func::FuncOp>(op);
@@ -468,7 +607,9 @@ void LowerSecretToFhePass::runOnOperation() {
                      ArithBasicPattern<secret::AddOp>, ArithBasicPattern<secret::AddPlainOp>,
                      ArithBasicPattern<secret::SubOp>, ArithBasicPattern<secret::SubPlainOp>,
                      ArithNegPattern,
-                     SecretFuncPattern, SecretRetPattern>
+                     SecretFuncPattern, SecretRetPattern,
+                     SecretLoadPattern, SecretStorePattern,
+                     SecretAllocaPattern, SecretAllocPattern, SecretDeallocPattern>
                      (type_converter, secretPatSet.getContext());
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(secretPatSet)))) {
         signalPassFailure();

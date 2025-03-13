@@ -923,7 +923,7 @@ def Secret_StoreOp : Secret_Op<"store", [Pure]> {
         ```
     }];
 
-    let arguments = (ins AnyType:$value, AnyType:$memref, Variadic<AnyType>:$index);
+    let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
     let results = (outs AnyType:$result);
 }
 
@@ -933,7 +933,7 @@ def Secret_AllocOp : Secret_Op<"alloc", [Pure]> {
     let description = [{
         Example:
         ```mlir
-        %0 = memref.alloc() : (!Secete.SecretVector<i32>) 
+        %0 = secret.alloc() : (!Secete.SecretVector<i32>) 
         ```
     }];
 
@@ -946,7 +946,7 @@ def Secret_DeallocOp : Secret_Op<"dealloc", [Pure]> {
     let description = [{
         Example:
         ```mlir
-        memref.dealloc %0 : (!Secete.SecretVector<i32>) 
+        secret.dealloc %0 : (!Secete.SecretVector<i32>) 
         ```
     }];
 
@@ -959,7 +959,7 @@ def Secret_AllocaOp : Secret_Op<"alloca", [Pure]> {
     let description = [{
         Example:
         ```mlir
-        %0 = memref.alloca() : (!Secete.SecretVector<i32>) 
+        %0 = secret.alloca() : (!Secete.SecretVector<i32>) 
         ```
     }];
 
