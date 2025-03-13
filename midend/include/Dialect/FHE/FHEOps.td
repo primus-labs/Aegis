@@ -112,7 +112,7 @@ def FHE_InsertOp : FHE_Op<"insert", []> {
     Insert a single value to plain vector.
   }];
 
-  let arguments = (ins AnyType:$value, AnyType:$memref, Variadic<AnyType>:$index);
+  let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
   // let results = (outs AnyType:$result);
 }
 
@@ -122,7 +122,7 @@ def FHE_InsertexOp : FHE_Op<"insertex", []> {
     Insert a single value to plain vector.
   }];
 
-  let arguments = (ins AnyType:$value, AnyType:$memref,  AnyAttr:$col, OptionalAttr<AnyAttr>:$row);
+  let arguments = (ins AnyType:$valueToStore, AnyType:$memref,  AnyAttr:$col, OptionalAttr<AnyAttr>:$row);
   // let results = (outs AnyType:$result);
 }
 
@@ -322,7 +322,7 @@ def FHE_VectorLoadOp: FHE_Op<"vector_load", []> {
 def FHE_VectorLoadExOp: FHE_Op<"vector_load_ex", []> {
   let summary = "Same as FHE_VectorLoadOp, but replace Value Type indices with Attr Type";
 
-  let arguments = (ins AnyType:$memref, AnyAttr:$index);
+  let arguments = (ins AnyType:$memref, AnyAttr:$indices);
   
   let results = (outs AnyType:$result);
 }
