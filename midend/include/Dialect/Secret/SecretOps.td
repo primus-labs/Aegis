@@ -897,7 +897,7 @@ def Secret_Log1pOp : Secret_Op<"log1p", [Pure]> {
 }
 
 
-def Secret_LoadOp : Secret_Op<"load", [Pure]> {
+def Secret_LoadOp : Secret_Op<"load", []> {
     let summary = "read an element from a memory.";
 
     let description = [{
@@ -912,7 +912,7 @@ def Secret_LoadOp : Secret_Op<"load", [Pure]> {
     let results = (outs AnyType:$result);
 }
 
-def Secret_StoreOp : Secret_Op<"store", [Pure]> {
+def Secret_StoreOp : Secret_Op<"store", []> {
     let summary = "Store a value to a memory location given by indices.";
 
     let description = [{
@@ -927,7 +927,7 @@ def Secret_StoreOp : Secret_Op<"store", [Pure]> {
     let results = (outs AnyType:$result);
 }
 
-def Secret_AllocOp : Secret_Op<"alloc", [Pure]> {
+def Secret_AllocOp : Secret_Op<"alloc", []> {
     let summary = "The `alloc` operation allocates a region of memory.";
 
     let description = [{
@@ -940,7 +940,7 @@ def Secret_AllocOp : Secret_Op<"alloc", [Pure]> {
     let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output);
 }
 
-def Secret_DeallocOp : Secret_Op<"dealloc", [Pure]> {
+def Secret_DeallocOp : Secret_Op<"dealloc", []> {
     let summary = "The `dealloc` operation frees the region of memory referenced.";
 
     let description = [{
@@ -953,7 +953,7 @@ def Secret_DeallocOp : Secret_Op<"dealloc", [Pure]> {
     let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$memref);
 }
 
-def Secret_AllocaOp : Secret_Op<"alloca", [Pure]> {
+def Secret_AllocaOp : Secret_Op<"alloca", []> {
     let summary = "The `alloca` operation allocates memory on the stack, to be automatically released";
 
     let description = [{

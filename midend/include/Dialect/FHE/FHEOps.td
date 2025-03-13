@@ -26,7 +26,7 @@ class FHE_Op<string mnemonic, list<Trait> traits = []> :
     let assemblyFormat = [{`(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)}];
 }
 
-def FHE_AllocOp : FHE_Op<"alloc", [Pure]> {
+def FHE_AllocOp : FHE_Op<"alloc", []> {
   let summary = "allocation ciphertext operation on heap memory";
 
   let description = [{
@@ -41,7 +41,7 @@ def FHE_AllocOp : FHE_Op<"alloc", [Pure]> {
   let results = (outs FHE_Type:$output);
 }
 
-def FHE_AllocaOp : FHE_Op<"alloca", [Pure]> {
+def FHE_AllocaOp : FHE_Op<"alloca", []> {
   let summary = "allocation ciphertext operation on stack memory";
 
   let description = [{
@@ -58,7 +58,7 @@ def FHE_AllocaOp : FHE_Op<"alloca", [Pure]> {
   let results = (outs FHE_Type:$output);
 }
 
-def FHE_DeallocOp : FHE_Op<"dealloc", [Pure]> {
+def FHE_DeallocOp : FHE_Op<"dealloc", []> {
     let summary = "memory deallocation operation";
 
     let description = [{
@@ -72,7 +72,7 @@ def FHE_DeallocOp : FHE_Op<"dealloc", [Pure]> {
     let arguments = (ins FHE_Type:$memref);
 }
 
-def FHE_EncodeOp : FHE_Op<"encode", [Pure]> {
+def FHE_EncodeOp : FHE_Op<"encode", []> {
   let summary = "LWE Encryption";
   let description = [{
     LWE Encryption fuction
@@ -82,7 +82,7 @@ def FHE_EncodeOp : FHE_Op<"encode", [Pure]> {
   let results = (outs AnyType:$cipher);
 }
 
-def FHE_ExtractOp : FHE_Op<"extract",  [Pure]> {
+def FHE_ExtractOp : FHE_Op<"extract",  []> {
   let summary = "Extract a single value from plain vector";
   let description = [{
     Extract a single value from plain vector.
@@ -93,7 +93,7 @@ def FHE_ExtractOp : FHE_Op<"extract",  [Pure]> {
   // let assemblyFormat = "$vector `[` $i `]` attr-dict `:` type($result)";
 }
 
-def FHE_ExtractexOp : FHE_Op<"extractex", [Pure]> {
+def FHE_ExtractexOp : FHE_Op<"extractex", []> {
   let summary = "Extract a single value from plain vector";
   let description = [{
     Extract a single value from plain vector.

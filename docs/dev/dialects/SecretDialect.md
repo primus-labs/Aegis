@@ -100,12 +100,6 @@ Example:
 %0 = secret.alloc() : (!Secete.SecretVector<i32>) 
 ```
 
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
-
 #### Results:
 
 | Result | Description |
@@ -120,12 +114,6 @@ Example:
 ```mlir
 %0 = secret.alloca() : (!Secete.SecretVector<i32>) 
 ```
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Results:
 
@@ -353,12 +341,6 @@ Example:
 ```mlir
 secret.dealloc %0 : (!Secete.SecretVector<i32>) 
 ```
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Operands:
 
@@ -659,12 +641,6 @@ Example:
 %0 = "secret.load" %A[%1]: (!Secete.SecretVector<i32>)
 %3 = "secret.load" %A[%1, %2] : (!Secete.SecretMatrix<i32>)
 ```
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Operands:
 
@@ -1390,12 +1366,6 @@ Example:
 "secret.store" %0, %A[%1]: (!Secete.SecretVector<i32>) 
 "secret.store" %0, %A[%1, 5]: (!Secete.SecretMatrix<i32>) 
 ```
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Operands:
 

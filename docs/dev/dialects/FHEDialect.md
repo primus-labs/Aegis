@@ -24,12 +24,6 @@ Example:
   %0 = fhe.alloc() : !Fhe.LWEChiperVector<64xi32>
   ```
 
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
-
 #### Results:
 
 | Result | Description |
@@ -53,12 +47,6 @@ Example:
   ```mlir
   %0 = fhe.alloca() : !Fhe.LWEChiperVector<64xi32>
   ```
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Results:
 
@@ -161,12 +149,6 @@ Example:
 fhe.dealloc %0 : !he.LWEChiperVector<64xi32>
 ```
 
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
-
 #### Operands:
 
 | Operand | Description |
@@ -185,12 +167,6 @@ operation ::= `fhe.encode` `(` operands `)` attr-dict `:`  `(` type(operands) `)
 ```
 
 LWE Encryption fuction
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Attributes:
 
@@ -218,12 +194,6 @@ operation ::= `fhe.extract` `(` operands `)` attr-dict `:`  `(` type(operands) `
 
 Extract a single value from plain vector.
 
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
-
 #### Operands:
 
 | Operand | Description |
@@ -249,12 +219,6 @@ operation ::= `fhe.extractex` `(` operands `)` attr-dict `:`  `(` type(operands)
 ```
 
 Extract a single value from plain vector.
-
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
 
 #### Attributes:
 
