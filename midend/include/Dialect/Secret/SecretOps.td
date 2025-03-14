@@ -924,7 +924,6 @@ def Secret_StoreOp : Secret_Op<"store", []> {
     }];
 
     let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
-    // let results = (outs AnyType:$result);
 }
 
 def Secret_AllocOp : Secret_Op<"alloc", []> {

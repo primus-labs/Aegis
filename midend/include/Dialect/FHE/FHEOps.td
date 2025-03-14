@@ -72,6 +72,35 @@ def FHE_DeallocOp : FHE_Op<"dealloc", []> {
     let arguments = (ins FHE_Type:$memref);
 }
 
+def FHE_LoadOp : FHE_Op<"load", []> {
+    let summary = "read an element from a LWECipherVector.";
+
+    let description = [{
+        Example:
+        ```mlir
+        %0 = "fhe.load" %A[%1]: (!fhe.LWECipherVector<i32>)
+        %3 = "fhe.load" %A[%1, %2] : (!fhe.LWECipherVector<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyType:$memref, Variadic<AnyType>:$indices);
+    let results = (outs AnyType:$result);
+}
+
+def FHE_StoreOp : FHE_Op<"store", []> {
+    let summary = "Store a value to a LWECipherVector memory location given by indices.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "fhe.store" %0, %A[%1]: (!fhe.LWECipherVectori32>) 
+        "fhe.store" %0, %A[%1, 5]: (!fhe.LWECipherVector<i32>) 
+        ```
+    }];
+
+    let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
+}
+
 def FHE_EncodeOp : FHE_Op<"encode", []> {
   let summary = "LWE Encryption";
   let description = [{
@@ -80,50 +109,6 @@ def FHE_EncodeOp : FHE_Op<"encode", []> {
 
   let arguments = (ins F32Attr:$message);
   let results = (outs AnyType:$cipher);
-}
-
-def FHE_ExtractOp : FHE_Op<"extract",  []> {
-  let summary = "Extract a single value from plain vector";
-  let description = [{
-    Extract a single value from plain vector.
-  }];
-
-  let arguments = (ins AnyType:$vector, Variadic<AnyType>:$i);
-  let results = (outs AnyType:$result);
-  // let assemblyFormat = "$vector `[` $i `]` attr-dict `:` type($result)";
-}
-
-def FHE_ExtractexOp : FHE_Op<"extractex", []> {
-  let summary = "Extract a single value from plain vector";
-  let description = [{
-    Extract a single value from plain vector.
-  }];
-
-  let arguments = (ins AnyTypeOf<[LWECipherVector, LWECipherMatrix, RLWECipher, RLWECipherGrid]>:$vector,
-                    AnyAttr:$col, OptionalAttr<AnyAttr>:$row);
-
-  let results = (outs LWECipher:$result);
-  // let assemblyFormat = [{ $vector `[` $i `]`  attr-dict `:` type($result) }];
-}
-
-def FHE_InsertOp : FHE_Op<"insert", []> {
-  let summary = "Insert a single value to plain vector";
-  let description = [{
-    Insert a single value to plain vector.
-  }];
-
-  let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
-  // let results = (outs AnyType:$result);
-}
-
-def FHE_InsertexOp : FHE_Op<"insertex", []> {
-  let summary = "Insert a single value to plain vector";
-  let description = [{
-    Insert a single value to plain vector.
-  }];
-
-  let arguments = (ins AnyType:$valueToStore, AnyType:$memref,  AnyAttr:$col, OptionalAttr<AnyAttr>:$row);
-  // let results = (outs AnyType:$result);
 }
 
 def FHE_LWEAddOp : FHE_Op<"lweadd", [Pure]> {

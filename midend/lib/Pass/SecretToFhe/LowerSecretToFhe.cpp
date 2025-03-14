@@ -257,7 +257,7 @@ public:
 };
 
 
-// Transform the secret::LoadOp to fhe::ExtractOp, convert secret type to LWECipher type.
+// Transform the secret::LoadOp to fhe::LoadOp, convert secret type to LWECipher type.
 class SecretLoadPattern final : public OpConversionPattern<secret::LoadOp> {
 public:
     using OpConversionPattern<secret::LoadOp>::OpConversionPattern;
@@ -291,7 +291,7 @@ public:
 
         SmallVector<Value, 8> indices(adaptor.getIndices());
         auto unitCipherTy = fhe::LWECipherType::get(getContext(), destUnitTy);
-        rewriter.replaceOpWithNewOp<fhe::ExtractOp>(op, unitCipherTy, fheVal, indices);
+        rewriter.replaceOpWithNewOp<fhe::LoadOp>(op, unitCipherTy, fheVal, indices);
         
         LLVM_DEBUG(llvm::dbgs() << "run SecretLoadPattern success.\n");
         return success();
@@ -299,7 +299,7 @@ public:
 };
 
 
-// Transform secret::StoreOp to fhe::InsertOp, convert secret type to LWECipher type.
+// Transform secret::StoreOp to fhe::StoreOp, convert secret type to LWECipher type.
 class SecretStorePattern final : public OpConversionPattern<secret::StoreOp> {
 public:
     using OpConversionPattern<secret::StoreOp>::OpConversionPattern;
@@ -327,7 +327,7 @@ public:
         auto fheArrVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
         auto fheValToStore = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), valueToStoreDestTy, op.getValueToStore());
         SmallVector<Value, 8> indices(adaptor.getIndices());
-        rewriter.replaceOpWithNewOp<fhe::InsertOp>(op, fheValToStore, fheArrVal, indices);
+        rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheArrVal, indices);
         
         LLVM_DEBUG(llvm::dbgs() << "run SecretStorePattern success.\n");
         return success();

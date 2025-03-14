@@ -15,9 +15,9 @@ fi
 cd ../debug_build/bin
 FILECHECK_TOOL="../../third_party/llvm-project/build/bin/FileCheck"
 
-#./aegiscompiler -collect-metadata --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse < "$1" | "$FILECHECK_TOOL" "$1"
+#./aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse < "$1" | "$FILECHECK_TOOL" "$1"
 
-output=$(./aegiscompiler -collect-metadata --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse < "$1" | "$FILECHECK_TOOL" "$1" 2>&1) 
+output=$(./aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse < "$1" | "$FILECHECK_TOOL" "$1" 2>&1) 
 if [ -z "$output" ]; then
     echo "\033[1;34mPass\033[0m"
 else
