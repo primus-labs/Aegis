@@ -195,6 +195,9 @@ void LowerFuncToSecretPass::runOnOperation() {
         if (mlir::isa<FloatType>(t)) {
             return std::optional<Type>(SecretType::get(&getContext(), t));
         }
+        else if (mlir::isa<IntegerType>(t)) {
+            return std::optional<Type>(SecretType::get(&getContext(), Float32Type::getF32(&getContext())));
+        }
         else if (mlir::isa<MemRefType>(t)) {
             auto newTy = mlir::cast<MemRefType>(t);
             if (newTy.hasStaticShape() && newTy.getShape().size() == 1) {
