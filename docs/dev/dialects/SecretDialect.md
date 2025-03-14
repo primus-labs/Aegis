@@ -1375,12 +1375,6 @@ Example:
 | `memref` | any type
 | `indices` | variadic of any type
 
-#### Results:
-
-| Result | Description |
-| :----: | ----------- |
-| `result` | any type
-
 ### `secret.sub` (aegis::secret::SubOp)
 
 _Subtraction two secret values_

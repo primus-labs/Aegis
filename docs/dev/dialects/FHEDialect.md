@@ -181,65 +181,6 @@ LWE Encryption fuction
 | :----: | ----------- |
 | `cipher` | any type
 
-### `fhe.extract` (aegis::fhe::ExtractOp)
-
-_Extract a single value from plain vector_
-
-
-Syntax:
-
-```
-operation ::= `fhe.extract` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
-```
-
-Extract a single value from plain vector.
-
-#### Operands:
-
-| Operand | Description |
-| :-----: | ----------- |
-| `vector` | any type
-| `i` | variadic of any type
-
-#### Results:
-
-| Result | Description |
-| :----: | ----------- |
-| `result` | any type
-
-### `fhe.extractex` (aegis::fhe::ExtractexOp)
-
-_Extract a single value from plain vector_
-
-
-Syntax:
-
-```
-operation ::= `fhe.extractex` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
-```
-
-Extract a single value from plain vector.
-
-#### Attributes:
-
-<table>
-<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
-<tr><td><code>col</code></td><td>::mlir::Attribute</td><td>any attribute</td></tr>
-<tr><td><code>row</code></td><td>::mlir::Attribute</td><td>any attribute</td></tr>
-</table>
-
-#### Operands:
-
-| Operand | Description |
-| :-----: | ----------- |
-| `vector` | lweciphervec or lweciphermat or rlwecipher or rlweciphermat
-
-#### Results:
-
-| Result | Description |
-| :----: | ----------- |
-| `result` | lwecipher
-
 ### `fhe.call` (aegis::fhe::FuncCallOp)
 
 _Function call to replace Func::CallOp_
@@ -274,55 +215,6 @@ and function definition is occured in FuncToHEIR pass.
 | Result | Description |
 | :----: | ----------- |
 &laquo;unnamed&raquo; | any type
-
-### `fhe.insert` (aegis::fhe::InsertOp)
-
-_Insert a single value to plain vector_
-
-
-Syntax:
-
-```
-operation ::= `fhe.insert` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
-```
-
-Insert a single value to plain vector.
-
-#### Operands:
-
-| Operand | Description |
-| :-----: | ----------- |
-| `value` | any type
-| `memref` | any type
-| `index` | variadic of any type
-
-### `fhe.insertex` (aegis::fhe::InsertexOp)
-
-_Insert a single value to plain vector_
-
-
-Syntax:
-
-```
-operation ::= `fhe.insertex` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
-```
-
-Insert a single value to plain vector.
-
-#### Attributes:
-
-<table>
-<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
-<tr><td><code>col</code></td><td>::mlir::Attribute</td><td>any attribute</td></tr>
-<tr><td><code>row</code></td><td>::mlir::Attribute</td><td>any attribute</td></tr>
-</table>
-
-#### Operands:
-
-| Operand | Description |
-| :-----: | ----------- |
-| `value` | any type
-| `memref` | any type
 
 ### `fhe.lut_half` (aegis::fhe::LUTForAddOp)
 
@@ -662,6 +554,36 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
+### `fhe.load` (aegis::fhe::LoadOp)
+
+_Read an element from a LWECipherVector._
+
+
+Syntax:
+
+```
+operation ::= `fhe.load` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+Example:
+```mlir
+%0 = "fhe.load" %A[%1]: (!fhe.LWECipherVector<i32>)
+%3 = "fhe.load" %A[%1, %2] : (!fhe.LWECipherVector<i32>)
+```
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `memref` | any type
+| `indices` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `result` | any type
+
 ### `fhe.rlweadd` (aegis::fhe::RLWEAddOp)
 
 _RLWECipher addition operation_
@@ -912,6 +834,31 @@ operation ::= `fhe.select` `(` operands `)` attr-dict `:`  `(` type(operands) `)
 | :----: | ----------- |
 | `result` | any type
 
+### `fhe.store` (aegis::fhe::StoreOp)
+
+_Store a value to a LWECipherVector memory location given by indices._
+
+
+Syntax:
+
+```
+operation ::= `fhe.store` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+Example:
+```mlir
+"fhe.store" %0, %A[%1]: (!fhe.LWECipherVectori32>) 
+"fhe.store" %0, %A[%1, 5]: (!fhe.LWECipherVector<i32>) 
+```
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `valueToStore` | any type
+| `memref` | any type
+| `indices` | variadic of any type
+
 ### `fhe.vector_load_ex` (aegis::fhe::VectorLoadExOp)
 
 _Same as FHE_VectorLoadOp, but replace Value Type indices with Attr Type_
@@ -928,7 +875,7 @@ operation ::= `fhe.vector_load_ex` `(` operands `)` attr-dict `:`  `(` type(oper
 
 <table>
 <tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
-<tr><td><code>index</code></td><td>::mlir::Attribute</td><td>any attribute</td></tr>
+<tr><td><code>indices</code></td><td>::mlir::Attribute</td><td>any attribute</td></tr>
 </table>
 
 #### Operands:
