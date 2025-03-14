@@ -39,7 +39,7 @@ def Secret_ConcealOp : Secret_Op<"conceal", [Pure]> {
     ];
 }
 
-def Secret_RevealOp : Secret_Op<"reveal", [Pure]> {
+def Secret_RevealOp : Secret_Op<"reveal", []> {
     let summary = "Convert a secret value into a non-secret";
     let description = [{
         Convert a secret into a non-secret containing the same value.

@@ -1178,12 +1178,6 @@ Examples:
 %Y = secret.reveal %secret_value : !secret.secret<i32> -> i32
 ```
 
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
-
 #### Operands:
 
 | Operand | Description |

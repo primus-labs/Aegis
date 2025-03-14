@@ -370,5 +370,25 @@ def FHE_FuncCallOp: FHE_Op<"call", []> {
   let results = (outs AnyType);
 }
 
+def fhe_RevealOp : FHE_Op<"reveal", []> {
+    let summary = "Convert a cipher value into a real number";
+    let description = [{
+
+        Examples:
+
+        ```mlir
+        %Y = fhe.reveal %secret_value : !fhe.LWECipher<f32> -> f32
+        ```
+    }];
+
+    let arguments = (ins FHE_Type:$input);
+    let results = (outs AnyType:$cleartext);
+    let assemblyFormat = "$input attr-dict `:` type($input) `->` type($cleartext)";
+
+    let builders = [
+        // Builder to infer output type from the input type
+        OpBuilder<(ins "Value":$secret)>
+    ];
+}
 
 #endif

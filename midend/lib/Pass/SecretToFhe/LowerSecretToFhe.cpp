@@ -160,6 +160,102 @@ public:
 };
 
 
+// Transform secret::CmpFOp into fhe::cmpOp, and Convert the data type of input/output of the ops
+class SecretCmpPattern final : public OpConversionPattern<secret::CmpOp>
+{
+public:
+    using OpConversionPattern<secret::CmpOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::CmpOp op, typename secret::CmpOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destType = this->getTypeConverter()->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op " << op << "\n");
+            return failure();
+        }
+        
+        // Materialize the operands where necessary
+        auto lhs = op.getLhs();
+        auto rhs = op.getRhs();
+        Value new_lhs, new_rhs;
+
+        // Convert the type of operands(inputs)
+        auto lhsOpType = typeConverter->convertType(lhs.getType());
+        if (!lhsOpType) {
+            LLVM_DEBUG(llvm::dbgs() << "the lhs value " << lhs << " convert type fail.\n");
+            return failure();
+        }
+        if (lhs.getType() != lhsOpType) {
+            new_lhs = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), lhsOpType, lhs);
+            assert(new_lhs && "Type Conversion must be not fail");
+        }
+        else {
+            new_lhs = lhs;
+        }
+
+        auto rhsOpType = typeConverter->convertType(rhs.getType());
+        if (!rhsOpType) {
+            LLVM_DEBUG(llvm::dbgs() << "the rhs value " << lhs << " convert type fail.\n");
+            return failure();
+        }
+        if (rhs.getType() != rhsOpType) {
+            new_rhs = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), rhsOpType, rhs);
+            assert(new_rhs && "Type Conversion must be not fail");
+        }
+        else {
+            new_rhs = rhs;
+        }
+
+        arith::CmpFPredicate predicate = op.getPredicate();
+        rewriter.replaceOpWithNewOp<fhe::CmpOp>(op, TypeRange(destType), predicate, new_lhs, new_rhs);
+
+        return success();
+    }
+};
+
+
+// Transform secret::SelectOp into secret corresponding op(fhe::SelectOp)
+class SecretSelectPattern final : public OpConversionPattern<secret::SelectOp>
+{
+protected:
+    using OpConversionPattern<secret::SelectOp>::typeConverter;
+
+public:
+    using OpConversionPattern<secret::SelectOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::SelectOp op, typename secret::SelectOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destType = typeConverter->convertType(op.getType());
+        if (!destType) {
+            LLVM_DEBUG(llvm::dbgs() << "convert the " <<  op.getType() << " failure.\n");
+            return failure();
+        }
+
+        Value trueVal = op.getTrueValue();
+        Value falseVal = op.getFalseValue();
+        Value cond = op.getCondition();
+        auto trueDestTy = typeConverter->convertType(trueVal.getType());
+        auto falseDestTy = typeConverter->convertType(falseVal.getType());
+        auto conDestTy = typeConverter->convertType(cond.getType());
+        if (!trueDestTy || !falseDestTy || !conDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "trueDestTy=" << trueDestTy << ",falseDestTy=" << falseDestTy << ",conDestTy=" << conDestTy << "/n");
+            return failure();
+        }
+
+        auto material_true = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), trueDestTy, trueVal);
+        auto material_false = typeConverter->materializeTargetConversion(rewriter, op.getLoc(),falseDestTy, falseVal);
+        auto material_cond = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), conDestTy, cond);
+        LLVM_DEBUG(llvm::dbgs() << "material_true=" << material_true << "material_false=" << material_false
+                                << "material_cond=" << material_cond << "\n");
+
+        rewriter.replaceOpWithNewOp<fhe::SelectOp>(op, destType, material_cond, material_true, material_false);
+        return success();
+    };
+};
+
+
 // Convert all secret function arguments in a function block to fhe types.
 class SecretFuncPattern final : public OpConversionPattern<func::FuncOp>
 {
@@ -402,7 +498,7 @@ public:
         }
         else {
             newOperand = o;
-        }  
+        }
         
         rewriter.replaceOpWithNewOp<fhe::DeallocOp>(op, newOperand);
 
@@ -411,6 +507,58 @@ public:
     }
 };
 
+
+// Transform secret::RevealOp to fhe::RevealOp.
+class SecretRevealPattern final : public OpConversionPattern<secret::RevealOp>
+{
+public:
+    using OpConversionPattern<secret::RevealOp>::OpConversionPattern;
+
+    mlir::Type getPlaintextType(Type t) const {
+        if (mlir::isa<fhe::LWECipherType>(t)) {
+            auto realTy = mlir::cast<fhe::LWECipherType>(t);
+            return realTy.getPlaintextType();
+        }
+        else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
+            auto realTy = mlir::cast<fhe::LWECipherVectorType>(t);
+            return realTy.getPlaintextType();
+        }
+        else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
+            auto realTy = mlir::cast<fhe::LWECipherMatrixType>(t);
+            return realTy.getPlaintextType();
+        }
+        else {
+            assert(false && "getPlaintextType faiulre, maybe source type incorrect.");
+            return mlir::Float32Type::getF32(getContext());
+        }
+    }
+
+    LogicalResult matchAndRewrite(secret::RevealOp op, typename secret::RevealOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        Value newOperand;
+        auto o = op.getOperand();
+        auto opDestTy = typeConverter->convertType(o.getType());
+        if (!opDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for value " << op << "\n");
+            return failure();
+        }
+
+        if (o.getType() != opDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
+            assert(newOperand && "Type Conversion must be not fail");
+            LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << newOperand << "\n");
+        }
+        else {
+            newOperand = o;
+        }
+        
+        auto resTy = getPlaintextType(opDestTy);
+        rewriter.replaceOpWithNewOp<fhe::RevealOp>(op, resTy, newOperand);
+
+        LLVM_DEBUG(llvm::dbgs() << "run SecretRevealPattern success.\n");
+        return success();
+    }
+};
 
 
 void LowerSecretToFhePass::getDependentDialects(mlir::DialectRegistry &registry) const 
@@ -599,7 +747,9 @@ void LowerSecretToFhePass::runOnOperation() {
     target.addIllegalOp<secret::AddOp, secret::AddPlainOp>();
     target.addIllegalOp<secret::SubOp, secret::SubPlainOp, secret::NegOp>();
     target.addIllegalOp<secret::LoadOp, secret::StoreOp>();
+    target.addIllegalOp<secret::CmpOp, secret::SelectOp>();
     target.addIllegalOp<secret::AllocaOp, secret::AllocOp, secret::DeallocOp>();
+    target.addIllegalOp<secret::RevealOp>();
     target.addIllegalOp<func::CallOp>();
     target.addDynamicallyLegalOp<func::FuncOp>([&](Operation *op) {
         auto fop = llvm::dyn_cast<func::FuncOp>(op);
@@ -626,9 +776,11 @@ void LowerSecretToFhePass::runOnOperation() {
                      ArithBasicPattern<secret::AddOp>, ArithBasicPattern<secret::AddPlainOp>,
                      ArithBasicPattern<secret::SubOp>, ArithBasicPattern<secret::SubPlainOp>,
                      ArithNegPattern,
+                     SecretCmpPattern, SecretSelectPattern,
                      SecretFuncPattern, SecretRetPattern,
                      SecretLoadPattern, SecretStorePattern,
-                     SecretAllocaPattern, SecretAllocPattern, SecretDeallocPattern>
+                     SecretAllocaPattern, SecretAllocPattern, SecretDeallocPattern,
+                     SecretRevealPattern>
                      (type_converter, secretPatSet.getContext());
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(secretPatSet)))) {
         signalPassFailure();
