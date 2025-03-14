@@ -136,7 +136,7 @@ public:
             auto memValToStore = op.getValueToStore();
             auto secretValToStroe = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(), 
                                                             SecretType::get(getContext(), memValToStore.getType()), memValToStore);
-            rewriter.replaceOpWithNewOp<secret::StoreOp>(op, secretArrVal.getType(), secretValToStroe, secretArrVal, indices);
+            rewriter.replaceOpWithNewOp<secret::StoreOp>(op, secretValToStroe, secretArrVal, indices);
         }
         
         LLVM_DEBUG(llvm::dbgs() << "run MemrefStorePattern success.\n");
@@ -246,7 +246,7 @@ public:
                 return failure();
             }
 
-            rewriter.replaceOpWithNewOp<secret::StoreOp>(op, secretVal.getType(), op.getValueToStore(), secretVal, *resOperands);
+            rewriter.replaceOpWithNewOp<secret::StoreOp>(op, op.getValueToStore(), secretVal, *resOperands);
         }
         
         LLVM_DEBUG(llvm::dbgs() << "run AffineStorePattern success.\n");

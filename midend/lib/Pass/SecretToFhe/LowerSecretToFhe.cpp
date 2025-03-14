@@ -277,8 +277,22 @@ public:
         }
         auto fheVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
 
+        // Get lwecipher Plaintext Type
+        mlir::Type destUnitTy;
+        if (auto CipherTy = mlir::dyn_cast_or_null<fhe::LWECipherType>(destTy)) {
+            destUnitTy = CipherTy.getPlaintextType();
+        }
+        else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(destTy)) {
+            destUnitTy = CipherTy.getPlaintextType();
+        }
+        else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(destTy)) {
+            destUnitTy = CipherTy.getPlaintextType();
+        }
+
         SmallVector<Value, 8> indices(adaptor.getIndices());
-        rewriter.replaceOpWithNewOp<fhe::ExtractOp>(op, destTy, fheVal, indices);
+        auto unitCipherTy = fhe::LWECipherType::get(getContext(), destUnitTy);
+        rewriter.replaceOpWithNewOp<fhe::ExtractOp>(op, unitCipherTy, fheVal, indices);
+        
         LLVM_DEBUG(llvm::dbgs() << "run SecretLoadPattern success.\n");
         return success();
     }
@@ -301,14 +315,19 @@ public:
 
         auto destTy = this->getTypeConverter()->convertType(srcTy);
         if (!destTy) {
-            LLVM_DEBUG(llvm::dbgs() << "convert type " << srcTy << " failure.\n");
+            LLVM_DEBUG(llvm::dbgs() << "convert memref type " << srcTy << " failure.\n");
+            return failure();
+        }
+        auto valueToStoreDestTy = this->getTypeConverter()->convertType(op.getValueToStore().getType());
+        if (!valueToStoreDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "convert ValueToStore type " << op.getValueToStore().getType() << " failure.\n");
             return failure();
         }
 
         auto fheArrVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
-        auto fheValToStore = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getValueToStore());
+        auto fheValToStore = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), valueToStoreDestTy, op.getValueToStore());
         SmallVector<Value, 8> indices(adaptor.getIndices());
-        rewriter.replaceOpWithNewOp<fhe::InsertOp>(op, fheArrVal.getType(), fheValToStore, fheArrVal, indices);
+        rewriter.replaceOpWithNewOp<fhe::InsertOp>(op, fheValToStore, fheArrVal, indices);
         
         LLVM_DEBUG(llvm::dbgs() << "run SecretStorePattern success.\n");
         return success();
