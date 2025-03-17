@@ -122,8 +122,7 @@ public:
 
         // Materialize the operands where necessary
         llvm::SmallVector<Value> materialized_ops;
-        for (Value o : op.getOperands())
-        {
+        for (Value o : op.getOperands()) {
             LLVM_DEBUG(llvm::dbgs() << o << "\n");
             auto opDestTy = typeConverter->convertType(o.getType());
             if (!opDestTy) {
@@ -131,44 +130,36 @@ public:
                 return failure();
             }
 
-            if (o.getType() != opDestTy)
-            {
+            if (o.getType() != opDestTy) {
                 auto new_operand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestTy, o);
                 assert(new_operand && "Type Conversion must be not fail");
                 materialized_ops.push_back(new_operand);
                 LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << new_operand << "\n");
             }
-            else
-            {
+            else {
                 materialized_ops.push_back(o);
             }
         }
 
         // Deal with multiplications
-        if (std::is_same<OpType, arith::MulFOp>())
-        {
+        if (std::is_same<OpType, arith::MulFOp>()) {
             Value lhs = materialized_ops[0];
             Value rhs = materialized_ops[1];
-            if (isOneValue(lhs))
-            {
+            if (isOneValue(lhs)) {
                 rewriter.replaceOp(op, rhs);
-                if (lhs.use_empty())
-                {
+                if (lhs.use_empty()) {
                     rewriter.eraseOp(lhs.getDefiningOp());
                 }
                 return success();
             }
-            else if (isOneValue(rhs))
-            {
+            else if (isOneValue(rhs)) {
                 rewriter.replaceOp(op, lhs);
-                if (rhs.use_empty())
-                {
+                if (rhs.use_empty()) {
                     rewriter.eraseOp(rhs.getDefiningOp());
                 }
                 return success();
             }
-            else
-            {
+            else {
                 llvm::DenseMap<Value, bool> cache;
                 bool bEncLhs = isEncrypted(lhs, cache);
                 bool bEncRhs = isEncrypted(rhs, cache);
@@ -181,32 +172,26 @@ public:
                 else if (!bEncLhs && bEncRhs) {
                     rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), rhs, op.getOperand(0));
                 }
-
                 return success();
             }
         }      
         
         // Deal with additions
-        else if (std::is_same<OpType, arith::AddFOp>())
-        {
+        else if (std::is_same<OpType, arith::AddFOp>()) {
             Value lhs = materialized_ops[0];
             Value rhs = materialized_ops[1];
-            if (isZeroValue(lhs))
-            {
+            if (isZeroValue(lhs)) {
                 rewriter.replaceOp(op, rhs);
                 auto srcVal = lhs.getDefiningOp<secret::CastOp>().getOperand();       
-                if (lhs.use_empty())
-                {
+                if (lhs.use_empty()) {
                     rewriter.eraseOp(lhs.getDefiningOp());
                 }
-                if (srcVal.use_empty())
-                {
+                if (srcVal.use_empty()) {
                     rewriter.eraseOp(srcVal.getDefiningOp());
                 }
                 return success();
             }
-            else if (isZeroValue(rhs))
-            {
+            else if (isZeroValue(rhs)) {
                 rewriter.replaceOp(op, lhs);
                 auto srcVal = rhs.getDefiningOp<secret::CastOp>().getOperand();
                 if (rhs.use_empty())
@@ -219,8 +204,7 @@ public:
                 }
                 return success();
             }
-            else
-            {
+            else {
                 llvm::DenseMap<Value, bool> cache;
                 bool bEncLhs = isEncrypted(lhs, cache);
                 bool bEncRhs = isEncrypted(rhs, cache);
@@ -238,21 +222,17 @@ public:
         }
 
         // Deal with substractions
-        else if (std::is_same<OpType, arith::SubFOp>())
-        {
+        else if (std::is_same<OpType, arith::SubFOp>()) {
             Value lhs = materialized_ops[0];
             Value rhs = materialized_ops[1];
-            if (isZeroValue(rhs))
-            {
+            if (isZeroValue(rhs)) {
                 rewriter.replaceOp(op, lhs);
-                if (rhs.use_empty())
-                {
+                if (rhs.use_empty()) {
                     rewriter.eraseOp(rhs.getDefiningOp());
                 }
                 return success();
             }
-            else
-            {
+            else {
                 llvm::DenseMap<Value, bool> cache;
                 bool bEncLhs = isEncrypted(lhs, cache);
                 bool bEncRhs = isEncrypted(rhs, cache);
@@ -272,8 +252,7 @@ public:
                         auto new_lhs = rewriter.create<secret::NegOp>(op.getLoc(), rhs.getType(), rhs);
                         rewriter.replaceOpWithNewOp<secret::AddPlainOp>(op, TypeRange(destType), new_lhs, op.getOperand(0));
                     }
-                }
-                
+                }              
                 return success();
             }
         }

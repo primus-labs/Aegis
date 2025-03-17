@@ -149,8 +149,8 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
             return false;
         }
 
-        // If the operation is a secret operation, the result is encrypted
-        // if (isa<SecretDialect>(op->getDialect())) {
+        // // If the operation is a secret operation and the secret op is not castop, the result is encrypted
+        // if (isa<secret::SecretDialect>(op->getDialect()) && !isa<secret::CastOp>(op)) {
         //     cache[value] = true;
         //     return true;
         // }
@@ -162,10 +162,13 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
                 return true;
             }
             else {
-                cache[value] = false;
-                return false;
+                continue;
             }
         }
+
+        // Once none of the operands of this op are of the encrypted type, return false.
+        cache[value] = false;
+        return false;
     }
 
     // Default to true if the value is neither a BlockArgument nor an OpResult
