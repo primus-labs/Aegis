@@ -23,10 +23,62 @@ using namespace aegis;
 using namespace fhe;
 
 
-// Convert FHE add/sub/mul/... operations into emitc::CallOp 
-// to facilitate further transformation into C++ functions.
+// Convert FHE arith unary op(neg/abs/...) operations into emitc::CallOp.
 template <typename OpType>
-class FheArithBasicPattern final : public OpConversionPattern<OpType>
+class FheArithUnaryPattern final : public OpConversionPattern<OpType>
+{
+protected:
+    using OpConversionPattern<OpType>::typeConverter;
+
+public:
+    using OpConversionPattern<OpType>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(OpType op, typename OpType::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destTy = typeConverter->convertType(op.getType());
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+
+        // Materialize the operand where necessary
+        Value newOperand;
+        auto operand = op.getOperand();
+        auto operandDestTy = typeConverter->convertType(operand.getType());
+        if (!operandDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << operand << ", the op type:" << operand.getType() << ".\n");
+            return failure();
+        }
+
+        if (operand.getType() != operandDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+        }
+        else {
+            newOperand = operand;
+        }
+
+        // Build a series of calls to our custom function.
+        std::string opName;
+        if (std::is_same<OpType, LWENegOp>()) {
+            opName = "Neg";
+        }
+        else {
+            LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
+            return failure();
+        }
+        
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), opName, 
+                                    ArrayAttr(), ArrayAttr(), newOperand);
+        return success();
+    }
+};
+
+
+// Convert FHE arith binary op(add/sub/mul/...) operations into emitc::CallOp.
+template <typename OpType>
+class FheArithBinaryPattern final : public OpConversionPattern<OpType>
 {
 protected:
     using OpConversionPattern<OpType>::typeConverter;
@@ -67,15 +119,25 @@ public:
         if (std::is_same<OpType, LWEAddOp>()) {
             opName = "Add";
         }
+        else if (std::is_same<OpType, LWEAddPlainOp>()) {
+            opName = "AddPlain";
+        }
         else if (std::is_same<OpType, LWESubOp>()) {
             opName = "Sub";
+        }
+        else if (std::is_same<OpType, LWESubPlainOp>()) {
+            opName = "SubPlain";
         }
         else if (std::is_same<OpType, LWEMulOp>() ||
                  std::is_same<OpType, RLWEMulOp>()) {
             opName = "Mul";
         }
+        else if (std::is_same<OpType, LWEMulPlainOp>() ||
+                 std::is_same<OpType, RLWEMulPlainOp>()) {
+            opName = "MulPlain";
+        }
         else {
-            LLVM_DEBUG(llvm::dbgs() << "Unkown this Op, not handle.\n");
+            LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
             return failure();
         }
         
@@ -195,9 +257,6 @@ public:
         return success();
     }
 };
-
-
-
 
 
 void LowerFheToEmitcPass::getDependentDialects(mlir::DialectRegistry &registry) const
@@ -372,6 +431,10 @@ void LowerFheToEmitcPass::runOnOperation()
             if (!type_converter.isLegal(t))
                 return false;
         }
+        for (auto t : funcOp.getFunctionType().getInputs()) {
+            if (!type_converter.isLegal(t))
+                return false;
+        }
         for (auto t : funcOp.getFunctionType().getResults()) {
             if (!type_converter.isLegal(t))
                 return false;
@@ -385,8 +448,10 @@ void LowerFheToEmitcPass::runOnOperation()
 
 
     mlir::RewritePatternSet fhePats(&getContext());
-    fhePats.add<FheArithBasicPattern<LWEAddOp>, FheArithBasicPattern<LWESubOp>, 
-            FheArithBasicPattern<LWEMulOp>, FheArithBasicPattern<RLWEMulOp>,
+    fhePats.add<FheArithUnaryPattern<LWENegOp>,
+            FheArithBinaryPattern<LWEAddOp>, FheArithBinaryPattern<LWEAddPlainOp>, 
+            FheArithBinaryPattern<LWESubOp>, FheArithBinaryPattern<LWESubPlainOp>,
+            FheArithBinaryPattern<LWEMulOp>, FheArithBinaryPattern<LWEMulPlainOp>, FheArithBinaryPattern<RLWEMulOp>,
             FheFuncPattern, FheRetPattern, FheCallPattern>(type_converter, fhePats.getContext());
 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(fhePats)))) {

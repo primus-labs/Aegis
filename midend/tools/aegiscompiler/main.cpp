@@ -74,6 +74,8 @@ void fhePipeline(OpPassManager &manager)
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerFheToEmitcPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
 }
 
 void mpcPipeline(OpPassManager &manager)
