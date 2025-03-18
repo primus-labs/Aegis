@@ -333,6 +333,29 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | A secret value
 
+### `secret.copy` (aegis::secret::CopyOp)
+
+_Copies the data from the source to the destination._
+
+
+Syntax:
+
+```
+operation ::= `secret.copy` $source `,` $target attr-dict `:` type($source) `to` type($target)
+```
+
+Example:
+```mlir
+secret.copy %arg0, %arg1 : !Secete.SecretVector<i32> to !Secete.SecretVector<i32>
+```
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `source` | A secret value or Batched Secret or Batched Secret
+| `target` | A secret value or Batched Secret or Batched Secret
+
 ### `secret.dealloc` (aegis::secret::DeallocOp)
 
 _The `dealloc` operation frees the region of memory referenced._

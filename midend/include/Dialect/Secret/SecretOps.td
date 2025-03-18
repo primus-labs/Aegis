@@ -965,4 +965,23 @@ def Secret_AllocaOp : Secret_Op<"alloca", []> {
     let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output);
 }
 
+def Secret_CopyOp : Secret_Op<"copy", []> {
+    let summary = "Copies the data from the source to the destination.";
+
+    let description = [{
+        Example:
+        ```mlir
+        secret.copy %arg0, %arg1 : !Secete.SecretVector<i32> to !Secete.SecretVector<i32>
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$source,
+                         AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$target);
+
+    let assemblyFormat = [{
+        $source `,` $target attr-dict `:` type($source) `to` type($target)
+    }];
+}
+
+
 #endif  // DIALECT_SECRET_SECRETOPS_TD_

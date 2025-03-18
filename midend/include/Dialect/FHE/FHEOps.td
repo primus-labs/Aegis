@@ -101,6 +101,23 @@ def FHE_StoreOp : FHE_Op<"store", []> {
     let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
 }
 
+def FHE_CopyOp : FHE_Op<"copy", []> {
+    let summary = "Copies the data from the source to the destination.";
+
+    let description = [{
+        Example:
+        ```mlir
+        secret.copy %arg0, %arg1 : !Secete.SecretVector<i32> to !Secete.SecretVector<i32>
+        ```
+    }];
+
+    let arguments = (ins AnyType:$source, AnyType:$target);
+
+    let assemblyFormat = [{
+        $source `,` $target attr-dict `:` type($source) `to` type($target)
+    }];
+}
+
 def FHE_EncodeOp : FHE_Op<"encode", []> {
   let summary = "LWE Encryption";
   let description = [{

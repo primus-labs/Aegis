@@ -132,6 +132,29 @@ operation ::= `fhe.compare` `(` operands `)` attr-dict `:`  `(` type(operands) `
 | :----: | ----------- |
 | `result` | any type
 
+### `fhe.copy` (aegis::fhe::CopyOp)
+
+_Copies the data from the source to the destination._
+
+
+Syntax:
+
+```
+operation ::= `fhe.copy` $source `,` $target attr-dict `:` type($source) `to` type($target)
+```
+
+Example:
+```mlir
+secret.copy %arg0, %arg1 : !Secete.SecretVector<i32> to !Secete.SecretVector<i32>
+```
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `source` | any type
+| `target` | any type
+
 ### `fhe.dealloc` (aegis::fhe::DeallocOp)
 
 _Memory deallocation operation_
