@@ -99,7 +99,7 @@ public:
     LogicalResult matchAndRewrite(memref::StoreOp op, typename memref::StoreOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
     {
         llvm::DenseMap<Value, bool> cache;
-        if (!isEncrypted(op.getMemRef(), cache)) {
+        if (!isEncrypted(op.getMemRef(), cache) && !isEncrypted(op.getValueToStore(), cache)) {
             return success();
         }
 
