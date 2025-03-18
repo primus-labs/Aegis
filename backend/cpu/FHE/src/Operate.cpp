@@ -5,13 +5,13 @@
 
 namespace aegiscpu {
 
-std::vector<uint8_t> encrypt(std::vector<T>& data) {
+std::vector<uint8_t> encrypt(std::vector<double>& data) {
     CryptoContext<DCRTPoly> cc = CryptoContextMgr::getInstance().getCryptoContext();
 
     //ProtoMessage<aegisprotocol::KeyInfo> keyInfo = ProgramSpec::getInstance().getKeyInfo();
     Plaintext ptValue = cc->MakeCKKSPackedPlaintext(data);
 
-    PublicKey<DCRTPoly> pk = FheKeyset::getInstance.getPubKey()->getKey();
+    PublicKey<DCRTPoly> pk = FheKeyset::getInstance().getPubKey()->getKey();
     Ciphertext<DCRTPoly> ctValue = cc->Encrypt(pk, ptValue);
     std::stringstream ss;
     Serial::Serialize(ctValue, ss, SerType::BINARY);
@@ -38,7 +38,7 @@ std::vector<double> decrypt(std::vector<uint8_t>& data) {
     Plaintext ptValue;
     cc->Decrypt(priKey, deserCiphertext, &ptValue);
     ptValue->SetLength(data.size()/sizeof(double));
-    return ptValue->GetCKKSPackedValue()
+    return ptValue->GetRealPackedValue();
 }
 
 } //namespace aegiscpu

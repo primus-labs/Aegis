@@ -2,6 +2,7 @@
 #define CPU_FHE_CRYPTOCONTEXTMGR_H
 
 #include "openfhe.h"
+using namespace lbcrypto;
 
 namespace aegiscpu {
 

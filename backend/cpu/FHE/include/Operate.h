@@ -1,6 +1,8 @@
 #ifndef CPU_FHE_OPERATE_H
 #define CPU_FHE_OPERATE_H
 
+#include <inttypes.h>
+#include <vector>
 
 namespace aegiscpu {
 
