@@ -61,8 +61,11 @@ public:
 
         // Build a series of calls to our custom function.
         std::string opName;
-        if (std::is_same<OpType, LWENegOp>()) {
+        if (std::is_same<OpType, fhe::LWENegOp>()) {
             opName = "Neg";
+        }
+        else if (std::is_same<OpType, fhe::CastOp>()) {
+            opName = "Cast";
         }
         else {
             LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
@@ -259,6 +262,32 @@ public:
 };
 
 
+// Transform arith::ConstantOp to emitc::ConstantOp
+class FheConstantPattern final : public OpConversionPattern<arith::ConstantOp>
+{
+protected:
+    using OpConversionPattern<arith::ConstantOp>::typeConverter;
+
+public:
+    using OpConversionPattern<arith::ConstantOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(arith::ConstantOp op, typename arith::ConstantOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destTy = typeConverter->convertType(op.getType());
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+        
+        rewriter.replaceOpWithNewOp<emitc::ConstantOp>(op, TypeRange(destTy), op.getValue());
+        
+        return success();
+    }
+};
+
+
 void LowerFheToEmitcPass::getDependentDialects(mlir::DialectRegistry &registry) const
 {
     registry.insert<func::FuncDialect>();
@@ -448,10 +477,11 @@ void LowerFheToEmitcPass::runOnOperation()
 
 
     mlir::RewritePatternSet fhePats(&getContext());
-    fhePats.add<FheArithUnaryPattern<LWENegOp>,
-            FheArithBinaryPattern<LWEAddOp>, FheArithBinaryPattern<LWEAddPlainOp>, 
-            FheArithBinaryPattern<LWESubOp>, FheArithBinaryPattern<LWESubPlainOp>,
-            FheArithBinaryPattern<LWEMulOp>, FheArithBinaryPattern<LWEMulPlainOp>, FheArithBinaryPattern<RLWEMulOp>,
+    fhePats.add<FheConstantPattern,
+            FheArithUnaryPattern<fhe::LWENegOp>,  FheArithUnaryPattern<fhe::CastOp>,
+            FheArithBinaryPattern<fhe::LWEAddOp>, FheArithBinaryPattern<fhe::LWEAddPlainOp>, 
+            FheArithBinaryPattern<fhe::LWESubOp>, FheArithBinaryPattern<fhe::LWESubPlainOp>,
+            FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, FheArithBinaryPattern<fhe::RLWEMulOp>,
             FheFuncPattern, FheRetPattern, FheCallPattern>(type_converter, fhePats.getContext());
 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(fhePats)))) {
