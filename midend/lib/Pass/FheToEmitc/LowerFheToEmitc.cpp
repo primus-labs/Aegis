@@ -7,9 +7,11 @@
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Transforms/DialectConversion.h"
+#include "mlir/Conversion/MemRefToEmitC/MemRefToEmitC.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/Transforms/DialectConversion.h"
 #include "Dialect/FHE/FHEDialect.h"
 #include "Dialect/FHE/FHEOps.h"
 #include "Dialect/FHE/FHETypes.h"
@@ -288,6 +290,218 @@ public:
 };
 
 
+// Transform memref::LoadOp to emitc::LoadOp.
+// mark: current mlir version not support emitc::LoadOp.
+// class MemrefLoadPattern final : public OpConversionPattern<memref::LoadOp>
+// {
+// public:
+//     using OpConversionPattern<memref::LoadOp>::OpConversionPattern;
+
+//     LogicalResult matchAndRewrite(memref::LoadOp op, typename memref::LoadOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+//     {
+//         auto resultTy = getTypeConverter()->convertType(op.getType());
+//         if (!resultTy) {
+//             return rewriter.notifyMatchFailure(op.getLoc(), "cannot convert type");
+//         }
+
+//         auto arrayValue = mlir::dyn_cast<TypedValue<emitc::ArrayType>>(adaptor.getMemref());
+//         if (!arrayValue) {
+//             return rewriter.notifyMatchFailure(op.getLoc(), "expected array type");
+//         }
+
+//         auto subscript = rewriter.create<emitc::SubscriptOp>(
+//             op.getLoc(), arrayValue, adaptor.getIndices());
+
+//         rewriter.replaceOpWithNewOp<emitc::LoadOp>(op, resultTy, subscript);
+
+//         return success();
+//     }
+// };
+
+
+// Transform memref::LoadOp to emitc::LoadOp.
+class MemrefLoadPattern final : public OpConversionPattern<memref::LoadOp>
+{
+public:
+    using OpConversionPattern<memref::LoadOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::LoadOp op, typename memref::LoadOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        Value memref = op.getMemref();
+        SmallVector<Value, 4> indices(op.getIndices().begin(), op.getIndices().end());
+        SmallVector<Value, 8> operands;
+        operands.push_back(memref);
+        operands.append(indices.begin(), indices.end());
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, op.getType(), "Native_Load", operands);
+
+        return success();
+    }
+};
+
+
+// Transform fhe::LoadOp to emitc::CallOpaqueOp.
+class FheLoadPattern final : public OpConversionPattern<fhe::LoadOp>
+{
+public:
+    using OpConversionPattern<fhe::LoadOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::LoadOp op, typename fhe::LoadOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destTy = typeConverter->convertType(op.getType());
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+        
+        auto memOperand = op.getMemref();
+        auto operandDestTy = typeConverter->convertType(memOperand.getType());
+        if (!operandDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << memOperand << ", the op type:" << memOperand.getType() << ".\n");
+            return failure();
+        }
+
+        Value newOperand;
+        if (memOperand.getType() != operandDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, memOperand);
+            if (auto castOp = mlir::dyn_cast_or_null<fhe::CastOp>(memOperand.getDefiningOp())) {
+                if (auto castOp2 = mlir::dyn_cast_or_null<fhe::CastOp>(castOp.getOperand().getDefiningOp())) {
+                    newOperand = castOp2.getOperand();
+                }
+            }
+        }
+        else {
+            newOperand = memOperand;
+        }
+
+        // Convert load index to int attr
+        SmallVector<Value, 4> indices(op.getIndices().begin(), op.getIndices().end());
+        SmallVector<Value, 8> ops;
+        ops.push_back(newOperand);
+        for (Value idx : indices) {
+            if (auto constantOp = idx.getDefiningOp<emitc::ConstantOp>()) {
+                ops.push_back(idx);
+            } 
+            else {
+                op.emitError("Non-constant indices are not supported.");
+                return failure();
+            }
+        }
+
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Load", ops);
+        
+        return success();
+    }
+};
+
+
+// Transform fhe::Store to emitc::CallOpaqueOp.
+class FheStorePattern final : public OpConversionPattern<fhe::StoreOp>
+{
+public:
+    using OpConversionPattern<fhe::StoreOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::StoreOp op, typename fhe::StoreOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {        
+        rewriter.setInsertionPoint(op);
+
+        auto destMemrefTy = typeConverter->convertType(op.getMemref().getType());
+        if (!destMemrefTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op.getMemref() << ", the op type:" 
+                                    << op.getMemref().getType() << ".\n");
+            return failure();
+        }
+
+        auto destStoreValTy = typeConverter->convertType(op.getValueToStore().getType());
+        if (!destStoreValTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op.getValueToStore() << ", the op type:" 
+                                    << op.getValueToStore().getType() << ".\n");
+            return failure();
+        }
+
+        llvm::SmallVector<Value, 8> operands;
+        llvm::SmallVector<Value, 4> indices(op.getIndices().begin(), op.getIndices().end());
+        auto newMemref = typeConverter->materializeTargetConversion(rewriter, op.getMemref().getLoc(),
+                                                                destMemrefTy, op.getMemref());
+        auto newValueToStore = typeConverter->materializeTargetConversion(rewriter, op.getValueToStore().getLoc(),
+                                                                destStoreValTy, op.getValueToStore());
+        operands.push_back(newMemref);
+        operands.push_back(newValueToStore);
+        operands.append(indices.begin(), indices.end());
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destMemrefTy, "Store", operands);
+
+        return success();
+    }
+};
+
+
+// Transform fhe::AllocaOp to emitc::CallOpaqueOp.
+class FheAllocaPattern final : public OpConversionPattern<fhe::AllocaOp>
+{
+public:
+    using OpConversionPattern<fhe::AllocaOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::AllocaOp op, typename fhe::AllocaOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destTy = typeConverter->convertType(op.getType());
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op<< ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+
+        //auto noneValue = builder.create<emitc::ConstantOp>(loc, builder.getType<mlir::NoneType>(), mlir::Attribute());
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Alloca", ValueRange());
+        return success();
+    }
+};
+
+
+// Transform fhe::AllocOp to emitc::CallOpaqueOp.
+class FheAllocPattern final : public OpConversionPattern<fhe::AllocOp>
+{
+public:
+    using OpConversionPattern<fhe::AllocOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::AllocOp op, typename fhe::AllocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destTy = typeConverter->convertType(op.getType());
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op<< ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Alloc", ValueRange());
+        return success();
+    }
+};
+
+
+// Transform fhe::DeallocOp to emitc::CallOpaqueOp.
+class FheDeallocPattern final : public OpConversionPattern<fhe::DeallocOp>
+{
+public:
+    using OpConversionPattern<fhe::DeallocOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::DeallocOp op, typename fhe::DeallocOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto destMemrefTy = typeConverter->convertType(op.getMemref().getType());
+        if (!destMemrefTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" 
+                                    << op.getMemref().getType() << ".\n");
+            return failure();
+        }
+
+        auto newMemref = typeConverter->materializeTargetConversion(rewriter, op.getMemref().getLoc(),
+                                                                destMemrefTy, op.getMemref());
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(), "Dealloc", newMemref);
+        return success();
+    }
+};
+
+
+
+
 void LowerFheToEmitcPass::getDependentDialects(mlir::DialectRegistry &registry) const
 {
     registry.insert<func::FuncDialect>();
@@ -447,6 +661,7 @@ void LowerFheToEmitcPass::runOnOperation()
     target.addIllegalDialect<fhe::FHEDialect>();
     target.addIllegalOp<func::CallOp>();
     target.addIllegalOp<arith::ConstantOp>();
+    target.addIllegalOp<memref::LoadOp>();
     target.addLegalOp<fhe::CastOp>();
     target.addLegalDialect<emitc::EmitCDialect>();
     target.addLegalOp<ModuleOp>();
@@ -478,11 +693,13 @@ void LowerFheToEmitcPass::runOnOperation()
 
     mlir::RewritePatternSet fhePats(&getContext());
     fhePats.add<FheConstantPattern,
-            FheArithUnaryPattern<fhe::LWENegOp>,  FheArithUnaryPattern<fhe::CastOp>,
+            FheArithUnaryPattern<fhe::LWENegOp>, 
             FheArithBinaryPattern<fhe::LWEAddOp>, FheArithBinaryPattern<fhe::LWEAddPlainOp>, 
             FheArithBinaryPattern<fhe::LWESubOp>, FheArithBinaryPattern<fhe::LWESubPlainOp>,
             FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, FheArithBinaryPattern<fhe::RLWEMulOp>,
-            FheFuncPattern, FheRetPattern, FheCallPattern>(type_converter, fhePats.getContext());
+            FheFuncPattern, FheRetPattern, FheCallPattern,
+            MemrefLoadPattern, FheLoadPattern, FheStorePattern,
+            FheAllocaPattern, FheAllocPattern, FheDeallocPattern>(type_converter, fhePats.getContext());
 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(fhePats)))) {
         signalPassFailure();
