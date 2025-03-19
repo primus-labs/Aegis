@@ -670,88 +670,86 @@ void LowerFheToEmitcPass::runOnOperation()
     });
 
     type_converter.addSourceMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherType>(t)) {
+        if (mlir::isa<fhe::LWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "LWECipher") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(t)) {
+        else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "std::vector<LWECipher>") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(t)) {
+        else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "std::vector<std::vector<LWECipher>>") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::RLWECipherType>(t)) {
+        else if (mlir::isa<fhe::RLWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "RLWECipher") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::RLWECipherGridType>(t)) {
+        else if (mlir::isa<fhe::RLWECipherGridType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "std::vector<RLWECipher>") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::PlainType>(t)) {
+        else if (mlir::isa<fhe::PlainType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "Plain") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::PlainVectorType>(t)) {
+        else if (mlir::isa<fhe::PlainVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "std::vector<Plain>") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::PlainMatrixType>(t)) {
+        else if (mlir::isa<fhe::PlainMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "std::vector<std::vector<Plain>>") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::IntType>(t)) {
+        else if (mlir::isa<fhe::IntType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
                 if (srcTy.getValue().str() == "int") {
-                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
         }
         // deal with mlir build-in type, the all following types mean clear types.
-        else if (auto destTy = mlir::dyn_cast_or_null<MemRefType>(t)) {
+        else if (mlir::isa<MemRefType>(t)) {
             llvm::errs() << "Unhandle MemRefType, maybe catch a error()![at FheToEmitcPass addSourceMaterialization].\n";
         }
         else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
                  mlir::isa<mlir::IndexType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
-            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
-            }
+            return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
 
         llvm::outs() << "Warning: No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n";
