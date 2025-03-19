@@ -282,8 +282,20 @@ public:
             LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
             return failure();
         }
-        
-        rewriter.replaceOpWithNewOp<emitc::ConstantOp>(op, TypeRange(destTy), op.getValue());
+
+        // Get arith::ConstOp interger value.
+        double dVal;
+        auto valueAttr = op.getValue(); 
+        if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(valueAttr)) {
+            dVal = intAttr.getInt();
+        } else if (auto floatAttr = mlir::dyn_cast<mlir::FloatAttr>(valueAttr)) {
+            dVal = floatAttr.getValueAsDouble();
+        }
+
+        // Combine emitc::OpaqueAttr using the value.
+        emitc::OpaqueAttr emitcAttrVal;
+        emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("Plain(" + std::to_string(dVal) + ")"));
+        rewriter.replaceOpWithNewOp<emitc::ConstantOp>(op, TypeRange(destTy), emitcAttrVal);
         
         return success();
     }
@@ -346,11 +358,6 @@ public:
         Value newOperand;
         if (memOperand.getType() != operandDestTy) {
             newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, memOperand);
-            if (auto castOp = mlir::dyn_cast_or_null<fhe::CastOp>(memOperand.getDefiningOp())) {
-                if (auto castOp2 = mlir::dyn_cast_or_null<fhe::CastOp>(castOp.getOperand().getDefiningOp())) {
-                    newOperand = castOp2.getOperand();
-                }
-            }
         }
         else {
             newOperand = memOperand;
@@ -358,7 +365,7 @@ public:
 
         SmallVector<Value, 4> indices(op.getIndices().begin(), op.getIndices().end());
         SmallVector<Value, 8> operands;
-        operands.push_back(memOperand);
+        operands.push_back(newOperand);
         operands.append(indices.begin(), indices.end());
         auto newOp = rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Native_Load", operands);
 
@@ -444,6 +451,7 @@ public:
                                                                 destMemrefTy, op.getMemref());
         auto newValueToStore = typeConverter->materializeTargetConversion(rewriter, op.getValueToStore().getLoc(),
                                                                 destStoreValTy, op.getValueToStore());
+      
         operands.push_back(newMemref);
         operands.push_back(newValueToStore);
         operands.append(indices.begin(), indices.end());
@@ -580,11 +588,19 @@ void LowerFheToEmitcPass::runOnOperation()
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
+            // deal with build-in type, the all following types mean clear types.
+            else if (mlir::isa<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            }
+            else if (mlir::isa<mlir::FloatType>(srcTy) || mlir::isa<mlir::IntegerType>(srcTy) || mlir::isa<mlir::IndexType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            }
             else {
-                LLVM_DEBUG(llvm::dbgs() << "No handling for the ValueRange type:" << srcTy <<"[at FheToEmitcPass materializeCommon].\n");
+                llvm::outs() << "Warning:No handling for the ValueRange type:" << srcTy <<"[at FheToEmitcPass materializeCommon].\n";
             }
         }
 
+        llvm::outs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n";
         LLVM_DEBUG(llvm::dbgs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n");
         return std::optional<Value>(std::nullopt);
     };
@@ -617,27 +633,29 @@ void LowerFheToEmitcPass::runOnOperation()
         else if (mlir::isa<fhe::IntType>(t)) {
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "int"));
         }
-        // deal with build-in type, the all following types mean clear types.
-        // else if (mlir::isa<MemRefType>(t)) {
-        //     auto newTy = mlir::cast<MemRefType>(t);
-        //     if (newTy.hasStaticShape() && newTy.getShape().size() == 0) {
-        //         return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>")); // rank:0
-        //     }
-        //     else if (newTy.hasStaticShape() && newTy.getShape().size() == 1) {
-        //         return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>"));
-        //     }
-        //     else if (newTy.hasStaticShape() && newTy.getShape().size() == 2) {
-        //         return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<std::vector<Plain>>"));
-        //     }
-        //     else {
-        //         llvm::errs() << "Unknow support rank is:" << newTy.getShape().size() << ".\n";
-        //         return std::optional<Type>(std::nullopt);
-        //     }
-        // }
-        // else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t)) {
-        //     return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
-        // }
+        // deal with mlir build-in type, the all following types mean clear types.
+        else if (mlir::isa<MemRefType>(t)) {
+            auto newTy = mlir::cast<MemRefType>(t);
+            if (newTy.hasStaticShape() && newTy.getShape().size() == 0) {
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>")); // rank:0
+            }
+            else if (newTy.hasStaticShape() && newTy.getShape().size() == 1) {
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>"));
+            }
+            else if (newTy.hasStaticShape() && newTy.getShape().size() == 2) {
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<std::vector<Plain>>"));
+            }
+            else {
+                llvm::errs() << "Unknow support rank is:" << newTy.getShape().size() << ".\n";
+                return std::optional<Type>(std::nullopt);
+            }
+        }
+        else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
+                 mlir::isa<mlir::IndexType>(t)) {
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
+        }
 
+        llvm::outs() << "Warning: No conver type:(" << t << ")[at FheToEmitcPass addConversion].\n";
         LLVM_DEBUG(llvm::dbgs() << "Warning: No conver type:(" << t << ")[at FheToEmitcPass addConversion].\n");
         return std::optional<Type>(t);
     
@@ -670,8 +688,8 @@ void LowerFheToEmitcPass::runOnOperation()
         }
         else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
-            if (auto ot = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (ot.getValue().str() == "std::vector<std::vector<LWECipher>>") {
+            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
+                if (srcTy.getValue().str() == "std::vector<std::vector<LWECipher>>") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
@@ -694,21 +712,49 @@ void LowerFheToEmitcPass::runOnOperation()
         }
         else if (auto destTy = mlir::dyn_cast_or_null<fhe::PlainType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
-            if (auto ot = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (ot.getValue().str() == "Plain") {
+            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
+                if (srcTy.getValue().str() == "Plain") {
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                }
+            }
+        }
+        else if (auto destTy = mlir::dyn_cast_or_null<fhe::PlainVectorType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
+                if (srcTy.getValue().str() == "std::vector<Plain>") {
+                    return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+                }
+            }
+        }
+        else if (auto destTy = mlir::dyn_cast_or_null<fhe::PlainMatrixType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
+                if (srcTy.getValue().str() == "std::vector<std::vector<Plain>>") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
         }
         else if (auto destTy = mlir::dyn_cast_or_null<fhe::IntType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
-            if (auto ot = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (ot.getValue().str() == "int") {
+            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
+                if (srcTy.getValue().str() == "int") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
         }
+        // deal with mlir build-in type, the all following types mean clear types.
+        else if (auto destTy = mlir::dyn_cast_or_null<MemRefType>(t)) {
+            llvm::errs() << "Unhandle MemRefType, maybe catch a error()![at FheToEmitcPass addSourceMaterialization].\n";
+        }
+        else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
+                 mlir::isa<mlir::IndexType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
+            }
+        }
 
+        llvm::outs() << "Warning: No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n";
         LLVM_DEBUG(llvm::dbgs() << "No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n");
         return std::optional<Value>(std::nullopt);
     });
