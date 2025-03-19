@@ -52,6 +52,15 @@ def PlainVector : TypeDef<FHE_Dialect, "PlainVector"> {
   let summary = "plainvector";
 }
 
+def PlainMatrix : TypeDef<FHE_Dialect, "PlainMatrix"> {
+
+  let description = "A type for vector of plain";
+
+  let mnemonic = "plainmatrix";
+
+  let summary = "plainmatrix";
+}
+
 def LWECipher : TypeDef<FHE_Dialect, "LWECipher"> {
 
   let description = "A type for LWE Cipher";
