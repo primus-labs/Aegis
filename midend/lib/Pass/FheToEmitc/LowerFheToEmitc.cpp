@@ -66,9 +66,6 @@ public:
         if (std::is_same<OpType, fhe::LWENegOp>()) {
             opName = "Neg";
         }
-        else if (std::is_same<OpType, fhe::CastOp>()) {
-            opName = "Cast";
-        }
         else {
             LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
             return failure();
@@ -262,6 +259,100 @@ public:
         return success();
     }
 };
+
+
+// Transform memref::GetGlobalOp to emitc::GetGlobalOp
+class MemrefGetGlobalPattern final : public OpConversionPattern<memref::GetGlobalOp>
+{
+protected:
+    using OpConversionPattern<memref::GetGlobalOp>::typeConverter;
+
+public:
+    using OpConversionPattern<memref::GetGlobalOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::GetGlobalOp op, typename memref::GetGlobalOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        // auto resTy = getTypeConverter()->convertType(op.getType());
+        // if (!resTy) {
+        //     return rewriter.notifyMatchFailure(op.getLoc(), "cannot convert result type");
+        // }
+         auto resTy = emitc::ArrayType::get(getContext(), op.getType().getShape(), op.getType().getElementType());
+
+        rewriter.replaceOpWithNewOp<emitc::GetGlobalOp>(op, resTy, adaptor.getNameAttr());
+
+        return success();
+    }
+};
+
+
+// Transform memref::GlobalOp to emitc::GlobalOp
+class MemrefGlobalPattern final : public OpConversionPattern<memref::GlobalOp>
+{
+protected:
+    using OpConversionPattern<memref::GlobalOp>::typeConverter;
+
+public:
+    using OpConversionPattern<memref::GlobalOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::GlobalOp op, typename memref::GlobalOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        if (!op.getType().hasStaticShape()) {
+            return rewriter.notifyMatchFailure(op.getLoc(), "cannot transform global with dynamic shape");
+        }
+
+        if (op.getAlignment().value_or(1) > 1) {
+            return rewriter.notifyMatchFailure(op.getLoc(), "global variable with alignment requirement is currently not supported");
+        }
+
+        // auto resTy = getTypeConverter()->convertType(op.getType());
+        // if (!resTy) {
+        //     return rewriter.notifyMatchFailure(op.getLoc(), "cannot convert global op result type");
+        // }
+        auto resTy = emitc::ArrayType::get(getContext(), op.getType().getShape(), op.getType().getElementType());
+
+        SymbolTable::Visibility visibility = SymbolTable::getSymbolVisibility(op);
+        if (visibility != SymbolTable::Visibility::Public && visibility != SymbolTable::Visibility::Private) {
+            return rewriter.notifyMatchFailure(op.getLoc(), "only public and private visibility is currently supported");
+        }
+
+        // We are explicit in specifing the linkage because the default linkage
+        // for constants is different in C and C++.
+        bool staticSpecifier = visibility == SymbolTable::Visibility::Private;
+        bool externSpecifier = !staticSpecifier;
+
+        Attribute initialValue = adaptor.getInitialValueAttr();
+        if (isa_and_present<UnitAttr>(initialValue))
+            initialValue = {};
+
+        rewriter.replaceOpWithNewOp<emitc::GlobalOp>(op, adaptor.getSymName(), resTy, initialValue, 
+                                        externSpecifier, staticSpecifier, adaptor.getConstant());
+
+        return success();
+    }
+};
+
+
+// Transform fhe::CastOp to emitc::CallOpaqueOp
+// fhe::CastOp cannot be directly converted to emitc::CastOp but instead is converted to emitc::CallOpaqueOp 
+// because its type is incompatible with EmitCType and does not meet the requirements of emitc::CastOp.
+// class FheCastPattern final : public OpConversionPattern<fhe::CastOp>
+// {
+// public:
+//     using OpConversionPattern<fhe::CastOp>::OpConversionPattern;
+
+//     LogicalResult matchAndRewrite(fhe::CastOp op, typename fhe::CastOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+//     {
+//         rewriter.setInsertionPoint(op);
+
+//         auto destTy = op.getType();
+//         auto operand = op.getOperand();
+//         llvm::outs() << op << "\n";
+//         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast", 
+//                                     ArrayAttr(), ArrayAttr(), operand);
+
+//         return success();
+//     }
+// };
 
 
 // Transform arith::ConstantOp to emitc::ConstantOp
@@ -633,11 +724,15 @@ void LowerFheToEmitcPass::runOnOperation()
             else if (mlir::isa<mlir::FloatType>(srcTy) || mlir::isa<mlir::IntegerType>(srcTy) || mlir::isa<mlir::IndexType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
             }
+            // The global op type is emitc.array and needs to be converted to !emitc.opaque.
+            else if (mlir::isa<emitc::ArrayType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            }
             else {
                 llvm::outs() << "Warning:No handling for the ValueRange type:" << srcTy <<"[at FheToEmitcPass materializeCommon].\n";
             }
         }
-
+ 
         llvm::outs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n";
         LLVM_DEBUG(llvm::dbgs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n");
         return std::optional<Value>(std::nullopt);
@@ -782,7 +877,8 @@ void LowerFheToEmitcPass::runOnOperation()
         }
         // deal with mlir build-in type, the all following types mean clear types.
         else if (mlir::isa<MemRefType>(t)) {
-            llvm::errs() << "Unhandle MemRefType, maybe catch a error()![at FheToEmitcPass addSourceMaterialization].\n";
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
         else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
                  mlir::isa<mlir::IndexType>(t)) {
@@ -795,12 +891,12 @@ void LowerFheToEmitcPass::runOnOperation()
         return std::optional<Value>(std::nullopt);
     });
 
-
+    // Convert fhe op to emitc op target
     ConversionTarget target(getContext());
     target.addIllegalDialect<fhe::FHEDialect>();
     target.addIllegalOp<func::CallOp>();
     target.addIllegalOp<arith::ConstantOp>();
-    target.addIllegalOp<memref::LoadOp>();
+    target.addIllegalOp<memref::LoadOp, memref::GetGlobalOp, memref::GlobalOp>();
     target.addLegalOp<fhe::CastOp>();
     target.addLegalDialect<emitc::EmitCDialect>();
     target.addLegalOp<ModuleOp>();
@@ -829,19 +925,29 @@ void LowerFheToEmitcPass::runOnOperation()
         return type_converter.isLegal(op->getOperandTypes()); 
     });
 
-
     mlir::RewritePatternSet fhePats(&getContext());
     fhePats.add<FheConstantPattern,
-            FheArithUnaryPattern<fhe::LWENegOp>, 
+            FheArithUnaryPattern<fhe::LWENegOp>,
             FheArithBinaryPattern<fhe::LWEAddOp>, FheArithBinaryPattern<fhe::LWEAddPlainOp>, 
             FheArithBinaryPattern<fhe::LWESubOp>, FheArithBinaryPattern<fhe::LWESubPlainOp>,
             FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, FheArithBinaryPattern<fhe::RLWEMulOp>,
             FheFuncPattern, FheRetPattern, FheCallPattern,
+            MemrefGetGlobalPattern, MemrefGlobalPattern,
             NativeMemrefLoadPattern, FheLoadPattern, FheStorePattern, FheCopyPattern,
             FheAllocaPattern, FheAllocPattern, FheDeallocPattern>(type_converter, fhePats.getContext());
 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(fhePats)))) {
-        getOperation()->emitError("FheToEmitc Partial conversion failed.");
         signalPassFailure();
     }
+
+    // Convert fhe::CastOp target
+    // ConversionTarget castTarget(getContext());
+    // target.addIllegalDialect<fhe::FHEDialect>();
+    // target.addLegalOp<ModuleOp>();
+
+    // mlir::RewritePatternSet castPats(&getContext());
+    // castPats.add<FheCastPattern>(type_converter, castPats.getContext());
+    // if (mlir::failed(mlir::applyPartialConversion(getOperation(), castTarget, std::move(castPats)))) {
+    //     signalPassFailure();
+    // }
 }
