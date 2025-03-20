@@ -652,122 +652,95 @@ void LowerSecretToFhePass::runOnOperation() {
         }
     });
 
-    type_converter.addTargetMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherType>(t)) {
+    // Type conversion, convert fhe types to emitc C++ types
+    auto materializeCommon = [this](OpBuilder &builder, Type t, ValueRange vs, Location loc) -> std::optional<Value> {
+        if (mlir::isa<fhe::LWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
-                mlir::dyn_cast_or_null<IntegerType>(srcTy) ||
-                mlir::dyn_cast_or_null<secret::SecretType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<FloatType>(srcTy) ||
+                mlir::isa<IntegerType>(srcTy) ||
+                mlir::isa<secret::SecretType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
             llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(t)) {
+        else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy) ||
-                mlir::dyn_cast_or_null<secret::SecretVectorType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<MemRefType>(srcTy) ||
+                mlir::isa<secret::SecretVectorType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
             llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(t)) {
+        else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy) ||
-                mlir::dyn_cast_or_null<secret::SecretMatrixType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<MemRefType>(srcTy) ||
+                mlir::isa<secret::SecretMatrixType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
             llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addTargetMaterialization failure, return null type.(at SecretToFhePass)\n");
+        LLVM_DEBUG(llvm::dbgs() << "call materializeCommon(Target or Argument) failure, return null type.(at SecretToFhePass)\n");
         return std::optional<Value>(std::nullopt);
+    };
+
+    type_converter.addTargetMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
+        return materializeCommon(builder, t, vs, loc);
     });
 
     type_converter.addArgumentMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherType>(t)) {
-            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
-            auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
-                mlir::dyn_cast_or_null<IntegerType>(srcTy) ||
-                mlir::dyn_cast_or_null<secret::SecretType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
-            }
-            llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(t)) {
-            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
-            auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy) ||
-                mlir::dyn_cast_or_null<secret::SecretVectorType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
-            }
-            llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(t)) {
-            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
-            auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy) ||
-                mlir::dyn_cast_or_null<secret::SecretMatrixType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
-            }
-            llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
-        }
-
-        LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure, return null type.(at SecretToFhePass)\n");
-        return std::optional<Value>(std::nullopt);
+        return materializeCommon(builder, t, vs, loc);
     });
 
     type_converter.addSourceMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<FloatType>(t)) {
+        if (mlir::isa<FloatType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<fhe::LWECipherType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<IntegerType>(t)) {
+        else if (mlir::isa<IntegerType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<fhe::LWECipherType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<MemRefType>(t)) {
+        else if (mlir::isa<MemRefType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
-            }
-            else if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<fhe::LWECipherVectorType>(srcTy) || 
+                mlir::isa<fhe::LWECipherMatrixType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<secret::SecretType>(t)) {
+        else if (mlir::isa<secret::SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<fhe::LWECipherType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<secret::SecretVectorType>(t)) {
+        else if (mlir::isa<secret::SecretVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<fhe::LWECipherVectorType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
-        else if (auto destTy = mlir::dyn_cast_or_null<secret::SecretMatrixType>(t)) {
+        else if (mlir::isa<secret::SecretMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(srcTy)) {
-                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            if (mlir::isa<fhe::LWECipherMatrixType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
 
-        llvm::outs() << "Don't handle source type:(" << t << ").\n";
+        llvm::outs() << "Don't handle source type:(" << t << ")[at SecretToFhePass SourceMaterialization].\n";
         LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure, return null type.(at SecretToFhePass)\n");
         return std::optional<Value>(std::nullopt);
     });
