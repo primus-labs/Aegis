@@ -431,6 +431,42 @@ public:
 };
 
 
+// Transform secret::CopyOp to fhe::CopyOp, convert secret type to LWECipher type.
+class SecretCopyPattern final : public OpConversionPattern<secret::CopyOp> {
+public:
+    using OpConversionPattern<secret::CopyOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(secret::CopyOp op, typename secret::CopyOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto srcTy = op.getSource().getType();
+        if (!(mlir::isa<secret::SecretType>(srcTy) ||
+              mlir::isa<secret::SecretVectorType>(srcTy) ||
+              mlir::isa<secret::SecretMatrixType>(srcTy))) {
+            return success();
+        }
+
+        auto newSrcTy = this->getTypeConverter()->convertType(srcTy);
+        if (!newSrcTy) {
+            LLVM_DEBUG(llvm::dbgs() << "convert secret::copyop source type " << srcTy << " failure.\n");
+            return failure();
+        }
+
+        auto newDestTy = this->getTypeConverter()->convertType(op.getTarget().getType());
+        if (!newDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "convert secret::copyop target type " << op.getTarget().getType() << " failure.\n");
+            return failure();
+        }
+
+        auto newSrcVal  = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), newSrcTy, op.getSource());
+        auto newDestVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), newDestTy, op.getTarget());
+        rewriter.replaceOpWithNewOp<fhe::CopyOp>(op, newSrcVal, newDestVal);
+        
+        LLVM_DEBUG(llvm::dbgs() << "run SecretCopyPattern success.\n");
+        return success();
+    }
+};
+
+
 // Transform secret::AllocaOp to fhe::AllocaOp.
 class SecretAllocaPattern final : public OpConversionPattern<secret::AllocaOp>
 {
@@ -746,7 +782,7 @@ void LowerSecretToFhePass::runOnOperation() {
     target.addIllegalOp<secret::MulOp, secret::MulPlainOp>();
     target.addIllegalOp<secret::AddOp, secret::AddPlainOp>();
     target.addIllegalOp<secret::SubOp, secret::SubPlainOp, secret::NegOp>();
-    target.addIllegalOp<secret::LoadOp, secret::StoreOp>();
+    target.addIllegalOp<secret::LoadOp, secret::StoreOp, secret::CopyOp>();
     target.addIllegalOp<secret::CmpOp, secret::SelectOp>();
     target.addIllegalOp<secret::AllocaOp, secret::AllocOp, secret::DeallocOp>();
     target.addIllegalOp<secret::RevealOp>();
@@ -778,7 +814,7 @@ void LowerSecretToFhePass::runOnOperation() {
                      ArithNegPattern,
                      SecretCmpPattern, SecretSelectPattern,
                      SecretFuncPattern, SecretRetPattern,
-                     SecretLoadPattern, SecretStorePattern,
+                     SecretLoadPattern, SecretStorePattern, SecretCopyPattern,
                      SecretAllocaPattern, SecretAllocPattern, SecretDeallocPattern,
                      SecretRevealPattern>
                      (type_converter, secretPatSet.getContext());
