@@ -255,6 +255,64 @@ public:
 };
 
 
+// Transform memref::CopyOp to secret::CopyOp, convert memref type to secret type.
+class MemrefCopyPattern final : public OpConversionPattern<memref::CopyOp> {
+public:
+    using OpConversionPattern<memref::CopyOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(memref::CopyOp op, typename memref::CopyOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        llvm::DenseMap<Value, bool> cache;
+        if (!isEncrypted(op.getSource(), cache) && !isEncrypted(op.getTarget(), cache)) {
+            return success();
+        }
+
+        auto fnGetVal = [op, &rewriter, this](Value SrcOrDestVal) -> std::optional<Value> {
+            Type elementTy = SrcOrDestVal.getType();
+            if (mlir::isa<MemRefType>(elementTy)) {
+                elementTy = mlir::cast<MemRefType>(elementTy).getElementType();
+            }
+            else {
+                LLVM_DEBUG(llvm::dbgs() << "get memref::copyop op " << op << " type failure.\n");
+                return std::optional<Value>(std::nullopt);
+            }
+
+            auto memrefTy = mlir::dyn_cast<MemRefType>(SrcOrDestVal.getType());
+            if (!memrefTy || !memrefTy.hasStaticShape()) {
+                LLVM_DEBUG(llvm::dbgs() << "memrefTy:" << memrefTy << ", has static shape:" << memrefTy.hasStaticShape());
+                return std::optional<Value>(std::nullopt);
+            }
+
+            Value newSrcOrDestVal;
+            if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 1) {
+                int sizes = memrefTy.getShape().front();
+                newSrcOrDestVal = typeConverter->materializeTargetConversion(rewriter, SrcOrDestVal.getLoc(),
+                                            SecretVectorType::get(getContext(), elementTy, sizes), SrcOrDestVal);
+            }
+            else if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 2) {
+                int row = memrefTy.getShape().front();
+                int col = memrefTy.getShape().back();
+                newSrcOrDestVal = typeConverter->materializeTargetConversion(rewriter, SrcOrDestVal.getLoc(),
+                                            SecretMatrixType::get(getContext(), elementTy, row, col), SrcOrDestVal);
+            }
+            else {
+                llvm::outs() << "Unsupport rank:" << memrefTy.getShape().size() << ".\n";
+                return std::optional<Value>(std::nullopt);
+            }
+
+            return std::optional<Value>(newSrcOrDestVal);
+        };
+
+        auto newSrcVal = fnGetVal(op.getSource());
+        auto newDestVal = fnGetVal(op.getTarget());
+        rewriter.replaceOpWithNewOp<secret::CopyOp>(op, newSrcVal.value(), newDestVal.value());
+        
+        LLVM_DEBUG(llvm::dbgs() << "run MemrefCopyPattern success.\n");
+        return success();
+    }
+};
+
+
 // Transform memref::AllocaOp to secret::AllocaOp
 class MemrefAllocaPattern final : public OpConversionPattern<memref::AllocaOp>
 {
@@ -438,11 +496,12 @@ void LowerMemrefToSecretPass::runOnOperation() {
     target.addIllegalOp<memref::LoadOp>();
     target.addIllegalOp<memref::StoreOp>();
     target.addIllegalOp<memref::AllocOp>();
+    target.addIllegalOp<memref::CopyOp>();
     target.addIllegalOp<affine::AffineLoadOp>();
     target.addIllegalOp<affine::AffineStoreOp>();
     
     mlir::RewritePatternSet patterns(&getContext());
-    patterns.add<MemrefLoadPattern, MemrefStorePattern, AffineLoadPattern, AffineStorePattern,
+    patterns.add<MemrefLoadPattern, MemrefStorePattern, AffineLoadPattern, AffineStorePattern, MemrefCopyPattern,
                 MemrefAllocaPattern, MemrefAllocPattern, MemrefDeallocPattern>(type_converter, patterns.getContext()); 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(patterns)))) {
         signalPassFailure();

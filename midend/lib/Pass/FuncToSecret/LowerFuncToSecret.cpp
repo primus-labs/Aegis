@@ -307,6 +307,7 @@ void LowerFuncToSecretPass::runOnOperation() {
     target.addLegalOp<memref::LoadOp>();
     target.addLegalOp<memref::StoreOp>();
     target.addLegalOp<memref::AllocOp>();
+    target.addLegalOp<memref::CopyOp>();
     target.addIllegalOp<func::CallOp>();
     target.addDynamicallyLegalOp<func::FuncOp>([&](Operation *op) {
         auto fop = llvm::dyn_cast<func::FuncOp>(op);
