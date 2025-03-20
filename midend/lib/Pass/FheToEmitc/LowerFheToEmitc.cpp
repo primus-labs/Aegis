@@ -462,6 +462,44 @@ public:
 };
 
 
+// Transform fhe::CopyOp to emitc::CallOpaqueOp.
+class FheCopyPattern final : public OpConversionPattern<fhe::CopyOp>
+{
+public:
+    using OpConversionPattern<fhe::CopyOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::CopyOp op, typename fhe::CopyOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto newSrcTy = typeConverter->convertType(op.getSource().getType());
+        if (!newSrcTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op.getSource() << ", the op type:" 
+                                    << op.getSource().getType() << ".\n");
+            return failure();
+        }
+
+        auto newDestTy = typeConverter->convertType(op.getTarget().getType());
+        if (!newDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op.getTarget() << ", the op type:" 
+                                    << op.getTarget().getType() << ".\n");
+            return failure();
+        }
+
+        auto newSrcVal = typeConverter->materializeTargetConversion(rewriter, op.getSource().getLoc(),
+                                                                newSrcTy, op.getSource());
+        auto newDestVal = typeConverter->materializeTargetConversion(rewriter, op.getTarget().getLoc(),
+                                                                newDestTy, op.getTarget());
+        llvm::SmallVector<Value, 8> operands;
+        operands.push_back(newSrcVal);
+        operands.push_back(newDestVal);
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange{}, "Copy", operands);
+
+        return success();
+    }
+};
+
+
 // Transform fhe::AllocaOp to emitc::CallOpaqueOp.
 class FheAllocaPattern final : public OpConversionPattern<fhe::AllocaOp>
 {
@@ -799,7 +837,7 @@ void LowerFheToEmitcPass::runOnOperation()
             FheArithBinaryPattern<fhe::LWESubOp>, FheArithBinaryPattern<fhe::LWESubPlainOp>,
             FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, FheArithBinaryPattern<fhe::RLWEMulOp>,
             FheFuncPattern, FheRetPattern, FheCallPattern,
-            NativeMemrefLoadPattern, FheLoadPattern, FheStorePattern,
+            NativeMemrefLoadPattern, FheLoadPattern, FheStorePattern, FheCopyPattern,
             FheAllocaPattern, FheAllocPattern, FheDeallocPattern>(type_converter, fhePats.getContext());
 
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(fhePats)))) {
