@@ -68,7 +68,7 @@ classDiagram
   class FHEKeyset {
     +generate(spec.json: string) FHEKeyset$
     +loads(string) FHEKeyset$
-    +dumps(only_public: boolean = false) string
+    +dumps(contain_sk: boolean = true) string
     +getPrivateKey() FHEPrivateKey
     +getPublicKey() FHEPublicKey
   }
