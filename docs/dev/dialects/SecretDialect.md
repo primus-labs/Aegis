@@ -232,6 +232,38 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | A secret value or Batched Secret or Batched Secret
 
+### `secret.call` (aegis::secret::CallOp)
+
+_Call operation_
+
+The `secret.call` operation represents a direct call to a function that is
+within the same symbol scope as the call. The operands and result types of
+the call must match the specified function type. The callee is encoded as a
+symbol reference attribute named "callee".
+the call op to replace func::CallOp, since type conflict between function call 
+and function definition is occured in aegis other pass.
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>callee</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
+<tr><td><code>arg_attrs</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
+<tr><td><code>res_attrs</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
+</table>
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `operands` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+&laquo;unnamed&raquo; | variadic of any type
+
 ### `secret.cast` (aegis::secret::CastOp)
 
 _No-op operation used to preserve consistency of type system during type conversion_

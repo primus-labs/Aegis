@@ -369,22 +369,26 @@ def FHE_LUTOp: FHE_Op<"lut", []> {
   let results = (outs AnyType:$result);
 } 
 
-def FHE_FuncCallOp: FHE_Op<"call", []> {
-  let summary = "Function call to replace Func::CallOp";
+def FHE_CallOp: FHE_Op<"call", []> {
+  let summary = "call operation";
 
   let description = [{
-    To replace Func::CallOp, since type conflict between function call 
-    and function definition is occured in FuncToHEIR pass.
+    The `fhe.call` operation represents a direct call to a function that is
+    within the same symbol scope as the call. The operands and result types of
+    the call must match the specified function type. The callee is encoded as a
+    symbol reference attribute named "callee".
+    the call op to replace secret::CallOp, since type conflict between function call 
+    and function definition is occured in aegis other pass.
   }];
   
   let arguments = (ins
-    Arg<StrAttr, "the homomorphic function to call">:$callee,
-    Arg<OptionalAttr<ArrayAttr>, "the order of operands and further attributes">:$args,
-    Arg<OptionalAttr<ArrayAttr>, "template arguments">:$template_args,
+    Arg<StrAttr, "the fhe function to call">:$callee,
+    Arg<OptionalAttr<ArrayAttr>, "the arguments attributes">:$arg_attrs,
+    Arg<OptionalAttr<ArrayAttr>, "the results attributes">:$res_attrs,
     Variadic<AnyType>:$operands
   );
 
-  let results = (outs AnyType);
+  let results = (outs Variadic<AnyType>);
 }
 
 def fhe_RevealOp : FHE_Op<"reveal", []> {

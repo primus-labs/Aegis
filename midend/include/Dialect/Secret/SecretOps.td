@@ -983,5 +983,27 @@ def Secret_CopyOp : Secret_Op<"copy", []> {
     }];
 }
 
+def Secret_CallOp: Secret_Op<"call", []> {
+  let summary = "call operation";
+
+  let description = [{
+    The `secret.call` operation represents a direct call to a function that is
+    within the same symbol scope as the call. The operands and result types of
+    the call must match the specified function type. The callee is encoded as a
+    symbol reference attribute named "callee".
+    the call op to replace func::CallOp, since type conflict between function call 
+    and function definition is occured in aegis other pass.
+  }];
+  
+  let arguments = (ins
+    Arg<StrAttr, "the secret function to call">:$callee,
+    Arg<OptionalAttr<ArrayAttr>, "the arguments attributes">:$arg_attrs,
+    Arg<OptionalAttr<ArrayAttr>, "the results attributes">:$res_attrs,
+    Variadic<AnyType>:$operands
+  );
+
+  let results = (outs Variadic<AnyType>);
+}
+
 
 #endif  // DIALECT_SECRET_SECRETOPS_TD_

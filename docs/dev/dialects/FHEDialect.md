@@ -54,6 +54,45 @@ Example:
 | :----: | ----------- |
 | `output` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or rlweciphermat
 
+### `fhe.call` (aegis::fhe::CallOp)
+
+_Call operation_
+
+
+Syntax:
+
+```
+operation ::= `fhe.call` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The `fhe.call` operation represents a direct call to a function that is
+within the same symbol scope as the call. The operands and result types of
+the call must match the specified function type. The callee is encoded as a
+symbol reference attribute named "callee".
+the call op to replace secret::CallOp, since type conflict between function call 
+and function definition is occured in aegis other pass.
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>callee</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
+<tr><td><code>arg_attrs</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
+<tr><td><code>res_attrs</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
+</table>
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `operands` | variadic of any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+&laquo;unnamed&raquo; | variadic of any type
+
 ### `fhe.cast` (aegis::fhe::CastOp)
 
 _No-op operation used to preserve consistency of type system during type conversion_
@@ -203,41 +242,6 @@ LWE Encryption fuction
 | Result | Description |
 | :----: | ----------- |
 | `cipher` | any type
-
-### `fhe.call` (aegis::fhe::FuncCallOp)
-
-_Function call to replace Func::CallOp_
-
-
-Syntax:
-
-```
-operation ::= `fhe.call` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
-```
-
-To replace Func::CallOp, since type conflict between function call 
-and function definition is occured in FuncToHEIR pass.
-
-#### Attributes:
-
-<table>
-<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
-<tr><td><code>callee</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
-<tr><td><code>args</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
-<tr><td><code>template_args</code></td><td>::mlir::ArrayAttr</td><td>array attribute</td></tr>
-</table>
-
-#### Operands:
-
-| Operand | Description |
-| :-----: | ----------- |
-| `operands` | variadic of any type
-
-#### Results:
-
-| Result | Description |
-| :----: | ----------- |
-&laquo;unnamed&raquo; | any type
 
 ### `fhe.lut_half` (aegis::fhe::LUTForAddOp)
 
@@ -1059,6 +1063,13 @@ plain
 Syntax: `!fhe.plain`
 
 A type for encoded Plaintext
+### PlainMatrixType
+
+plainmatrix
+
+Syntax: `!fhe.plainmatrix`
+
+A type for vector of plain
 ### PlainVectorType
 
 plainvector
