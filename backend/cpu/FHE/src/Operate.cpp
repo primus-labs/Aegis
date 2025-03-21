@@ -1,44 +1,46 @@
 #include "Operate.h"
 #include "CryptoContextMgr.h"
 #include "FheKeyset.h"
-//#include "Common/ProgramSpec.h"
 
 namespace aegiscpu {
 
-std::vector<uint8_t> encrypt(std::vector<double>& data) {
-    CryptoContext<DCRTPoly> cc = CryptoContextMgr::getInstance().getCryptoContext();
+std::vector<uint8_t> encrypt(std::vector<double> &data) {
+  CryptoContext<DCRTPoly> cc =
+      CryptoContextMgr::getInstance().getCryptoContext();
 
-    //ProtoMessage<aegisprotocol::KeyInfo> keyInfo = ProgramSpec::getInstance().getKeyInfo();
-    Plaintext ptValue = cc->MakeCKKSPackedPlaintext(data);
+  Plaintext ptValue = cc->MakeCKKSPackedPlaintext(data);
 
-    PublicKey<DCRTPoly> pk = FheKeyset::getInstance().getPubKey()->getKey();
-    Ciphertext<DCRTPoly> ctValue = cc->Encrypt(pk, ptValue);
-    std::stringstream ss;
-    Serial::Serialize(ctValue, ss, SerType::BINARY);
-    std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(ss)),
-                                       std::istreambuf_iterator<char>());
-    
-    return buffer;
+  PublicKey<DCRTPoly> pk = FheKeyset::getInstance().getPubKey()->getKey();
+  Ciphertext<DCRTPoly> ctValue = cc->Encrypt(pk, ptValue);
+
+  std::stringstream ss;
+  Serial::Serialize(ctValue, ss, SerType::BINARY);
+  std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(ss)),
+                              std::istreambuf_iterator<char>());
+
+  return buffer;
 }
 
+std::vector<double> decrypt(std::vector<uint8_t> &data) {
+  CryptoContext<DCRTPoly> cc =
+      CryptoContextMgr::getInstance().getCryptoContext();
 
-std::vector<double> decrypt(std::vector<uint8_t>& data) {
-    CryptoContext<DCRTPoly> cc = CryptoContextMgr::getInstance().getCryptoContext();
+  // Deserialize output byte array into a ciphertext object.
+  std::stringstream ss;
+  ss.write(reinterpret_cast<char *>(data.data()), data.size());
+  Ciphertext<DCRTPoly> deserCiphertext;
+  Serial::Deserialize(deserCiphertext, ss, SerType::BINARY);
 
-    //Deserialize output byte array into a ciphertext object.
-    std::stringstream ss;
-    ss.write(reinterpret_cast<char*>(data.data()), data.size());
-    Ciphertext<DCRTPoly> deserCiphertext;
-    Serial::Deserialize(deserCiphertext, ss, SerType::BINARY);
+  // get private key
+  PrivateKey<DCRTPoly> priKey = FheKeyset::getInstance().getPriKey()->getKey();
 
-    //get private key
-    PrivateKey<DCRTPoly> priKey = FheKeyset::getInstance().getPriKey()->getKey();
+  // decrypt
+  Plaintext ptValue;
+  cc->Decrypt(priKey, deserCiphertext, &ptValue);
+  // TODO: Need know plaintext size.
+  // ptValue->SetLength(data.size() / sizeof(double)); // invalid size
 
-    //decrypt
-    Plaintext ptValue;
-    cc->Decrypt(priKey, deserCiphertext, &ptValue);
-    ptValue->SetLength(data.size()/sizeof(double));
-    return ptValue->GetRealPackedValue();
+  return ptValue->GetRealPackedValue();
 }
 
-} //namespace aegiscpu
+} // namespace aegiscpu

@@ -4,6 +4,7 @@ add_library (
     aegis_cpu
     KeysetGenerator.cpp
     Operate.cpp
+    FheKeyset.cpp
 )
 
 add_dependencies(aegis_cpu aegis-protocol)
