@@ -30,6 +30,7 @@
 #include "Pass/MemrefToSecret/LowerMemrefToSecret.h"
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
 #include "Pass/FheToEmitc/LowerFheToEmitc.h"
+#include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
 
 
 using namespace mlir;
@@ -76,6 +77,7 @@ void fhePipeline(OpPassManager &manager)
     manager.addPass(std::make_unique<LowerFheToEmitcPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<LowerCastToEmitcStubPass>());
 }
 
 void mpcPipeline(OpPassManager &manager)
@@ -138,6 +140,7 @@ int main(int argc, char **argv)
     PassRegistration<CollectMetadataPass>();
     PassRegistration<LowerSecretToFhePass>();
     PassRegistration<LowerFheToEmitcPass>();
+    PassRegistration<LowerCastToEmitcStubPass>();
 
     PassPipelineRegistration<>("fhe-pass", "Converts MLIR operations to FHE operations", fhePipeline);
 

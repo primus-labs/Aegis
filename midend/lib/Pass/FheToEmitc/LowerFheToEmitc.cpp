@@ -332,29 +332,6 @@ public:
 };
 
 
-// Transform fhe::CastOp to emitc::CallOpaqueOp
-// fhe::CastOp cannot be directly converted to emitc::CastOp but instead is converted to emitc::CallOpaqueOp 
-// because its type is incompatible with EmitCType and does not meet the requirements of emitc::CastOp.
-// class FheCastPattern final : public OpConversionPattern<fhe::CastOp>
-// {
-// public:
-//     using OpConversionPattern<fhe::CastOp>::OpConversionPattern;
-
-//     LogicalResult matchAndRewrite(fhe::CastOp op, typename fhe::CastOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
-//     {
-//         rewriter.setInsertionPoint(op);
-
-//         auto destTy = op.getType();
-//         auto operand = op.getOperand();
-//         llvm::outs() << op << "\n";
-//         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast", 
-//                                     ArrayAttr(), ArrayAttr(), operand);
-
-//         return success();
-//     }
-// };
-
-
 // Transform arith::ConstantOp to emitc::ConstantOp
 class FheConstantPattern final : public OpConversionPattern<arith::ConstantOp>
 {
@@ -939,15 +916,4 @@ void LowerFheToEmitcPass::runOnOperation()
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(fhePats)))) {
         signalPassFailure();
     }
-
-    // Convert fhe::CastOp target
-    // ConversionTarget castTarget(getContext());
-    // target.addIllegalDialect<fhe::FHEDialect>();
-    // target.addLegalOp<ModuleOp>();
-
-    // mlir::RewritePatternSet castPats(&getContext());
-    // castPats.add<FheCastPattern>(type_converter, castPats.getContext());
-    // if (mlir::failed(mlir::applyPartialConversion(getOperation(), castTarget, std::move(castPats)))) {
-    //     signalPassFailure();
-    // }
 }
