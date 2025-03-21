@@ -1,0 +1,51 @@
+// RUN: aegiscompiler --collect-metadata --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --fhe-to-emitc --canonicalize --cse < %s | FileCheck %s
+
+
+module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128", llvm.target_triple = "x86_64-unknown-linux-gnu", "onnx-mlir.symbol-postfix" = "muladd_model"} {
+  memref.global @constant_0 : memref<f32> = dense<2.000000e+00>
+
+  func.func @main_graph(%arg0: memref<8xf32> {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                        %arg1: memref<1xf32> {onnx.name = "input_y", onnx.type = "encrypted"}) 
+                        -> memref<8xf32> attributes {llvm.emit_c_interface} {
+    %c0 = arith.constant 0 : index
+    %c0_0 = arith.constant 0 : index
+    %0 = memref.get_global @constant_0 : memref<f32>
+    %1 = memref.load %arg1[%c0_0] : memref<1xf32>
+    %2 = memref.load %0[] : memref<f32>
+    %3 = arith.mulf %1, %2 : f32
+    %alloc = memref.alloc() {alignment = 16 : i64} : memref<8xf32>
+    %4 = memref.load %arg0[%c0] : memref<8xf32>
+    %5 = arith.addf %4, %3 : f32
+    memref.store %5, %alloc[%c0] : memref<8xf32>
+    %c1 = arith.constant 1 : index
+    %6 = memref.load %arg0[%c1] : memref<8xf32>
+    %7 = arith.addf %6, %3 : f32
+    memref.store %7, %alloc[%c1] : memref<8xf32>
+    return %alloc : memref<8xf32>
+  }
+}
+
+
+// CHECK-NOT: memref.global
+// CHECK-NOT: memref.get_global
+// CHECK-NOT: memref.load
+// CHECK-NOT: arith.mulf
+// CHECK-NOT: memref.alloc()
+// CHECK-NOT: arith.addf
+// CHECK-NOT: memref.store
+// CHECK-NOT: secret.
+// CHECK-NOT: fhe.[^c]
+// CHECK-NOT: fhe.c[^a]
+// CHECK-NOT: fhe.ca[^s]
+// CHECK-NOT: fhe.cas[^t]
+// CHECK: emitc.global
+// CHECK: emitc.constant
+// CHECK: emitc.get_global
+// CHECK: emitc.call_opaque "Load"
+// CHECK: emitc.call_opaque "Native_Load"
+// CHECK: emitc.call_opaque "MulPlain"
+// CHECK: emitc.call_opaque "Alloc"
+// CHECK: emitc.call_opaque "Add"
+// CHECK: emitc.call_opaque "Store"
+
+
