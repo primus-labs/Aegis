@@ -34,32 +34,30 @@ void InsertEmitcPreamblePass::runOnOperation()
         "using CiphertextT = ConstCiphertext<DCRTPoly>;",
         "using PlaintextT = Plaintext;",
         "using MutableCiphertextT = Ciphertext<DCRTPoly>;",
-        "using CCParamsT = CCParams<CryptoContext{0}RNS>;",
+        "using CCParamsT = CCParams<CryptoContextCKKSRNS>;",
         "using CryptoContextT = CryptoContext<DCRTPoly>;",
         "using EvalKeyT = EvalKey<DCRTPoly>;",
         "using PrivateKeyT = PrivateKey<DCRTPoly>;",
         "using PublicKeyT = PublicKey<DCRTPoly>;",
     };
 
-    // Traverse all ModelOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
-    module.walk([&](Operation *op) {
-        // if (op->getName().getStringRef() != "buildin.model") {
-        //     return;
-        // }
-
-        Block *block = op->getBlock();
-        builder.setInsertionPoint(op);
+    // Traverse all ModuleOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
+    // Terminate traversal after finding the first one.
+    module.walk([&](mlir::ModuleOp op) {
+        // Ensure the insertion point is in the top-level block of the module.
+        auto moduleBlock = op.getBody()->front().getBlock();
+        builder.setInsertionPointToStart(moduleBlock);
 
         // Insert all emitc::IncludeOp
         for (auto &include : incLines) {
-            auto includeOp = builder.create<emitc::IncludeOp>(op->getLoc(), include.first, include.second);
-            includeOp->moveBefore(op);
+            builder.create<emitc::IncludeOp>(op->getLoc(), include.first, include.second);
         }
 
         // Insert all VerbatimOp
         for (auto &line : verbatimLines) {
-            auto verbatimOp = builder.create<emitc::VerbatimOp>(op->getLoc(), line);
-            verbatimOp->moveBefore(op);
+            builder.create<emitc::VerbatimOp>(op->getLoc(), line);
         }
+
+        return mlir::WalkResult::interrupt();
     });
 }
