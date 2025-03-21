@@ -3,45 +3,40 @@
 
 #include <llvm/Support/Error.h>
 
-
 namespace mlir {
 namespace aegis {
 
 class ErrorMsg {
 
 public:
-    ErrorMsg(const llvm::StringRef &s) : msg(s.str()), os(msg) {};
-    ErrorMsg() : msg(""), os(msg) {};
+  ErrorMsg(const llvm::StringRef &s) : msg(s.str()), os(msg){};
+  ErrorMsg() : msg(""), os(msg){};
 
-    template <typename T> 
-    ErrorMsg &operator<<(const T &v) {
-        this->os << v;
-        return *this;
-    }
+  template <typename T> ErrorMsg &operator<<(const T &v) {
+    this->os << v;
+    return *this;
+  }
 
-    operator llvm::Error() {
-        return llvm::make_error<llvm::StringError>(os.str(), llvm::inconvertibleErrorCode());
-    }
+  operator llvm::Error() {
+    return llvm::make_error<llvm::StringError>(os.str(),
+                                               llvm::inconvertibleErrorCode());
+  }
 
-    template <typename T> 
-    operator llvm::Expected<T>() {
-        return this->operator llvm::Error();
-    }
+  template <typename T> operator llvm::Expected<T>() {
+    return this->operator llvm::Error();
+  }
 
 protected:
-    std::string msg;
-    llvm::raw_string_ostream os;
+  std::string msg;
+  llvm::raw_string_ostream os;
 };
 
-
-
 inline ErrorMsg &operator<<(ErrorMsg &errmsg, llvm::Error &err) {
-    errmsg << llvm::toString(std::move(err));
-    return errmsg;
+  errmsg << llvm::toString(std::move(err));
+  return errmsg;
 }
 
 } // namespace aegis
 } // namespace mlir
-
 
 #endif

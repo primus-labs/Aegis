@@ -1,24 +1,25 @@
 #ifndef PASS_COLLECTMETADATA_COLLECTMETADEATA_H
 #define PASS_COLLECTMETADATA_COLLECTMETADEATA_H
 
+
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
 
-/// Collect and store all metadata information, primarily function parameter attributes, 
-/// for use in subsequent passes.
-struct CollectMetadataPass : public mlir::PassWrapper<CollectMetadataPass, mlir::OperationPass<mlir::ModuleOp>>
-{
-    // This never generates new kinds of operations that weren't previously in the program => no dependent dialects
+/// Collect and store all metadata information, primarily function parameter
+/// attributes, for use in subsequent passes.
+struct CollectMetadataPass
+    : public mlir::PassWrapper<CollectMetadataPass,
+                               mlir::OperationPass<mlir::ModuleOp>> {
+  // This never generates new kinds of operations that weren't previously in the
+  // program => no dependent dialects
 
-    void runOnOperation() override;
+  void runOnOperation() override;
 
-    mlir::StringRef getArgument() const final
-    {
-        return "collect-metadata";
-    }
+  mlir::StringRef getArgument() const final { return "collect-metadata"; }
 
 private:
-    void collectAllMetadata(mlir::func::FuncOp funcOp);
+  void collectAllMetadata(mlir::func::FuncOp funcOp);
 };
 
-#endif //PASS_COLLECTMETADATA_COLLECTMETADEATA_H
+#endif // PASS_COLLECTMETADATA_COLLECTMETADEATA_H

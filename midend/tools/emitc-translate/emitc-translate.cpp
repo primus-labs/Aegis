@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllTranslations.h"
@@ -6,19 +7,18 @@
 
 using namespace mlir;
 
-int main(int argc, char **argv)
-{
-    mlir::MLIRContext context;
+int main(int argc, char **argv) {
+  mlir::MLIRContext context;
 
-    mlir::DialectRegistry registry;
-    registry.insert<emitc::EmitCDialect>();
-    // Uncomment the following to include *all* MLIR Core dialects, or selectively
-    // include what you need like above. You only need to register dialects that
-    // will be *parsed* by the tool, not the one generated
-    registerAllDialects(registry);
+  mlir::DialectRegistry registry;
+  registry.insert<emitc::EmitCDialect>();
+  // Uncomment the following to include *all* MLIR Core dialects, or selectively
+  // include what you need like above. You only need to register dialects that
+  // will be *parsed* by the tool, not the one generated
+  registerAllDialects(registry);
 
-    registerAllTranslations();
-    context.loadAllAvailableDialects();
+  registerAllTranslations();
+  context.loadAllAvailableDialects();
 
-    return failed(mlir::mlirTranslateMain(argc, argv, "EmitC Translation Tool"));
+  return failed(mlir::mlirTranslateMain(argc, argv, "EmitC Translation Tool"));
 }
