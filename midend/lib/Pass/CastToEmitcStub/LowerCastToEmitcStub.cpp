@@ -14,7 +14,7 @@
 #include "Dialect/FHE/FHETypes.h"
 #include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
 
-#define DEBUG_TYPE "remove-unused-cast"
+#define DEBUG_TYPE "cast-to-emitc-stub"
 
 using namespace mlir;
 using namespace aegis;

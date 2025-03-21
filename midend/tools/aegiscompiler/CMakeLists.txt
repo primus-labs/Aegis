@@ -37,6 +37,7 @@ set(DEP_LIBS
         AegisLowerSecretToFhe
         AegisLowerFheToEmitc
         AegisLowerCastToEmitcStub
+        AegisInsertEmitcPreamble
         AegisCollectMetadata
         
         AegisCommon
