@@ -201,23 +201,23 @@ void LowerFuncToSecretPass::runOnOperation() {
     });
 
     type_converter.addTargetMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
+        if (mlir::isa<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy) || mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
-        } else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
+        } else if (mlir::isa<SecretVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
-        } else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
+        } else if (mlir::isa<SecretMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
         }
 
@@ -227,23 +227,23 @@ void LowerFuncToSecretPass::runOnOperation() {
     });
 
     type_converter.addArgumentMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
+        if (mlir::isa<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy) || mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
-        } else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
+        } else if (mlir::isa<SecretVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
-        } else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
+        } else if (mlir::isa<SecretMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<MemRefType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
         }
 
@@ -253,19 +253,17 @@ void LowerFuncToSecretPass::runOnOperation() {
     });
 
     type_converter.addSourceMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (auto destTy = mlir::dyn_cast_or_null<FloatType>(t)) {
+        if (mlir::isa<FloatType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<SecretType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<SecretType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
-        } else if (auto destTy = mlir::dyn_cast_or_null<MemRefType>(t)) {
+        } else if (mlir::isa<MemRefType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (auto _ = mlir::dyn_cast_or_null<SecretVectorType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
-            } else if (auto _ = mlir::dyn_cast_or_null<SecretMatrixType>(srcTy)) {
-                return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
+            if (mlir::isa<SecretVectorType>(srcTy) || mlir::isa<SecretMatrixType>(srcTy)) {
+                return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
         }
 
