@@ -1,4 +1,4 @@
-// RUN: aegiscompiler -collect-metadata --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --secret-to-fhe < %s | FileCheck %s
+// RUN: aegiscompiler --collect-metadata --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --secret-to-fhe < %s | FileCheck %s
 module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128", llvm.target_triple = "x86_64-unknown-linux-gnu", "onnx-mlir.symbol-postfix" = "muladd_model"} {
   // memref.global @constant_0 : memref<f32> = dense<2.000000e+00>
   // func.func @main_graph(%arg0: memref<8xf32> {onnx.name = "input_x"}, %arg1: memref<1xf32> {onnx.name = "input_y"}) -> (memref<8xf32> {onnx.name = "output"}) attributes {llvm.emit_c_interface} {
