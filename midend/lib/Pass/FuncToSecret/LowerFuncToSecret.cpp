@@ -1,21 +1,21 @@
-#include <memory>
 #include <iostream>
+#include <memory>
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
-#include "mlir/Dialect/Affine/IR/AffineOps.h"
-#include "mlir/Dialect/Affine/Utils.h"
-#include "mlir/Dialect/Affine/LoopUtils.h"
-#include "mlir/Dialect/SCF/IR/SCF.h"
-#include "mlir/Dialect/Arith/IR/Arith.h"
-#include "llvm/include/llvm/Support/Debug.h"
-#include "mlir/include/mlir/Support/LLVM.h" 
-#include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "Common/MetadataMgr.h"
+#include "Common/Utils.h"
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/Secret/SecretOps.h"
 #include "Dialect/Secret/SecretTypes.h"
 #include "Pass/FuncToSecret/LowerFuncToSecret.h"
-#include "Common/MetadataMgr.h"
-#include "Common/Utils.h"
+#include "mlir/Dialect/Affine/IR/AffineOps.h"
+#include "mlir/Dialect/Affine/LoopUtils.h"
+#include "mlir/Dialect/Affine/Utils.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/include/mlir/Support/LLVM.h"
+#include "llvm/include/llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "func-to-secret"
 
@@ -23,43 +23,35 @@ using namespace mlir;
 using namespace aegis;
 using namespace secret;
 
-
-
-// Transform func::CallOp to secret::CallOp and 
-// convert arguments types into secret types and 
-class FuncCallPattern final : public OpConversionPattern<func::CallOp>
-{
-protected:
+// Transform func::CallOp to secret::CallOp and convert arguments types into secret types
+class FuncCallPattern final : public OpConversionPattern<func::CallOp> {
+  protected:
     using OpConversionPattern<func::CallOp>::typeConverter;
 
-public:
+  public:
     using OpConversionPattern<func::CallOp>::OpConversionPattern;
 
-    LogicalResult matchAndRewrite(func::CallOp op, typename func::CallOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
-    {
+    LogicalResult matchAndRewrite(func::CallOp op, typename func::CallOp::Adaptor adaptor,
+                                  ConversionPatternRewriter &rewriter) const override {
         rewriter.setInsertionPoint(op);
 
-        llvm::SmallVector<Value> materialize_ops;
-        for (Value o : op.getOperands())
-        {
-            auto opDestType = typeConverter->convertType(o.getType());
+        llvm::SmallVector<Value> materialOps;
+        for (Value operand : op.getOperands()) {
+            auto opDestType = typeConverter->convertType(operand.getType());
             if (!opDestType) {
-                LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op( " << o << " )\n");
+                LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op( " << operand << " )\n");
                 return failure();
             }
 
-            if (o.getType() != opDestType) {
-                auto new_operand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestType, o);
+            if (operand.getType() != opDestType) {
+                auto new_operand =
+                    typeConverter->materializeTargetConversion(rewriter, op.getLoc(), opDestType, operand);
                 assert(new_operand && "Type Conversion must be not fail");
-                materialize_ops.push_back(new_operand);
-            }
-            else {
-                materialize_ops.push_back(o);
+                materialOps.push_back(new_operand);
+            } else {
+                materialOps.push_back(operand);
             }
         }
-
-        // Get function name
-        auto func_name = op.getCallee();
 
         // Only support one result
         if (op.getNumResults() > 1) {
@@ -74,30 +66,30 @@ public:
                 LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op type( " << op.getResult(0) << " )\n");
                 return failure();
             }
-        
-            //rewriter.replaceOpWithNewOp<Secret::CallOp>(op, TypeRange(resType), func_name, ArrayAttr(), ArrayAttr(), materialize_ops);
 
-        } 
-        else {
+            rewriter.replaceOpWithNewOp<secret::CallOp>(op, TypeRange(resType), op.getCallee(), ArrayAttr(), ArrayAttr(),
+                                                        materialOps);
+
+        } else {
             return failure();
         }
-        
+
         return success();
     }
 };
 
 // Convert all numeric function arguments in a function block to secret types.
-class FunctionPattern final : public OpConversionPattern<func::FuncOp>
-{
-public:
+class FunctionPattern final : public OpConversionPattern<func::FuncOp> {
+  public:
     using OpConversionPattern<func::FuncOp>::OpConversionPattern;
 
-    LogicalResult matchAndRewrite(func::FuncOp op, typename func::FuncOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
-    {
+    LogicalResult matchAndRewrite(func::FuncOp op, typename func::FuncOp::Adaptor adaptor,
+                                  ConversionPatternRewriter &rewriter) const override {
         // Generate the new signature of the function.
         SmallVector<Type> newResTypes;
         if (failed(typeConverter->convertTypes(op.getFunctionType().getResults(), newResTypes))) {
-            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for function result op type( " << op.getFunctionType().getResults() << " )\n");
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for function result op type( "
+                                    << op.getFunctionType().getResults() << " )\n");
             return failure();
         }
 
@@ -105,16 +97,15 @@ public:
         TypeConverter::SignatureConversion signatureConversion(op.getFunctionType().getNumInputs());
         for (auto [index, arg] : llvm::enumerate(op.getRegion().getArguments())) {
             Type originalType = op.getFunctionType().getInput(index);
-            
+
             if (isArgEncrypted(arg)) {
                 SmallVector<Type> destTypes;
                 if (failed(typeConverter->convertType(originalType, destTypes))) {
-                    LLVM_DEBUG(llvm::dbgs() << "all convertType fail for type("  << originalType << " )\n");
+                    LLVM_DEBUG(llvm::dbgs() << "all convertType fail for type(" << originalType << " )\n");
                     return failure();
                 }
                 signatureConversion.addInputs(index, destTypes);
-            } 
-            else {
+            } else {
                 signatureConversion.addInputs(index, {originalType});
             }
         }
@@ -124,7 +115,7 @@ public:
         op.setType(newFuncTy);
         for (BlockArgument arg : op.getRegion().getArguments()) {
             if (!isArgEncrypted(arg)) {
-                //skip the clear argument.
+                // skip the clear argument.
                 continue;
             }
 
@@ -136,30 +127,27 @@ public:
             }
 
             arg.setType(newType);
-            if (newType != oldType)
-            {
+            if (newType != oldType) {
                 rewriter.setInsertionPointToStart(&op.getBody().getBlocks().front());
                 auto cast_op = typeConverter->materializeSourceConversion(rewriter, arg.getLoc(), oldType, arg);
-                arg.replaceAllUsesExcept(cast_op, cast_op.getDefiningOp());      
+                arg.replaceAllUsesExcept(cast_op, cast_op.getDefiningOp());
             }
         }
         rewriter.finalizeOpModification(op);
-        // op.print(llvm::errs());
+        // op.print(llvm::outs());
 
         return success();
     }
 };
 
 // Convert the type of return value in a function block to secret types.
-class ReturnPattern final : public OpConversionPattern<func::ReturnOp>
-{
-public:
+class ReturnPattern final : public OpConversionPattern<func::ReturnOp> {
+  public:
     using OpConversionPattern<func::ReturnOp>::OpConversionPattern;
 
-    LogicalResult matchAndRewrite(func::ReturnOp op, typename func::ReturnOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
-    {
-        if (op.getNumOperands() != 1)
-        {
+    LogicalResult matchAndRewrite(func::ReturnOp op, typename func::ReturnOp::Adaptor adaptor,
+                                  ConversionPatternRewriter &rewriter) const override {
+        if (op.getNumOperands() != 1) {
             emitError(op.getLoc(), "Currently only single value return operations are supported.");
             return failure();
         }
@@ -179,7 +167,6 @@ public:
     }
 };
 
-
 void LowerFuncToSecretPass::getDependentDialects(mlir::DialectRegistry &registry) const {
     registry.insert<func::FuncDialect>();
     registry.insert<affine::AffineDialect>();
@@ -194,47 +181,39 @@ void LowerFuncToSecretPass::runOnOperation() {
     type_converter.addConversion([&](Type t) {
         if (mlir::isa<FloatType>(t)) {
             return std::optional<Type>(SecretType::get(&getContext(), t));
-        }
-        else if (mlir::isa<IntegerType>(t)) {
+        } else if (mlir::isa<IntegerType>(t)) {
             return std::optional<Type>(SecretType::get(&getContext(), Float32Type::getF32(&getContext())));
-        }
-        else if (mlir::isa<MemRefType>(t)) {
+        } else if (mlir::isa<MemRefType>(t)) {
             auto newTy = mlir::cast<MemRefType>(t);
             if (newTy.hasStaticShape() && newTy.getShape().size() == 1) {
                 int size = newTy.getShape().front();
                 return std::optional<Type>(SecretVectorType::get(&getContext(), newTy.getElementType(), size));
-            }
-            else if (newTy.hasStaticShape() && newTy.getShape().size() == 2) {
+            } else if (newTy.hasStaticShape() && newTy.getShape().size() == 2) {
                 auto row = newTy.getShape().front();
                 auto col = newTy.getShape().back();
                 return std::optional<Type>(SecretMatrixType::get(&getContext(), newTy.getElementType(), row, col));
-            }
-            else {
+            } else {
                 return std::optional<Type>(t);
             }
-        }
-        else {
+        } else {
             return std::optional<Type>(t);
         }
     });
 
-    type_converter.addTargetMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
+    type_converter.addTargetMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
         if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
-                mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
+            if (mlir::dyn_cast_or_null<FloatType>(srcTy) || mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
+        } else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
+        } else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
@@ -242,27 +221,25 @@ void LowerFuncToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addTargetMaterialization failure, return null type.(at LowerFuncToSecret Pass)\n");
+        LLVM_DEBUG(llvm::dbgs() << "call addTargetMaterialization failure, return "
+                                   "null type.(at LowerFuncToSecret Pass)\n");
         return std::optional<Value>(std::nullopt);
     });
 
-    type_converter.addArgumentMaterialization([&] (OpBuilder &builder, Type t, ValueRange vs, Location loc) {
+    type_converter.addArgumentMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
         if (auto destTy = mlir::dyn_cast_or_null<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<FloatType>(srcTy) ||
-                mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
+            if (mlir::dyn_cast_or_null<FloatType>(srcTy) || mlir::dyn_cast_or_null<IntegerType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
+        } else if (auto destTy = mlir::dyn_cast_or_null<SecretVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
+        } else if (auto destTy = mlir::dyn_cast_or_null<SecretMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::dyn_cast_or_null<MemRefType>(srcTy)) {
@@ -270,7 +247,8 @@ void LowerFuncToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure, return null type.(at LowerFuncToSecret Pass)\n");
+        LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure, return null "
+                                   "type.(at LowerFuncToSecret Pass)\n");
         return std::optional<Value>(std::nullopt);
     });
 
@@ -281,22 +259,21 @@ void LowerFuncToSecretPass::runOnOperation() {
             if (auto _ = mlir::dyn_cast_or_null<SecretType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
-        }
-        else if (auto destTy = mlir::dyn_cast_or_null<MemRefType>(t)) {
+        } else if (auto destTy = mlir::dyn_cast_or_null<MemRefType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
             if (auto _ = mlir::dyn_cast_or_null<SecretVectorType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
-            }
-            else if (auto _ = mlir::dyn_cast_or_null<SecretMatrixType>(srcTy)) {
+            } else if (auto _ = mlir::dyn_cast_or_null<SecretMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, destTy, vs));
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addSourceMaterialization failure, return null type.(at LowerFuncToSecret Pass)\n");
+        LLVM_DEBUG(llvm::dbgs() << "call addSourceMaterialization failure, return "
+                                   "null type.(at LowerFuncToSecret Pass)\n");
         return std::optional<Value>(std::nullopt);
     });
-    
+
     ConversionTarget target(getContext());
     target.addLegalDialect<affine::AffineDialect, func::FuncDialect, scf::SCFDialect, arith::ArithDialect>();
     target.addLegalDialect<secret::SecretDialect>();
@@ -320,8 +297,8 @@ void LowerFuncToSecretPass::runOnOperation() {
                 return false;
         }
 
-        // Since function parameters may be marked as built-in types based on metadata, 
-        // their legality is not checked here.
+        // Since function parameters may be marked as built-in types based on
+        // metadata, their legality is not checked here. 
         // for (auto t : fop.getFunctionType().getInputs()) {
         //     if (!type_converter.isLegal(t))
         //         return false;
@@ -332,14 +309,13 @@ void LowerFuncToSecretPass::runOnOperation() {
         }
         return true;
     });
-    
-    target.addDynamicallyLegalOp<func::ReturnOp>([&](Operation *op) { 
-        return type_converter.isLegal(op->getOperandTypes()); 
-    });
+
+    target.addDynamicallyLegalOp<func::ReturnOp>(
+        [&](Operation *op) { return type_converter.isLegal(op->getOperandTypes()); });
 
     IRRewriter rewriter(&getContext());
     mlir::RewritePatternSet funcPatSet(&getContext());
-    funcPatSet.add<FunctionPattern, ReturnPattern, FuncCallPattern>(type_converter, funcPatSet.getContext()); 
+    funcPatSet.add<FunctionPattern, ReturnPattern, FuncCallPattern>(type_converter, funcPatSet.getContext());
     if (mlir::failed(mlir::applyFullConversion(getOperation(), target, std::move(funcPatSet))))
         signalPassFailure();
 }
