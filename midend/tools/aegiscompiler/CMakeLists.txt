@@ -28,6 +28,7 @@ set(DEP_LIBS
         AegisUnrollAndMemOpt
         AegisUnrollLoops
         AegisGlobalMemrefReplace
+        AegisExtractLoopBody
         AegisExpandMemrefCopy
         AegisForwardInsertToExtract
         AegisForwardStoreToLoad

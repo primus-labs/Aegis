@@ -1,4 +1,4 @@
-// RUN: aegiscompiler -forward-insert-to-extract --canonicalize --cse < %s | FileCheck %s
+// RUN: aegiscompiler --forward-insert-to-extract --canonicalize --cse < %s | FileCheck %s
 
 module {
     func.func @test_no_forwarding(%arg0: tensor<4xi32>, %arg1: index, %arg2: i32, %arg3: i32) -> i32 {

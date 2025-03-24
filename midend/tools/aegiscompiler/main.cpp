@@ -6,6 +6,7 @@
 #include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
 #include "Pass/CollectMetadata/CollectMetadata.h"
 #include "Pass/ExpandMemrefCopy/ExpandMemrefCopy.h"
+#include "Pass/ExtractLoopBody/ExtractLoopBody.h"
 #include "Pass/FheToEmitc/LowerFheToEmitc.h"
 #include "Pass/ForwardInsertToExtract/ForwardInsertToExtract.h"
 #include "Pass/ForwardStoreToLoad/ForwardStoreToLoad.h"
@@ -41,6 +42,9 @@ using namespace fhe;
 void fhePipeline(OpPassManager &manager) {
   manager.addPass(
       std::make_unique<CollectMetadataPass>()); // this pass must run first.
+  manager.addPass(std::make_unique<ExtractLoopBodyPass>());
+  manager.addPass(createCanonicalizerPass());
+  manager.addPass(createCSEPass());
   manager.addPass(std::make_unique<ExpandMemrefCopyPass>());
   manager.addPass(createCanonicalizerPass());
   manager.addPass(createCSEPass());
@@ -129,6 +133,7 @@ int main(int argc, char **argv) {
   PassRegistration<UnrollLoopAndMemOptPass>();
   PassRegistration<UnrollLoopsPass>();
   PassRegistration<GlobalMemrefReplacePass>();
+  PassRegistration<ExtractLoopBodyPass>();
   PassRegistration<ExpandMemrefCopyPass>();
   PassRegistration<ForwardInsertToExtractPass>();
   PassRegistration<ForwardStoreToLoadPass>();

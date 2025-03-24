@@ -119,6 +119,10 @@ void ExtractLoopBodyPass::extractLoopBody(affine::AffineForOp loop, unsigned int
                     return WalkResult::advance();
                 opsToCopy.push_back(&op);
                 for (auto operand : op.getOperands()) {
+                    // if the operand is block argument, getDefiningOp return null, then continue;
+                    if (!operand.getDefiningOp()) {
+                        continue;
+                    }
                     assert(operand.getDefiningOp() != nullptr);
                     if (isa<arith::ConstantOp>(operand.getDefiningOp())) {
                         constantOps.insert(operand.getDefiningOp());
@@ -205,6 +209,6 @@ void ExtractLoopBodyPass::runOnOperation() {
         if (!isa<func::FuncOp>(op.getOperation()->getParentOp())) {
             return;
         }
-        extractLoopBody(op, /*minLoopSize*/3, /*minBodySize*/3);
+        extractLoopBody(op, /*minLoopSize*/8, /*minBodySize*/3);
     });
 }
