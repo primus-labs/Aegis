@@ -269,21 +269,6 @@ def FHE_RLWEMulPlainOp : FHE_Op<"rlwemulplain", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_RotateOp: FHE_Op<"rotate", [Pure]> {
-  let summary = "Rotate the RLWECipher in slot form.";
-
-  let arguments = (ins 
-    AnyTypeOf<[RLWECipher, LWECipherVector]>:$cipher,
-    SI32Attr:$i
-  );
-
-  let results = (outs 
-    AnyTypeOf<[RLWECipher, LWECipherVector]>:$output
-  );
-
-  let hasFolder = 1;
-}
-
 def FHE_CmpOp: FHE_Op<"compare", []> {
   let summary = "LWE comparing operation";
 
@@ -391,7 +376,7 @@ def FHE_CallOp: FHE_Op<"call", []> {
   let results = (outs Variadic<AnyType>);
 }
 
-def fhe_RevealOp : FHE_Op<"reveal", []> {
+def FHE_RevealOp : FHE_Op<"reveal", []> {
     let summary = "Convert a cipher value into a real number";
     let description = [{
 
@@ -410,6 +395,30 @@ def fhe_RevealOp : FHE_Op<"reveal", []> {
         // Builder to infer output type from the input type
         OpBuilder<(ins "Value":$secret)>
     ];
+}
+
+def FHE_RotateOp: FHE_Op<"rotate", [AllTypesMatch<["cipher", "output"]>]> {
+  let summary = "Rotate the RLWECipher in slot form.";
+
+  let arguments = (ins 
+    AnyTypeOf<[RLWECipher, LWECipherVector]>:$cipher,
+    SI32Attr:$i
+  );
+
+  let results = (outs 
+    AnyTypeOf<[RLWECipher, LWECipherVector]>:$output
+  );
+
+  let hasFolder = 1;
+}
+
+def FHE_RelinearizeOp : FHE_Op<"relinearize", [AllTypesMatch<["input", "output"]>]> {
+
+  let summary = "Relinearization.";
+
+  let arguments = (ins FHE_Type:$input);
+
+  let results = (outs FHE_Type:$output);
 }
 
 #endif
