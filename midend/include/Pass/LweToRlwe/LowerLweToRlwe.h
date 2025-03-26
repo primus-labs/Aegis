@@ -5,18 +5,14 @@
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
 
-
-struct LweToRlwePass : public mlir::PassWrapper<LweToRlwePass, mlir::OperationPass<mlir::ModuleOp>>
-{
+struct LweToRlwePass : public mlir::PassWrapper<LweToRlwePass, mlir::OperationPass<mlir::ModuleOp>> {
     void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
     void runOnOperation() override;
 
-    mlir::StringRef getArgument() const final
-    {
-        return "lwe2rlwe";
+    mlir::StringRef getArgument() const final { 
+        return "lwe2rlwe"; 
     }
 };
 
-
-#endif  //PASS_LWE2RLWE_LOWERLWETORLWE_H
+#endif // PASS_LWE2RLWE_LOWERLWETORLWE_H
