@@ -11,7 +11,7 @@ struct LweToRlwePass : public mlir::PassWrapper<LweToRlwePass, mlir::OperationPa
     void runOnOperation() override;
 
     mlir::StringRef getArgument() const final { 
-        return "lwe2rlwe"; 
+        return "lwe-to-rlwe"; 
     }
 };
 

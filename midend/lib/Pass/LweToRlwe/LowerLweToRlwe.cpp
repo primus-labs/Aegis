@@ -78,8 +78,8 @@ LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, Op
 
 // Transform the unary LWE operator to RLWE operator
 template <typename OpType> 
-LogicalResult LweSubToRlweOperation(IRRewriter &rewriter, MLIRContext *context, OpType op,
-                                    TypeConverter typeConverter) {
+LogicalResult LweUnaryOpToRlweUnaryOp(IRRewriter &rewriter, MLIRContext *context, OpType op,
+                                      TypeConverter typeConverter) {
     rewriter.setInsertionPoint(op);
 
     auto dstType = typeConverter.convertType(op.getType());
@@ -110,8 +110,6 @@ LogicalResult LweSubToRlweOperation(IRRewriter &rewriter, MLIRContext *context, 
 
     return failure();
 }
-
-
 
 // Tranform pure LWE ciphertexts into RLWE ciphertexts after batching optimizations
 void LweToRlwePass::runOnOperation() {
@@ -166,6 +164,7 @@ void LweToRlwePass::runOnOperation() {
     for (auto f : llvm::make_early_inc_range(block.getOps<func::FuncOp>())) {
         // handle function body stmts
         if (f.walk([&](Operation *op) {
+                // binary operator
                 if (fhe::LWESubOp subOp = llvm::dyn_cast_or_null<fhe::LWESubOp>(op)) {
                     if (LweBinOpToRlweBinOp<fhe::LWESubOp>(rewriter, &getContext(), subOp, type_converter).failed()) {
                         return WalkResult::interrupt();
@@ -188,6 +187,11 @@ void LweToRlwePass::runOnOperation() {
                     }
                 } else if (fhe::LWEMulPlainOp mulPlainOp = llvm::dyn_cast_or_null<fhe::LWEMulPlainOp>(op)) {
                     if (LweBinOpToRlweBinOp<fhe::LWEMulPlainOp>(rewriter, &getContext(), mulPlainOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                // unary operator
+                } else if (fhe::LWENegOp negOp = llvm::dyn_cast_or_null<fhe::LWENegOp>(op)) {
+                    if (LweUnaryOpToRlweUnaryOp<fhe::LWENegOp>(rewriter, &getContext(), negOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
                 }
