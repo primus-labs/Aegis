@@ -897,7 +897,7 @@ def Secret_Log1pOp : Secret_Op<"log1p", [Pure]> {
 }
 
 
-def Secret_LoadOp : Secret_Op<"load", []> {
+def Secret_LoadOp : Secret_Op<"load", [MemoryEffects<[MemRead]>, Pure]> {
     let summary = "read an element from a memory.";
 
     let description = [{
@@ -912,7 +912,7 @@ def Secret_LoadOp : Secret_Op<"load", []> {
     let results = (outs AnyType:$result);
 }
 
-def Secret_StoreOp : Secret_Op<"store", []> {
+def Secret_StoreOp : Secret_Op<"store", [MemoryEffects<[MemWrite]>]> {
     let summary = "Store a value to a memory location given by indices.";
 
     let description = [{

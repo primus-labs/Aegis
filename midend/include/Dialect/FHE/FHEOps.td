@@ -72,7 +72,7 @@ def FHE_DeallocOp : FHE_Op<"dealloc", []> {
     let arguments = (ins FHE_Type:$memref);
 }
 
-def FHE_LoadOp : FHE_Op<"load", []> {
+def FHE_LoadOp : FHE_Op<"load", [MemoryEffects<[MemRead]>, Pure]> {
     let summary = "read an element from a LWECipherVector.";
 
     let description = [{
@@ -87,7 +87,7 @@ def FHE_LoadOp : FHE_Op<"load", []> {
     let results = (outs AnyType:$result);
 }
 
-def FHE_StoreOp : FHE_Op<"store", []> {
+def FHE_StoreOp : FHE_Op<"store", [MemoryEffects<[MemWrite]>]> {
     let summary = "Store a value to a LWECipherVector memory location given by indices.";
 
     let description = [{

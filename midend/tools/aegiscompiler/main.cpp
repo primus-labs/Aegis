@@ -15,6 +15,7 @@
 #include "Pass/InsertEmitcPreamble/InsertEmitcPreamble.h"
 #include "Pass/MemrefToSecret/LowerMemrefToSecret.h"
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
+#include "Pass/Batching/Batching.h"
 #include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
 #include "mlir/Dialect/Affine/Passes.h"
@@ -53,8 +54,7 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(affine::createSimplifyAffineStructuresPass());
     manager.addPass(createLowerAffinePass());
     manager.addPass(std::make_unique<UnrollLoopsPass>());
-    manager.addPass(createCanonicalizerPass()); // this can greatly reduce the number of
-                                                // operations after unrolling
+    manager.addPass(createCanonicalizerPass()); // this can greatly reduce the number of operations after unrolling
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<GlobalMemrefReplacePass>());
     manager.addPass(createCanonicalizerPass());
@@ -75,6 +75,9 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerSecretToFhePass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<BatchingPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerFheToEmitcPass>());
@@ -140,6 +143,7 @@ int main(int argc, char **argv) {
     PassRegistration<LowerMemrefToSecretPass>();
     PassRegistration<CollectMetadataPass>();
     PassRegistration<LowerSecretToFhePass>();
+    PassRegistration<BatchingPass>();
     PassRegistration<LowerFheToEmitcPass>();
     PassRegistration<LowerCastToEmitcStubPass>();
     PassRegistration<InsertEmitcPreamblePass>();

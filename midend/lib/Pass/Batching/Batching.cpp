@@ -217,21 +217,33 @@ void BatchingPass::runOnOperation() {
     for (auto funcOp : llvm::make_early_inc_range(block.getOps<func::FuncOp>())) {
         // We must translate in order of appearance for this to work, so we walk manually
         if (funcOp.walk([&](Operation *op) {
-                 if (auto subOp = llvm::dyn_cast_or_null<fhe::LWESubOp>(op)) {
-                     if (batchArithOperation<fhe::LWESubOp>(rewriter, &getContext(), subOp).failed()) {
-                         return WalkResult::interrupt();
-                     }
-                 } else if (auto addOp = llvm::dyn_cast_or_null<fhe::LWEAddOp>(op)) {
-                     if (batchArithOperation<fhe::LWEAddOp>(rewriter, &getContext(), addOp).failed()) {
-                         return WalkResult::interrupt();
-                     }
-                 } else if (auto mulOp = llvm::dyn_cast_or_null<fhe::LWEMulOp>(op)) {
-                     if (batchArithOperation<fhe::LWEMulOp>(rewriter, &getContext(), mulOp).failed()) {
-                         return WalkResult::interrupt();
-                     }
-                 }
-                 return WalkResult(success());
-             }).wasInterrupted())
+                if (auto subOp = llvm::dyn_cast_or_null<fhe::LWESubOp>(op)) {
+                    if (batchArithOperation<fhe::LWESubOp>(rewriter, &getContext(), subOp).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (auto subOp = llvm::dyn_cast_or_null<fhe::LWESubPlainOp>(op)) {
+                    if (batchArithOperation<fhe::LWESubPlainOp>(rewriter, &getContext(), subOp).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (auto addOp = llvm::dyn_cast_or_null<fhe::LWEAddOp>(op)) {
+                    if (batchArithOperation<fhe::LWEAddOp>(rewriter, &getContext(), addOp).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (auto addOp = llvm::dyn_cast_or_null<fhe::LWEAddPlainOp>(op)) {
+                    if (batchArithOperation<fhe::LWEAddPlainOp>(rewriter, &getContext(), addOp).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (auto mulOp = llvm::dyn_cast_or_null<fhe::LWEMulOp>(op)) {
+                    if (batchArithOperation<fhe::LWEMulOp>(rewriter, &getContext(), mulOp).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (auto mulOp = llvm::dyn_cast_or_null<fhe::LWEMulPlainOp>(op)) {
+                    if (batchArithOperation<fhe::LWEMulPlainOp>(rewriter, &getContext(), mulOp).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                }
+                return WalkResult(success());
+            }).wasInterrupted())
             signalPassFailure();
     }
 
