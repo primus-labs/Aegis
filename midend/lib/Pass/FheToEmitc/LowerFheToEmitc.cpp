@@ -63,7 +63,7 @@ public:
 
         // Build a series of calls to our custom function.
         std::string opName;
-        if (std::is_same<OpType, fhe::LWENegOp>()) {
+        if (std::is_same<OpType, fhe::LWENegOp>() || std::is_same<OpType, fhe::RLWENegOp>()) {
             opName = "Neg";
         }
         else {
@@ -118,16 +118,20 @@ public:
 
         // Build a series of calls to our custom function.
         std::string opName;
-        if (std::is_same<OpType, LWEAddOp>()) {
+        if (std::is_same<OpType, LWEAddOp>() || 
+            std::is_same<OpType, RLWEAddOp>()) {
             opName = "Add";
         }
-        else if (std::is_same<OpType, LWEAddPlainOp>()) {
+        else if (std::is_same<OpType, LWEAddPlainOp>() ||
+                 std::is_same<OpType, RLWEAddPlainOp>()) {
             opName = "AddPlain";
         }
-        else if (std::is_same<OpType, LWESubOp>()) {
+        else if (std::is_same<OpType, LWESubOp>() ||
+                 std::is_same<OpType, RLWESubOp>()) {
             opName = "Sub";
         }
-        else if (std::is_same<OpType, LWESubPlainOp>()) {
+        else if (std::is_same<OpType, LWESubPlainOp>() ||
+                 std::is_same<OpType, RLWESubPlainOp>()) {
             opName = "SubPlain";
         }
         else if (std::is_same<OpType, LWEMulOp>() ||
@@ -669,7 +673,7 @@ void LowerFheToEmitcPass::runOnOperation()
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
-            else if (mlir::dyn_cast_or_null<fhe::RLWECipherType>(srcTy)) {
+            else if (mlir::dyn_cast_or_null<fhe::RLWECipherGridType>(srcTy)) {
                 if (destTy.getValue().str() == "std::vector<RLWECipher>") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
@@ -904,10 +908,13 @@ void LowerFheToEmitcPass::runOnOperation()
 
     mlir::RewritePatternSet fhePats(&getContext());
     fhePats.add<FheConstantPattern,
-            FheArithUnaryPattern<fhe::LWENegOp>,
-            FheArithBinaryPattern<fhe::LWEAddOp>, FheArithBinaryPattern<fhe::LWEAddPlainOp>, 
+            FheArithUnaryPattern<fhe::LWENegOp>, FheArithUnaryPattern<fhe::RLWENegOp>,
+            FheArithBinaryPattern<fhe::LWEAddOp>, FheArithBinaryPattern<fhe::LWEAddPlainOp>,
+            FheArithBinaryPattern<fhe::RLWEAddOp>, FheArithBinaryPattern<fhe::RLWEAddPlainOp>,
             FheArithBinaryPattern<fhe::LWESubOp>, FheArithBinaryPattern<fhe::LWESubPlainOp>,
-            FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, FheArithBinaryPattern<fhe::RLWEMulOp>,
+            FheArithBinaryPattern<fhe::RLWESubOp>, FheArithBinaryPattern<fhe::RLWESubPlainOp>,
+            FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, 
+            FheArithBinaryPattern<fhe::RLWEMulOp>, FheArithBinaryPattern<fhe::RLWEMulPlainOp>,
             FheFuncPattern, FheRetPattern, FheCallPattern,
             MemrefGetGlobalPattern, MemrefGlobalPattern,
             NativeMemrefLoadPattern, FheLoadPattern, FheStorePattern, FheCopyPattern,
