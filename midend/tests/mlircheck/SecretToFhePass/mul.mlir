@@ -19,7 +19,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 
     // CHECK-NOT: arith.mulf
     // CHECK-NOT: secret.mulplain
-    // CHECK: fhe.lwemulplain
+    // CHECK: fhe.lwemul_plain
   }
 
 
@@ -30,7 +30,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 
     // CHECK-NOT: arith.mulf
     // CHECK-NOT: secret.mulplain
-    // CHECK: fhe.lwemulplain
+    // CHECK: fhe.lwemul_plain
   }
 }
 

@@ -394,7 +394,7 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
-### `fhe.lweaddplain` (aegis::fhe::LWEAddPlainOp)
+### `fhe.lweadd_plain` (aegis::fhe::LWEAddPlainOp)
 
 _LWECipher addition operation(lwecipher vs plain)_
 
@@ -402,7 +402,7 @@ _LWECipher addition operation(lwecipher vs plain)_
 Syntax:
 
 ```
-operation ::= `fhe.lweaddplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+operation ::= `fhe.lweadd_plain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
 The "add" operation performs element-wise addition between lwecipher and plain.
@@ -456,7 +456,7 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
-### `fhe.lwemulplain` (aegis::fhe::LWEMulPlainOp)
+### `fhe.lwemul_plain` (aegis::fhe::LWEMulPlainOp)
 
 _LWECipher multiplication operation(lwecipher vs plain)_
 
@@ -464,7 +464,7 @@ _LWECipher multiplication operation(lwecipher vs plain)_
 Syntax:
 
 ```
-operation ::= `fhe.lwemulplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+operation ::= `fhe.lwemul_plain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
 The "mul" operation performs element-wise multiplication between lwecipher and plain.
@@ -549,7 +549,7 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
-### `fhe.lwesubplain` (aegis::fhe::LWESubPlainOp)
+### `fhe.lwesub_plain` (aegis::fhe::LWESubPlainOp)
 
 _LWECipher subtraction operation(lwecipher vs plain)_
 
@@ -557,7 +557,7 @@ _LWECipher subtraction operation(lwecipher vs plain)_
 Syntax:
 
 ```
-operation ::= `fhe.lwesubplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+operation ::= `fhe.lwesub_plain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
 The "sub" operation performs element-wise subtraction between lwecipher and plain.
@@ -597,6 +597,12 @@ Example:
 %0 = "fhe.load" %A[%1]: (!fhe.LWECipherVector<i32>)
 %3 = "fhe.load" %A[%1, %2] : (!fhe.LWECipherVector<i32>)
 ```
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `MemoryEffectOpInterface (MemoryEffectOpInterface)`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{MemoryEffects::Read on ::mlir::SideEffects::DefaultResource}`, `MemoryEffects::Effect{}`
 
 #### Operands:
 
@@ -642,7 +648,7 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
-### `fhe.rlweaddplain` (aegis::fhe::RLWEAddPlainOp)
+### `fhe.rlweadd_plain` (aegis::fhe::RLWEAddPlainOp)
 
 _RLWECipher addition operation(rlwecipher vs plain)_
 
@@ -650,7 +656,7 @@ _RLWECipher addition operation(rlwecipher vs plain)_
 Syntax:
 
 ```
-operation ::= `fhe.rlweaddplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+operation ::= `fhe.rlweadd_plain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
 The "add" operation performs element-wise addition between rlwecipher and plain.
@@ -735,6 +741,37 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
+### `fhe.rlweneg` (aegis::fhe::RLWENegOp)
+
+_RLWECipher negative operation_
+
+
+Syntax:
+
+```
+operation ::= `fhe.rlweneg` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+The "neg" operation applies element-wise negation for rlweciphers.
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `x` | any type
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | any type
+
 ### `fhe.rlwesub` (aegis::fhe::RLWESubOp)
 
 _RLWECipher subtraction operation_
@@ -767,7 +804,7 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
-### `fhe.rlwesubplain` (aegis::fhe::RLWESubPlainOp)
+### `fhe.rlwesub_plain` (aegis::fhe::RLWESubPlainOp)
 
 _RLWECipher subtraction operation(rlwecipher vs plain)_
 
@@ -775,7 +812,7 @@ _RLWECipher subtraction operation(rlwecipher vs plain)_
 Syntax:
 
 ```
-operation ::= `fhe.rlwesubplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+operation ::= `fhe.rlwesub_plain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
 The "sub" operation performs element-wise subtraction between rlwecipher and plain.
@@ -798,6 +835,61 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
+### `fhe.relinearize` (aegis::fhe::RelinearizeOp)
+
+_Relinearization._
+
+
+Syntax:
+
+```
+operation ::= `fhe.relinearize` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+
+Interfaces: `InferTypeOpInterface`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `input` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or rlweciphermat
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or rlweciphermat
+
+### `fhe.reveal` (aegis::fhe::RevealOp)
+
+_Convert a cipher value into a real number_
+
+
+Syntax:
+
+```
+operation ::= `fhe.reveal` $input attr-dict `:` type($input) `->` type($cleartext)
+```
+
+Examples:
+
+```mlir
+%Y = fhe.reveal %secret_value : !fhe.LWECipher<f32> -> f32
+```
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `input` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or rlweciphermat
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `cleartext` | any type
+
 ### `fhe.rotate` (aegis::fhe::RotateOp)
 
 _Rotate the RLWECipher in slot form._
@@ -810,11 +902,7 @@ operation ::= `fhe.rotate` `(` operands `)` attr-dict `:`  `(` type(operands) `)
 ```
 
 
-Traits: `AlwaysSpeculatableImplTrait`
-
-Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
-
-Effects: `MemoryEffects::Effect{}`
+Interfaces: `InferTypeOpInterface`
 
 #### Attributes:
 
@@ -877,6 +965,10 @@ Example:
 "fhe.store" %0, %A[%1]: (!fhe.LWECipherVectori32>) 
 "fhe.store" %0, %A[%1, 5]: (!fhe.LWECipherVector<i32>) 
 ```
+
+Interfaces: `MemoryEffectOpInterface (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{MemoryEffects::Write on ::mlir::SideEffects::DefaultResource}`
 
 #### Operands:
 
@@ -942,35 +1034,6 @@ operation ::= `fhe.vector_load` `(` operands `)` attr-dict `:`  `(` type(operand
 | :----: | ----------- |
 | `result` | any type
 
-### `fhe.reveal` (aegis::fhe::RevealOp)
-
-_Convert a cipher value into a real number_
-
-
-Syntax:
-
-```
-operation ::= `fhe.reveal` $input attr-dict `:` type($input) `->` type($cleartext)
-```
-
-Examples:
-
-```mlir
-%Y = fhe.reveal %secret_value : !fhe.LWECipher<f32> -> f32
-```
-
-#### Operands:
-
-| Operand | Description |
-| :-----: | ----------- |
-| `input` | int or f64 or f64vector or plain or plainvector or lwecipher or lweciphervec or lweciphermat or rlwecipher or rlweciphermat
-
-#### Results:
-
-| Result | Description |
-| :----: | ----------- |
-| `cleartext` | any type
-
 <!-- Autogenerated by mlir-tblgen; don't manually edit -->
 ### FloatType
 
@@ -1022,7 +1085,7 @@ Syntax:
 !fhe.lweciphermat<
   Type,   # plaintextType
   int,   # row
-  int   # column
+  int   # col
 >
 ```
 
@@ -1033,7 +1096,7 @@ A type for matrix of LWE Cipher
 | :-------: | :-------: | ----------- |
 | plaintextType | `Type` |  |
 | row | `int` |  |
-| column | `int` |  |
+| col | `int` |  |
 
 ### LWECipherVectorType
 
@@ -1108,7 +1171,7 @@ Syntax:
 !fhe.rlweciphermat<
   Type,   # plaintextType
   int,   # row
-  int   # column
+  int   # col
 >
 ```
 
@@ -1119,5 +1182,5 @@ A type for RLWE Cipher, representing an encrypted grid (matrix) of plaintext val
 | :-------: | :-------: | ----------- |
 | plaintextType | `Type` |  |
 | row | `int` |  |
-| column | `int` |  |
+| col | `int` |  |
 

@@ -18,7 +18,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
     // CHECK-NOT: secret.store
     // CHECK: fhe.alloc
     // CHECK: memref.load
-    // CHECK: fhe.lwemulplain
+    // CHECK: fhe.lwemul_plain
     // CHECK: fhe.store
   }
 
@@ -41,7 +41,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
         // CHECK: fhe.alloc
         // CHECK: fhe.load
         // CHECK: memref.load
-        // CHECK: fhe.lwemulplain
+        // CHECK: fhe.lwemul_plain
         // CHECK: fhe.store
     }
 }

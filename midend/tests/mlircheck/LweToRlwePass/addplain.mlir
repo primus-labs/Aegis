@@ -11,7 +11,7 @@ module {
     }
     // CHECK-NOT: arith.addf
     // CHECK-NOT: secret.addplain
-    // CHECK-NOT: fhe.lweaddplain
+    // CHECK-NOT: fhe.lweadd_plain
     // CHECK: (%arg0: !fhe.rlwecipher<1 x f32> {onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: f32 {onnx.name = "input_y", onnx.type = "clear"}) -> !fhe.rlwecipher<1 x f32>
-    // CHECK: fhe.rlweaddplain
+    // CHECK: fhe.rlweadd_plain
 }

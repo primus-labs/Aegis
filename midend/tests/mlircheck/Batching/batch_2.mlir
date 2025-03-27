@@ -33,7 +33,7 @@ module  {
 // CHECK-NOT: arith.mulf
 // CHECK-NOT: arith.addf
 // CHECK: memref.load
-// CHECK: fhe.lwemulplain
+// CHECK: fhe.lwemul_plain
 // CHECK: fhe.rotate
 // CHECK: fhe.lweadd
 // CHECK: fhe.load

@@ -697,6 +697,12 @@ Example:
 %3 = "secret.load" %A[%1, %2] : (!Secete.SecretMatrix<i32>)
 ```
 
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `MemoryEffectOpInterface (MemoryEffectOpInterface)`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{MemoryEffects::Read on ::mlir::SideEffects::DefaultResource}`, `MemoryEffects::Effect{}`
+
 #### Operands:
 
 | Operand | Description |
@@ -1415,6 +1421,10 @@ Example:
 "secret.store" %0, %A[%1]: (!Secete.SecretVector<i32>) 
 "secret.store" %0, %A[%1, 5]: (!Secete.SecretMatrix<i32>) 
 ```
+
+Interfaces: `MemoryEffectOpInterface (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{MemoryEffects::Write on ::mlir::SideEffects::DefaultResource}`
 
 #### Operands:
 

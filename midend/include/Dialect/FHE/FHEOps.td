@@ -140,7 +140,7 @@ def FHE_LWEAddOp : FHE_Op<"lweadd", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_LWEAddPlainOp : FHE_Op<"lweaddplain", [Pure]> {
+def FHE_LWEAddPlainOp : FHE_Op<"lweadd_plain", [Pure]> {
   let summary = "LWECipher addition operation(lwecipher vs plain)";
   let description = [{
     The "add" operation performs element-wise addition between lwecipher and plain.
@@ -161,7 +161,7 @@ def FHE_LWESubOp : FHE_Op<"lwesub", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_LWESubPlainOp : FHE_Op<"lwesubplain", [Pure]> {
+def FHE_LWESubPlainOp : FHE_Op<"lwesub_plain", [Pure]> {
   let summary = "LWECipher subtraction operation(lwecipher vs plain)";
   let description = [{
     The "sub" operation performs element-wise subtraction between lwecipher and plain.
@@ -193,7 +193,7 @@ def FHE_LWEMulOp : FHE_Op<"lwemul", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_LWEMulPlainOp : FHE_Op<"lwemulplain", [Pure]> {
+def FHE_LWEMulPlainOp : FHE_Op<"lwemul_plain", [Pure]> {
   let summary = "LWECipher multiplication operation(lwecipher vs plain)";
   let description = [{
     The "mul" operation performs element-wise multiplication between lwecipher and plain.
@@ -215,7 +215,7 @@ def FHE_RLWEAddOp : FHE_Op<"rlweadd", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_RLWEAddPlainOp : FHE_Op<"rlweaddplain", [Pure]> {
+def FHE_RLWEAddPlainOp : FHE_Op<"rlweadd_plain", [Pure]> {
   let summary = "RLWECipher addition operation(rlwecipher vs plain)";
   let description = [{
     The "add" operation performs element-wise addition between rlwecipher and plain.
@@ -237,7 +237,7 @@ def FHE_RLWESubOp : FHE_Op<"rlwesub", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_RLWESubPlainOp : FHE_Op<"rlwesubplain", [Pure]> {
+def FHE_RLWESubPlainOp : FHE_Op<"rlwesub_plain", [Pure]> {
   let summary = "RLWECipher subtraction operation(rlwecipher vs plain)";
   let description = [{
     The "sub" operation performs element-wise subtraction between rlwecipher and plain.
@@ -268,7 +268,7 @@ def FHE_RLWEMulOp : FHE_Op<"rlwemul", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_RLWEMulPlainOp : FHE_Op<"rlwemulplain", [Pure]> {
+def FHE_RLWEMulPlainOp : FHE_Op<"rlwemul_plain", [Pure]> {
   let summary = "RLWECipher multiplication operation(rlwecipher vs plain)";
   let description = [{
     The "mul" operation performs element-wise multiplication between rlwecipher and plain.
