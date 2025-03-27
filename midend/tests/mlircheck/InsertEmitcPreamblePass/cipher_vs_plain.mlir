@@ -14,7 +14,7 @@ module {
 // CHECK: emitc.include "openfhe.h"
 // CHECK: emitc.verbatim "using namespace std;"
 // CHECK: emitc.verbatim "using namespace lbcrypto;"
-// CHECK: emitc.verbatim "using CiphertextT = ConstCiphertext<DCRTPoly>;"
+// CHECK: emitc.verbatim "using CiphertextT = Ciphertext<DCRTPoly>;"
 // CHECK: emitc.verbatim "using PlaintextT = Plaintext;"
 // CHECK: emitc.verbatim "using MutableCiphertextT = Ciphertext<DCRTPoly>;"
 // CHECK: emitc.verbatim "using CCParamsT = CCParams<CryptoContextCKKSRNS>;"

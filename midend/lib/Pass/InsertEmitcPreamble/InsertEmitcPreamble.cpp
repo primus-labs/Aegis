@@ -28,10 +28,12 @@ void InsertEmitcPreamblePass::runOnOperation()
         {"openfhe.h", /*isSystem=*/false}
     };
 
-    SmallVector<StringRef> verbatimLines = {
+    SmallVector<StringRef> verbatimUsing = {
         "using namespace std;",
         "using namespace lbcrypto;",
-        "using CiphertextT = ConstCiphertext<DCRTPoly>;",
+        "using CiphertextT = Ciphertext<DCRTPoly>;",
+        "using RLWECipher = Ciphertext<DCRTPoly>;",
+        "using LWECipher = Ciphertext<DCRTPoly>;",
         "using PlaintextT = Plaintext;",
         "using MutableCiphertextT = Ciphertext<DCRTPoly>;",
         "using CCParamsT = CCParams<CryptoContextCKKSRNS>;",
@@ -39,6 +41,24 @@ void InsertEmitcPreamblePass::runOnOperation()
         "using EvalKeyT = EvalKey<DCRTPoly>;",
         "using PrivateKeyT = PrivateKey<DCRTPoly>;",
         "using PublicKeyT = PublicKey<DCRTPoly>;",
+    };
+
+    SmallVector<StringRef> verbatimMacros = {
+        "#define Add(a, b) cryptoCtx->EvalAdd((a), (b))",
+        "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))",
+    };
+
+    // TODO, We must dynamically generate the corresponding encryption parameters based on the program.
+    SmallVector<StringRef> verbatimInitCC = {
+        "CryptoContext<DCRTPoly> cryptoCtx;",
+        "void init_cryptcontext() {",
+        "   CCParams<CryptoContextBGVRNS> parameters;",
+        "   //TODO",
+        "   cryptoCtx = GenCryptoContext(parameters);",
+        "   cryptoCtx->Enable(PKE);",
+        "   cryptoCtx->Enable(KEYSWITCH);",
+        "   cryptoCtx->Enable(LEVELEDSHE);",
+        "}",
     };
 
     // Traverse all ModuleOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
@@ -53,9 +73,19 @@ void InsertEmitcPreamblePass::runOnOperation()
             builder.create<emitc::IncludeOp>(op->getLoc(), include.first, include.second);
         }
 
-        // Insert all VerbatimOp
-        for (auto &line : verbatimLines) {
-            builder.create<emitc::VerbatimOp>(op->getLoc(), line);
+        // Insert all using stmts
+        for (auto &stmt : verbatimUsing) {
+            builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
+        }
+
+        // Insert all macros
+        for (auto &mac : verbatimMacros) {
+            builder.create<emitc::VerbatimOp>(op->getLoc(), mac);
+        }
+
+        // Insert init cryptcontext function
+        for (auto &stmt : verbatimInitCC) {
+            builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
         }
 
         return mlir::WalkResult::interrupt();

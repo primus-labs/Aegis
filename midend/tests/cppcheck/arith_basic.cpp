@@ -2,7 +2,7 @@
 // #include "openfhe.h"
 // using namespace std;
 // using namespace lbcrypto;
-// using CiphertextT = ConstCiphertext<DCRTPoly>;
+// using CiphertextT = Ciphertext<DCRTPoly>;
 // using PlaintextT = Plaintext;
 // using MutableCiphertextT = Ciphertext<DCRTPoly>;
 // using CCParamsT = CCParams<CryptoContextCKKSRNS>;
@@ -23,8 +23,9 @@
 #include "openfhe.h"
 using namespace std;
 using namespace lbcrypto;
-using CiphertextT = Ciphertext<DCRTPoly>;       //Modified
-using RLWECipher = Ciphertext<DCRTPoly>;        //Added
+using CiphertextT = Ciphertext<DCRTPoly>;       
+using RLWECipher = Ciphertext<DCRTPoly>;       
+using LWECipher = Ciphertext<DCRTPoly>;        
 using PlaintextT = Plaintext;
 using MutableCiphertextT = Ciphertext<DCRTPoly>;
 using CCParamsT = CCParams<CryptoContextCKKSRNS>;
@@ -34,17 +35,17 @@ using PrivateKeyT = PrivateKey<DCRTPoly>;
 using PublicKeyT = PublicKey<DCRTPoly>;
 
 //---------  begin added  -------------
-#define Add(a, b) cryptoContext->EvalAdd((a), (b))
-#define Mul(a, b) cryptoContext->EvalMult((a), (b))
-CryptoContext<DCRTPoly> cryptoContext;
+#define Add(a, b) cryptoCtx->EvalAdd((a), (b))
+#define Mul(a, b) cryptoCtx->EvalMult((a), (b))
+CryptoContext<DCRTPoly> cryptoCtx;
 void init_cryptcontext() {
     CCParams<CryptoContextBGVRNS> parameters;
     parameters.SetMultiplicativeDepth(2);
     
-    cryptoContext = GenCryptoContext(parameters);
-    cryptoContext->Enable(PKE);
-    cryptoContext->Enable(KEYSWITCH);
-    cryptoContext->Enable(LEVELEDSHE);
+    cryptoCtx = GenCryptoContext(parameters);
+    cryptoCtx->Enable(PKE);
+    cryptoCtx->Enable(KEYSWITCH);
+    cryptoCtx->Enable(LEVELEDSHE);
 }
 //---------   end added   -------------
 
