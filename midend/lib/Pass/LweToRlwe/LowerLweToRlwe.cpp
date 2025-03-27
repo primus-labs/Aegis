@@ -54,7 +54,7 @@ LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, Op
 
     // Deal with binary ops(mul/add/sub...)
     if (std::is_same<OpType, fhe::LWEMulOp>()) {
-        rewriter.replaceOpWithNewOp<fhe::RLWEAddOp>(op, destTy, castOps);
+        rewriter.replaceOpWithNewOp<fhe::RLWEMulOp>(op, destTy, castOps);
         return success();
     } else if (std::is_same<OpType, fhe::LWEMulPlainOp>()) {
         rewriter.replaceOpWithNewOp<fhe::RLWEMulPlainOp>(op, destTy, castOps);
@@ -116,10 +116,18 @@ void LweToRlwePass::runOnOperation() {
     auto type_converter = TypeConverter();
 
     type_converter.addConversion([&](Type t) {
-        if (mlir::isa<LWECipherVectorType>(t)) {
+        if (mlir::isa<LWECipherType>(t)) {
+            auto srcTy = mlir::cast<LWECipherType>(t);
+            return std::optional<Type>(RLWECipherType::get(&getContext(), srcTy.getPlaintextType(), 1));
+        } else if (mlir::isa<LWECipherVectorType>(t)) {
             auto srcTy = mlir::cast<LWECipherVectorType>(t);
             auto sizes = srcTy.getSize();
             return std::optional<Type>(RLWECipherType::get(&getContext(), srcTy.getPlaintextType(), sizes));
+        } else if (mlir::isa<LWECipherMatrixType>(t)) {
+            auto srcTy = mlir::cast<LWECipherMatrixType>(t);
+            auto row = srcTy.getRow();
+            auto col = srcTy.getCol();
+            return std::optional<Type>(RLWECipherGridType::get(&getContext(), srcTy.getPlaintextType(), row, col));
         } else {
             return std::optional<Type>(t);
         }
@@ -129,7 +137,13 @@ void LweToRlwePass::runOnOperation() {
         if (mlir::isa<RLWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<LWECipherVectorType>(srcTy)) {
+            if (mlir::isa<LWECipherType>(srcTy) || mlir::isa<LWECipherVectorType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
+            }
+        } else if (mlir::isa<RLWECipherGridType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto srcTy = vs.front().getType();
+            if (mlir::isa<LWECipherMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
@@ -140,7 +154,13 @@ void LweToRlwePass::runOnOperation() {
         if (mlir::isa<RLWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::dyn_cast_or_null<LWECipherVectorType>(srcTy)) {
+            if (mlir::isa<LWECipherType>(srcTy) || mlir::isa<LWECipherVectorType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
+            }
+        } else if (mlir::isa<RLWECipherGridType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
+            auto srcTy = vs.front().getType();
+            if (mlir::isa<LWECipherMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
@@ -148,10 +168,15 @@ void LweToRlwePass::runOnOperation() {
     });
 
     type_converter.addSourceMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (mlir::isa<LWECipherVectorType>(t)) {
+        if (mlir::isa<LWECipherType>(t) || mlir::isa<LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
             if (mlir::isa<RLWECipherType>(srcTy))
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
+        } else if ( mlir::isa<LWECipherMatrixType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            auto srcTy = vs.front().getType();
+            if (mlir::isa<RLWECipherGridType>(srcTy))
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
         return std::optional<Value>(std::nullopt);

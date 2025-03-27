@@ -102,10 +102,10 @@ def LWECipherMatrix: TypeDef<FHE_Dialect, "LWECipherMatrix"> {
   let parameters = (ins
       "Type":$plaintextType,
       "int":$row,
-      "int":$column
+      "int":$col
   );
 
-  let assemblyFormat = "`<` $row`x`$column`x`$plaintextType `>`";
+  let assemblyFormat = "`<` $row`x`$col`x`$plaintextType `>`";
 }
 
 def RLWECipher : TypeDef<FHE_Dialect, "RLWECipher"> {
@@ -135,10 +135,10 @@ def RLWECipherGrid: TypeDef<FHE_Dialect, "RLWECipherGrid"> {
   let parameters = (ins
       "Type":$plaintextType,
       "int":$row,
-      "int":$column
+      "int":$col
   );
 
-  let assemblyFormat = "`<` $row`x`$column`x`$plaintextType `>`";
+  let assemblyFormat = "`<` $row`x`$col`x`$plaintextType `>`";
 }
 
 

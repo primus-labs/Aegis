@@ -16,6 +16,7 @@
 #include "Pass/MemrefToSecret/LowerMemrefToSecret.h"
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
 #include "Pass/Batching/Batching.h"
+#include "Pass/LweToRlwe/LowerLweToRlwe.h"
 #include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
 #include "mlir/Dialect/Affine/Passes.h"
@@ -78,6 +79,9 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<BatchingPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<LweToRlwePass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerFheToEmitcPass>());
@@ -144,6 +148,7 @@ int main(int argc, char **argv) {
     PassRegistration<CollectMetadataPass>();
     PassRegistration<LowerSecretToFhePass>();
     PassRegistration<BatchingPass>();
+    PassRegistration<LweToRlwePass>();
     PassRegistration<LowerFheToEmitcPass>();
     PassRegistration<LowerCastToEmitcStubPass>();
     PassRegistration<InsertEmitcPreamblePass>();
