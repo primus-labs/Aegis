@@ -247,7 +247,7 @@ def FHE_RLWESubPlainOp : FHE_Op<"rlwesubplain", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
-def FHE_RLWENegOp : FHE_Op<"lweneg", [Pure]> {
+def FHE_RLWENegOp : FHE_Op<"rlweneg", [Pure]> {
   let summary = "RLWECipher negative operation";
   let description = [{
     The "neg" operation applies element-wise negation for rlweciphers.
