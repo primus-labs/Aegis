@@ -17,7 +17,7 @@ struct Shape{
 
 
 struct Payload{
-  data @0 :List(Data);  # The binary data of the payload.
+  data @0 :Data;  # The binary data of the payload.
 }
 
 
