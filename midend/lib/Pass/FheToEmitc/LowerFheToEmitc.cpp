@@ -154,6 +154,46 @@ public:
 };
 
 
+// Transform fhe::RotateOp to emitc::CallOpaqueOp.
+class FheRotatePattern final : public OpConversionPattern<fhe::RotateOp>
+{
+public:
+    using OpConversionPattern<fhe::RotateOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::RotateOp op, typename fhe::RotateOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        auto resTy = getTypeConverter()->convertType(op.getType());
+        if (!resTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+
+        Value operand = op.getCipher();
+        auto operandDestTy = typeConverter->convertType(operand.getType());
+        if (!operandDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << operand << ", the op type:" << operand.getType() << ".\n");
+            return failure();
+        }
+
+        Value newOperand;
+        if (operand.getType() != operandDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+        }
+        else {
+            newOperand = operand;
+        }
+
+        auto rotIdxAttr = ArrayAttr::get(getContext(), 
+                                { IntegerAttr::get(IndexType::get(getContext()),0),
+                                rewriter.getSI32IntegerAttr(op.getI())});
+
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Rotate", rotIdxAttr, ArrayAttr(), newOperand);
+
+        return success();
+    }
+};
+
+
 // Transform fhe::CallOp to emitc::CallOpaqueOp.
 class FheCallPattern final : public OpConversionPattern<func::CallOp>
 {
@@ -915,6 +955,7 @@ void LowerFheToEmitcPass::runOnOperation()
             FheArithBinaryPattern<fhe::RLWESubOp>, FheArithBinaryPattern<fhe::RLWESubPlainOp>,
             FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, 
             FheArithBinaryPattern<fhe::RLWEMulOp>, FheArithBinaryPattern<fhe::RLWEMulPlainOp>,
+            FheRotatePattern,
             FheFuncPattern, FheRetPattern, FheCallPattern,
             MemrefGetGlobalPattern, MemrefGlobalPattern,
             NativeMemrefLoadPattern, FheLoadPattern, FheStorePattern, FheCopyPattern,
