@@ -4,7 +4,7 @@
 
 namespace aegiscpu {
 
-std::vector<uint8_t> encrypt(std::vector<double> &data) {
+std::vector<uint8_t> encrypt(const std::vector<double> &data) {
   CryptoContext<DCRTPoly> cc =
       CryptoContextMgr::getInstance().getCryptoContext();
 
@@ -21,13 +21,13 @@ std::vector<uint8_t> encrypt(std::vector<double> &data) {
   return buffer;
 }
 
-std::vector<double> decrypt(std::vector<uint8_t> &data) {
+std::vector<double> decrypt(const std::vector<uint8_t> &data, size_t plaintextSize) {
   CryptoContext<DCRTPoly> cc =
       CryptoContextMgr::getInstance().getCryptoContext();
 
   // Deserialize output byte array into a ciphertext object.
   std::stringstream ss;
-  ss.write(reinterpret_cast<char *>(data.data()), data.size());
+  ss.write(reinterpret_cast<const char *>(data.data()), data.size());
   Ciphertext<DCRTPoly> deserCiphertext;
   Serial::Deserialize(deserCiphertext, ss, SerType::BINARY);
 
@@ -37,8 +37,7 @@ std::vector<double> decrypt(std::vector<uint8_t> &data) {
   // decrypt
   Plaintext ptValue;
   cc->Decrypt(priKey, deserCiphertext, &ptValue);
-  // TODO: Need know plaintext size.
-  // ptValue->SetLength(data.size() / sizeof(double)); // invalid size
+  ptValue->SetLength(plaintextSize); // Need know plaintext size for decrypting.
 
   return ptValue->GetRealPackedValue();
 }

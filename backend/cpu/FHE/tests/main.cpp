@@ -107,13 +107,13 @@ void _test_encrypt() {
   {
     // test decrypt
     // cout << "x1:" << x1 << endl;
-    auto d1 = aegiscpu::decrypt(c1);
+    auto d1 = aegiscpu::decrypt(c1, x1.size());
     // PrintDiff(x1, d1);
     // cout << "d1:" << d1 << endl;
     assert_eq(x1, d1, "decrypt on c1, !=x1");
 
     // cout << "x2:" << x2 << endl;
-    auto d2 = aegiscpu::decrypt(c2);
+    auto d2 = aegiscpu::decrypt(c2, x2.size());
     // PrintDiff(x2, d2);
     // cout << "d2:" << d2 << endl;
     assert_eq(x2, d2, "decrypt on c2, !=x2");
@@ -122,7 +122,7 @@ void _test_encrypt() {
   {
     std::vector<double> x1 = RandomVector(8, -10.0, 10.0);
     auto c1 = aegiscpu::encrypt(x1);
-    auto d1 = aegiscpu::decrypt(c1);
+    auto d1 = aegiscpu::decrypt(c1, x1.size());
     assert_eq(x1, d1, "decrypt on c1, !=x1");
   }
 }

@@ -24,10 +24,11 @@ std::vector<Value> FHEDataProcessor::publicInput(std::vector<Value> &args) {
     return inputData;
 }
 
-std::vector<Value> FHEDataProcessor::processOutput(std::vector<Value> &outputs) {
+std::vector<Value> FHEDataProcessor::processOutput(std::vector<Value> &outputs, std::vector<size_t>& plaintextSizes) {
+    assert(outputs.size() == plaintextSizes.size());
     std::vector<Value> outputData;
-    for (auto& output : outputs) {
-        outputData.push_back(processOutput(output));
+    for (size_t i = 0; i < outputs.size(); i++) {
+        outputData.push_back(processOutput(outputs[i], plaintextSizes[i]));
     }
 
     return outputData;
@@ -44,9 +45,9 @@ Value FHEDataProcessor::publicInput(Value &arg) {
     return arg;
 }
 
-Value FHEDataProcessor::processOutput(Value &output) {
+Value FHEDataProcessor::processOutput(Value &output, size_t plaintextSize) {
     auto tensor = output.getTensor<uint8_t>().value();
-    std::vector<double> res = aegiscpu::decrypt(tensor.values);
+    std::vector<double> res = aegiscpu::decrypt(tensor.values, plaintextSize);
     Tensor<double> resBuf(res, output.getDims());
     return Value(resBuf);
 }
