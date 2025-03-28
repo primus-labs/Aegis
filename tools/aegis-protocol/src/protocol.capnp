@@ -24,6 +24,7 @@ struct Payload{
 struct RawInfo{
   shape @0 :Shape;      # The shape of the tensor.
   isSigned @1 :Bool;    # The signedness of the value.
+  rawSize @2 :UInt32;   # The number of raw data elements. 
 }
 
 
