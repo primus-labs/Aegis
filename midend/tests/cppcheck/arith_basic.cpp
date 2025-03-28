@@ -51,6 +51,7 @@ void init_cryptcontext() {
 
 
 RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
+  init_cryptcontext();
   RLWECipher v4 = Add(v1, v2);
   RLWECipher v5 = Mul(v2, v4);
   return v5;

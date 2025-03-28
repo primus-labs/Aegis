@@ -1,6 +1,7 @@
 #include "mlir/include/mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Conversion/MemRefToEmitC/MemRefToEmitC.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "llvm/include/llvm/Support/Debug.h"
 #include "mlir/include/mlir/Support/LLVM.h" 
 #include "mlir/include/mlir/IR/MLIRContext.h"            
@@ -87,6 +88,26 @@ void InsertEmitcPreamblePass::runOnOperation()
         for (auto &stmt : verbatimInitCC) {
             builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
         }
+
+        return mlir::WalkResult::interrupt();
+    });
+
+    // Traverse all functions in the module and 
+    // Insert a call to the init_cryptcontext function at the beginning of target function.
+    module.walk([&](func::FuncOp funcOp) {
+        // Only process the target function
+        // if (funcOp.getName() != "main") {
+        //     return;
+        // }
+
+        // Get the entry block of the function
+        Block &entryBlock = funcOp.getBody().front();
+        
+        // Create OpBuilder at the beginning of the entry block
+        OpBuilder builder(&entryBlock, entryBlock.begin());
+        
+        // Create emitc.VerbatimOp (call init) operation
+        builder.create<emitc::VerbatimOp>(funcOp->getLoc(), "init_cryptcontext();");
 
         return mlir::WalkResult::interrupt();
     });
