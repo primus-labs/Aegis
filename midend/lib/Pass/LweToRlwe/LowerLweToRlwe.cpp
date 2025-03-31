@@ -116,18 +116,28 @@ template <typename OpType>
 LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *context, OpType op,
                                          TypeConverter typeConverter) {
     rewriter.setInsertionPoint(op);
-
     if (std::is_same<OpType, fhe::LoadOp>()) {
-        auto srcTy = op.getMemref().getType();
+        auto loadOp = llvm::cast<fhe::LoadOp>(op);
+        auto srcTy = loadOp.getMemref().getType();
         auto destTy = typeConverter.convertType(srcTy);
         if (!destTy) {
             return failure();
         }
-        if (srcTy == destTy) {
-            return success();
+        Value fheMemrefVal = loadOp.getMemref();
+        if (srcTy != destTy) {
+            fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, loadOp.getLoc(), destTy, loadOp.getMemref());
         }
-        auto fheVal = typeConverter.materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
-        rewriter.replaceOpWithNewOp<fhe::LoadOp>(op, fheVal.getType(), fheVal, op.getIndices());
+
+        // Get rlwecipher Plaintext Type
+        mlir::Type destUnitTy;
+        if (auto CipherTy = mlir::dyn_cast_or_null<fhe::RLWECipherType>(destTy)) {
+            destUnitTy = CipherTy.getPlaintextType();
+        } else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::RLWECipherGridType>(destTy)) {
+            destUnitTy = CipherTy.getPlaintextType();
+        }
+        auto unitCipherTy = fhe::RLWECipherType::get(context, destUnitTy, 1);
+         
+        rewriter.replaceOpWithNewOp<fhe::LoadOp>(op, unitCipherTy, fheMemrefVal, loadOp.getIndices());
         return success();
     } else if (std::is_same<OpType, fhe::StoreOp>()) {
         auto storeOp = llvm::cast<fhe::StoreOp>(op);
@@ -140,12 +150,18 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
         if (!valueToStoreDestTy) {
             return failure();
         }
-        auto fheValToStore =
-            typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), valueToStoreDestTy, storeOp.getValueToStore());
-        auto fheArrVal = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), destTy, storeOp.getMemref());
-        
-        rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheArrVal, storeOp.getIndices());
 
+        Value fheValToStore = storeOp.getValueToStore();
+        if (valueToStoreDestTy != storeOp.getValueToStore().getType()) {
+            typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), valueToStoreDestTy, storeOp.getValueToStore());
+        }
+
+        Value fheMemrefVal = storeOp.getMemref();
+        if (destTy != srcTy) {
+            fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), destTy, storeOp.getMemref());
+        }
+        
+        rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheMemrefVal, storeOp.getIndices());
         return success();
     }
 
@@ -190,6 +206,8 @@ void LweToRlwePass::runOnOperation() {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
+
+        llvm::errs() << "call addTargetMaterialization return null value for type:" << t << ".[LweToRlwe pass]\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -207,6 +225,8 @@ void LweToRlwePass::runOnOperation() {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
+
+        llvm::errs() << "call addArgumentMaterialization return null value for type:" << t << ".[LweToRlwe pass]\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -222,6 +242,8 @@ void LweToRlwePass::runOnOperation() {
             if (mlir::isa<RLWECipherGridType>(srcTy))
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
+
+        llvm::errs() << "call addSourceMaterialization return null value for type:" << t << ".[LweToRlwe pass]\n";
         return std::optional<Value>(std::nullopt);
     });
 
