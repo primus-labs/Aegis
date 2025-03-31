@@ -32,10 +32,10 @@ module  {
 
 
 // CHECK: emitc.verbatim "init_cryptcontext();"
-// CHECK: "emitc.constant"() <{value = #emitc.opaque<"Plain(0.000000)">}> : () -> !emitc.opaque<"Plain">
-// CHECK: "emitc.constant"() <{value = #emitc.opaque<"Plain(1.000000)">}> : () -> !emitc.opaque<"Plain">
-// CHECK: "emitc.constant"() <{value = #emitc.opaque<"Plain(4.000000)">}> : () -> !emitc.opaque<"Plain">
-// CHECK: "emitc.constant"() <{value = #emitc.opaque<"Plain(5.000000)">}> : () -> !emitc.opaque<"Plain">
+// CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0.000000)">}> : () -> !emitc.opaque<"Plain">
+// CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1.000000)">}> : () -> !emitc.opaque<"Plain">
+// CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(4.000000)">}> : () -> !emitc.opaque<"Plain">
+// CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(5.000000)">}> : () -> !emitc.opaque<"Plain">
 // CHECK: emitc.call_opaque "Cast_Stub"(%3) : (!emitc.opaque<"Plain">) -> index
 // CHECK: emitc.call_opaque "Cast_Stub"(%2) : (!emitc.opaque<"Plain">) -> index
 // CHECK: emitc.call_opaque "Cast_Stub"(%1) : (!emitc.opaque<"Plain">) -> index

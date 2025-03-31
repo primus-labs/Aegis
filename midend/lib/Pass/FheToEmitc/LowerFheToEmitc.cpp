@@ -406,7 +406,7 @@ public:
 
         // Combine emitc::OpaqueAttr using the value.
         emitc::OpaqueAttr emitcAttrVal;
-        emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("Plain(" + std::to_string(dVal) + ")"));
+        emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakePlain(" + std::to_string(dVal) + ")"));
         rewriter.replaceOpWithNewOp<emitc::ConstantOp>(op, TypeRange(destTy), emitcAttrVal);
         
         return success();

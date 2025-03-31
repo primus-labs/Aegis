@@ -36,6 +36,7 @@ void InsertEmitcPreamblePass::runOnOperation()
         "using RLWECipher = Ciphertext<DCRTPoly>;",
         "using LWECipher = Ciphertext<DCRTPoly>;",
         "using PlaintextT = Plaintext;",
+        "using Plain = Plaintext;",
         "using MutableCiphertextT = Ciphertext<DCRTPoly>;",
         "using CCParamsT = CCParams<CryptoContextCKKSRNS>;",
         "using CryptoContextT = CryptoContext<DCRTPoly>;",
@@ -46,7 +47,13 @@ void InsertEmitcPreamblePass::runOnOperation()
 
     SmallVector<StringRef> verbatimMacros = {
         "#define Add(a, b) cryptoCtx->EvalAdd((a), (b))",
+        "#define AddPlain(c, p) cryptoCtx->EvalAdd((c), (p))",
         "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))",
+        "#define MulPlain(c, p) cryptoCtx->EvalMult((c), (p))",
+        "#define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))",
+        "#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector{VA_ARGS})",
+        "#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]",
+        "#define Native_Load(v, idx) v[idx]",
     };
 
     // TODO, We must dynamically generate the corresponding encryption parameters based on the program.

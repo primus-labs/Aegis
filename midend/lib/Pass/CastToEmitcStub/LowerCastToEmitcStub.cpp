@@ -32,6 +32,22 @@ public:
     {
         auto destTy = op.getType();
         auto operand = op.getOperand();
+        if (auto constantOp = mlir::dyn_cast<emitc::ConstantOp>(operand.getDefiningOp())) {
+            // Get value attribute
+            Attribute valueAttr = constantOp.getValueAttr();
+
+            // Exist OpaqueAttr ?
+            if (auto opaqueAttr = mlir::dyn_cast<emitc::OpaqueAttr>(valueAttr)) {
+                StringRef valueStr = opaqueAttr.getValue();
+                if (valueStr.starts_with("MakePlain") && mlir::isa<mlir::IndexType>(destTy)) {
+                    rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Plain_To_Index", 
+                                    ArrayAttr(), ArrayAttr(), operand);
+                    return success();
+                }
+            }
+        }
+
+
         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
                                     ArrayAttr(), ArrayAttr(), operand);
         return success();
