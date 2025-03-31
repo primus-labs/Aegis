@@ -19,7 +19,7 @@ module {
   emitc.verbatim "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))"
   emitc.verbatim "CryptoContext<DCRTPoly> cryptoCtx;"
   emitc.verbatim "void init_cryptcontext() {"
-  emitc.verbatim "   CCParams<CryptoContextBGVRNS> parameters;"
+  emitc.verbatim "   CCParams<CryptoContextCKKSRNS> parameters;"
   emitc.verbatim "   //TODO"
   emitc.verbatim "   cryptoCtx = GenCryptoContext(parameters);"
   emitc.verbatim "   cryptoCtx->Enable(PKE);"

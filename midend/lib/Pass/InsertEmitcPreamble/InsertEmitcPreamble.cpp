@@ -60,7 +60,7 @@ void InsertEmitcPreamblePass::runOnOperation()
     SmallVector<StringRef> verbatimInitCC = {
         "CryptoContext<DCRTPoly> cryptoCtx;",
         "void init_cryptcontext() {",
-        "   CCParams<CryptoContextBGVRNS> parameters;",
+        "   CCParams<CryptoContextCKKSRNS> parameters;",
         "   //TODO",
         "   cryptoCtx = GenCryptoContext(parameters);",
         "   cryptoCtx->Enable(PKE);",

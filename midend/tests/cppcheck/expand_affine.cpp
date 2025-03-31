@@ -24,7 +24,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 
 CryptoContext<DCRTPoly> cryptoCtx;
 void init_cryptcontext() {
-   CCParams<CryptoContextBGVRNS> parameters;
+   CCParams<CryptoContextCKKSRNS> parameters;
    //TODO
    cryptoCtx = GenCryptoContext(parameters);
    cryptoCtx->Enable(PKE);

@@ -26,7 +26,7 @@ module {
   emitc.verbatim "#define Native_Load(v, idx) v[idx]"
   emitc.verbatim "CryptoContext<DCRTPoly> cryptoCtx;"
   emitc.verbatim "void init_cryptcontext() {"
-  emitc.verbatim "   CCParams<CryptoContextBGVRNS> parameters;"
+  emitc.verbatim "   CCParams<CryptoContextCKKSRNS> parameters;"
   emitc.verbatim "   //TODO"
   emitc.verbatim "   cryptoCtx = GenCryptoContext(parameters);"
   emitc.verbatim "   cryptoCtx->Enable(PKE);"

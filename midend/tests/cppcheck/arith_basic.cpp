@@ -39,7 +39,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define Mul(a, b) cryptoCtx->EvalMult((a), (b))
 CryptoContext<DCRTPoly> cryptoCtx;
 void init_cryptcontext() {
-    CCParams<CryptoContextBGVRNS> parameters;
+    CCParams<CryptoContextCKKSRNS> parameters;
     parameters.SetMultiplicativeDepth(2);
     
     cryptoCtx = GenCryptoContext(parameters);
