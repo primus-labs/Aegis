@@ -51,7 +51,7 @@ void InsertEmitcPreamblePass::runOnOperation()
         "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))",
         "#define MulPlain(c, p) cryptoCtx->EvalMult((c), (p))",
         "#define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))",
-        "#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector{VA_ARGS})",
+        "#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector<double>{__VA_ARGS__})",
         "#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]",
         "#define Native_Load(v, idx) v[idx]",
     };
