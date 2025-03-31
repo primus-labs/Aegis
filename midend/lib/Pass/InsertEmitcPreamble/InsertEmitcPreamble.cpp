@@ -48,6 +48,8 @@ void InsertEmitcPreamblePass::runOnOperation()
     SmallVector<StringRef> verbatimMacros = {
         "#define Add(a, b) cryptoCtx->EvalAdd((a), (b))",
         "#define AddPlain(c, p) cryptoCtx->EvalAdd((c), (p))",
+        "#define Sub(a, b) cryptoCtx->EvalSub((a), (b))",
+        "#define SubPlain(c, p) cryptoCtx->EvalSub((c), (p))",
         "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))",
         "#define MulPlain(c, p) cryptoCtx->EvalMult((c), (p))",
         "#define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))",
