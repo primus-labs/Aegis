@@ -36,10 +36,10 @@ module  {
 // CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1.000000)">}> : () -> !emitc.opaque<"Plain">
 // CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(4.000000)">}> : () -> !emitc.opaque<"Plain">
 // CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(5.000000)">}> : () -> !emitc.opaque<"Plain">
-// CHECK: emitc.call_opaque "Cast_Stub"(%3) : (!emitc.opaque<"Plain">) -> index
-// CHECK: emitc.call_opaque "Cast_Stub"(%2) : (!emitc.opaque<"Plain">) -> index
-// CHECK: emitc.call_opaque "Cast_Stub"(%1) : (!emitc.opaque<"Plain">) -> index
-// CHECK: emitc.call_opaque "Cast_Stub"(%0) : (!emitc.opaque<"Plain">) -> index
+// CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%3) : (!emitc.opaque<"Plain">) -> index
+// CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%2) : (!emitc.opaque<"Plain">) -> index
+// CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%1) : (!emitc.opaque<"Plain">) -> index
+// CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%0) : (!emitc.opaque<"Plain">) -> index
 // CHECK: emitc.call_opaque "Native_Load"(%arg0, %7) : (!emitc.opaque<"std::vector<Plain>">, index) -> !emitc.opaque<"Plain">
 // CHECK: emitc.call_opaque "MulPlain"(%arg1, %8) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
 // CHECK: emitc.call_opaque "Native_Load"(%arg0, %6) : (!emitc.opaque<"std::vector<Plain>">, index) -> !emitc.opaque<"Plain">

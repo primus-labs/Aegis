@@ -57,3 +57,27 @@ module {
 }
 
 
+// CHECK: init_cryptcontext();
+// CHECK: Plain v3 = MakePlain(0.000000);
+// CHECK: Plain v4 = MakePlain(1.000000);
+// CHECK: Plain v5 = MakePlain(4.000000);
+// CHECK: Plain v6 = MakePlain(5.000000);
+// CHECK: size_t v7 = Cast_Plain_To_Index(v6);
+// CHECK: size_t v8 = Cast_Plain_To_Index(v5);
+// CHECK: size_t v9 = Cast_Plain_To_Index(v4);
+// CHECK: size_t v10 = Cast_Plain_To_Index(v3);
+// CHECK: Plain v11 = Native_Load(v1, v10);
+// CHECK: RLWECipher v12 = MulPlain(v2, v11);
+// CHECK: Plain v13 = Native_Load(v1, v9);
+// CHECK: RLWECipher v14 = MulPlain(v2, v13);
+// CHECK: RLWECipher v15 = Rotate(v14, 3);
+// CHECK: RLWECipher v16 = Add(v12, v15);
+// CHECK: Plain v19 = Native_Load(v1, v8);
+// CHECK: RLWECipher v20 = MulPlain(v2, v19);
+// CHECK: Plain v21 = Native_Load(v1, v7);
+// CHECK: RLWECipher v22 = MulPlain(v2, v21);
+// CHECK: RLWECipher v23 = Rotate(v20, 1);
+// CHECK: RLWECipher v24 = Add(v23, v22);
+
+
+
