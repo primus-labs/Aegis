@@ -2,10 +2,10 @@
 #define COMPILER_ENGINE_H
 
 #include "capnp/message.h"
-#include "protocol.capnp.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
+#include "protocol.capnp.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/SourceMgr.h"
@@ -15,76 +15,88 @@ namespace aegis {
 
 /// Backend type
 enum BACKEND_TYPE {
-CPU,
-GPU,
+    CPU,
+    GPU,
 };
 
 /// Compile Mode
 enum COMPILE_MODE {
-  COMPILE,
-  TRANSPILER,
+    COMPILE,
+    TRANSPILER,
 };
 
 /// Specification of the exit stage of the compilation pipeline
 enum class TARGET {
-  /// Read sources and convert mlir operations to SECRET operations
-  SECRET,
+    /// Dump all build-in mlir operations
+    MLIR,
 
-  /// Read sources and lower all SECRET operations to FHE operations
-  FHE,
+    /// Read high mlir operations and conver to low mlir operations
+    LOWER_MLIR,
 
-  /// Read sources and lower all FHE operations to the emitc dialect operations. 
-  EMITC,
+    /// Read sources and convert mlir operations to SECRET operations
+    SECRET,
 
-  /// Read sources and convert emitc dialect to c/cpp source code. 
-  CPP, 
+    /// Read sources and lower all SECRET operations to FHE operations
+    FHE,
 
-  /// compile cpp source code to a futur library
-  LIBRARY
+    /// Read sources and lower all FHE operations to the emitc dialect operations.
+    EMITC,
+
+    /// Read sources and convert emitc dialect to c/cpp source code.
+    CPP,
+
+    /// compile cpp source code to a futur library
+    LIBRARY
 
 };
 
-
-/// Compilation options 
+/// Compilation options
 typedef struct tagCompileOptions {
-  BACKEND_TYPE beType;
-  COMPILE_MODE mode; 
+    BACKEND_TYPE beType;
+    COMPILE_MODE mode;
+    bool verbose;
 
-  tagCompileOptions() {
-    beType = BACKEND_TYPE::CPU;
-    mode = COMPILE_MODE::COMPILE;
-  }
+    tagCompileOptions() {
+        beType = BACKEND_TYPE::CPU;
+        mode = COMPILE_MODE::COMPILE;
+        verbose = false;
+    }
 } CompileOptions;
 
-
 /// Result of Compile
-class CompileResult {
-  std::string outputDirPath;
-  std::string cppFileName;
-  std::string binFileName;
-  std::string progSpecFileName;
+struct CompileResult {
+    std::string outputDirPath;
+    std::string cppFileName;
+    std::string binFileName;
+    std::string progSpecFileName;
 };
-
 
 /// Compilation context , indirectly referenced LLVM and MLIR data structures.
 class CompileContext {
 public:
-  CompileContext();
-  ~CompileContext();
+    CompileContext();
+    ~CompileContext();
 
-  mlir::MLIRContext *getMLIRContext();
-  llvm::LLVMContext *getLLVMContext();
+    mlir::MLIRContext *getMLIRContext();
+    llvm::LLVMContext *getLLVMContext();
 
-  static std::shared_ptr<CompileContext> createContext();
+    static std::shared_ptr<CompileContext> createContext();
 
 public:
-  CompileResult compile(mlir::ModuleOp module, TARGET target);
-  CompileResult compile(llvm::SourceMgr &sm, TARGET target);
-  CompileResult compile(llvm::StringRef s, TARGET target);
+    llvm::Expected<CompileResult> compile(mlir::ModuleOp module, TARGET target);
+    llvm::Expected<CompileResult> compile(llvm::SourceMgr &sm, TARGET target);
+    llvm::Expected<CompileResult> compile(llvm::StringRef s, TARGET target);
+
+public:
+    void setEnablePass(std::function<bool(mlir::Pass *)> enablePass) {
+      this->enablePass = enablePass;
+    }
 
 protected:
-  mlir::MLIRContext *mlirCtx;
-  llvm::LLVMContext *llvmCtx;
+    mlir::MLIRContext *mlirCtx;
+    llvm::LLVMContext *llvmCtx;
+    CompileOptions compileOptions;
+    std::function<bool(mlir::Pass *)> enablePass;
 };
 
 } // namespace aegis

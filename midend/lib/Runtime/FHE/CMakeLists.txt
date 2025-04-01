@@ -5,6 +5,7 @@ add_mlir_library(
     CompilerEngine.cpp
     FHEDataProcessor.cpp
     FHERuntime.cpp
+    FHEPipeline.cpp
 
     DEPENDS
     aegis-protocol
