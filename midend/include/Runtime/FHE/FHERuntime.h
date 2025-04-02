@@ -9,7 +9,7 @@ namespace aegis {
 
 class FHERuntime : public Runtime {
 public:
-    std::vector<Value> call(const std::vector<Value> &input) const;
+    std::vector<Value> call(const std::vector<Value> &input);
 
 };
 
