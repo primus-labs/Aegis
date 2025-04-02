@@ -1,3 +1,12 @@
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
 #include "Runtime/FHE/FHEPipeline.h"
 #include "Pass/ArithToSecret/LowerArithToSecret.h"
 #include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
@@ -21,6 +30,8 @@
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassOptions.h"
 #include "mlir/InitAllPasses.h"
+#include "mlir/IR/AsmState.h"
+#include "mlir/Dialect/EmitC/IR/EmitC.h"
 
 namespace mlir {
 namespace aegis {
@@ -55,6 +66,141 @@ static void addNestedAwarePass(mlir::PassManager &pm, std::unique_ptr<Pass> pass
         mlir::OpPassManager &opm = pm.nest(*pass->getOpName());
         opm.addPass(std::move(pass));
     }
+}
+
+static bool findEmitcTranslateTool(std::string &toolPath) {
+    toolPath.clear();
+
+    // Check environment variables
+    if (const char* env_path = std::getenv("EMITC_TRANSLATE_PATH")) {
+        struct stat statbuf;
+        if (stat(env_path, &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
+            toolPath = env_path;
+            return true;
+        }
+    }
+
+    // Search PATH environment variable
+    const char* path_env = std::getenv("PATH");
+    if (!path_env) {
+        return false;
+    }
+
+    std::vector<std::string> search_paths;
+    const std::string delimiter = ":";
+    std::string path_str(path_env);
+    size_t pos = 0;
+    while ((pos = path_str.find(delimiter)) != std::string::npos) {
+        search_paths.push_back(path_str.substr(0, pos));
+        path_str.erase(0, pos + delimiter.length());
+    }
+    search_paths.push_back(path_str);
+
+    // Traverse search paths
+    for (const auto& dir : search_paths) {
+        std::string full_path = dir + "/emitc-translate";
+        struct stat statbuf;
+        if (stat(full_path.c_str(), &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
+            toolPath = full_path;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static mlir::LogicalResult moduleOpToString(mlir::ModuleOp &moduleOp, std::string &mlirContent) {
+    mlir::MLIRContext *context = moduleOp.getContext();
+    context->getOrLoadDialect<mlir::emitc::EmitCDialect>();
+
+    mlir::OpPrintingFlags printFlags;
+    printFlags.enableDebugInfo();  
+    printFlags.elideLargeElementsAttrs(10); 
+
+    mlirContent.clear();
+    llvm::raw_string_ostream sos(mlirContent);
+    moduleOp.print(sos, printFlags);
+    
+    if (mlirContent.empty()) {
+        llvm::errs() << "Failed to convert ModuleOp to mlir text.\n";
+        return failure();
+    }
+    
+    return success();
+}
+
+static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, std::string &cppFileName) {
+    // Find emitc-translate tool path
+    std::string emitcTranTool;
+    if (!findEmitcTranslateTool(emitcTranTool)) {
+        llvm::errs() << "emitc-translate not found in PATH or EMITC_TRANSLATE_PATH.\n";
+        return failure();
+    }
+
+    // Create a temporary input file
+    char inputTemp[] = "/tmp/emitc_XXXXXX.mlir";
+    int fdInput = mkstemps(inputTemp, 5); 
+    if (fdInput == -1) {
+        llvm::errs() << "Failed to create temporary input file.\n";
+        return failure();
+    }
+    close(fdInput);
+    
+    const std::string inputPath(inputTemp);
+    {
+        std::ofstream inputFile(inputPath);
+        if (!inputFile) {
+            llvm::errs() << "Cannot open input file: " << inputPath << ".\n";
+            return failure();
+        }
+        inputFile << mlirContent;
+    }
+
+    // Generate output path
+    char outputTemp[] = "/tmp/output_XXXXXX.cpp";
+    int fdOutput = mkstemps(outputTemp, 4);
+    if (fdOutput == -1) {
+        unlink(inputPath.c_str());
+        llvm::errs() << "Failed to create output file.\n";
+        return failure();
+    }
+    close(fdOutput);
+    const std::string outputPath(outputTemp);
+
+    // exec emitc-translate tool
+    pid_t pid = fork();
+    if (pid == -1) {
+        unlink(inputPath.c_str());
+        unlink(outputPath.c_str());
+        llvm::errs() << "Failed to fork process.\n";
+        return failure();
+    }
+
+    if (pid == 0) {
+        const char* args[] = {
+            emitcTranTool.c_str(),
+            "--mlir-to-cpp",
+            inputPath.c_str(),
+            "-o", outputPath.c_str(),
+            nullptr
+        };
+
+        execvp(args[0], const_cast<char* const*>(args));
+        exit(EXIT_FAILURE);
+    } else { 
+        int status;
+        waitpid(pid, &status, 0);
+        unlink(inputPath.c_str());
+
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+            unlink(outputPath.c_str());
+            llvm::errs() << "emitc-translate execution failed.\n";
+            return failure();
+        }
+    }
+
+    cppFileName = outputPath;
+    return success();
 }
 
 mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleOp &module,
@@ -144,8 +290,18 @@ mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &
 
 
 mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                                        std::function<bool(mlir::Pass *)> enablePass, bool verbose) {
-    return success();
+                                        std::string &cppFileName, bool verbose) {
+    mlir::PassManager pm(&context);
+    printPipeline("transformEmitcToCpp", pm, context, verbose);
+
+    // Get emitc mlir text content.
+    std::string mlirContent;
+    if (moduleOpToString(module, mlirContent).failed()) {
+        return failure();
+    }
+
+    // Exec emit-translate tool to generate cpp file
+    return fromEmitcToCpp(mlirContent, cppFileName);
 }
 
 

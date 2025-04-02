@@ -26,7 +26,7 @@ mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &
                                     std::function<bool(mlir::Pass *)> enablePass, bool verbose);
 
 mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                                    std::function<bool(mlir::Pass *)> enablePass, bool verbose);
+                                        std::string &cppFileName, bool verbose);
 
 
 } // namespace fhepipeline

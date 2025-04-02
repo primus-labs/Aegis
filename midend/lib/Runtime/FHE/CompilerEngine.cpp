@@ -72,7 +72,7 @@ llvm::Expected<CompileResult> CompileContext::compile(mlir::ModuleOp module, TAR
 
     // Transform emitc ir to cpp
     if (target == TARGET::CPP) {
-        if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, enablePass, options.verbose).failed()) {
+        if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, res.cppFileName, options.verbose).failed()) {
             return ErrorMsg("Failed to transform emitc to cpp.");
         }
     }
