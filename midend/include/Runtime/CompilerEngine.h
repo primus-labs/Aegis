@@ -14,15 +14,9 @@ namespace mlir {
 namespace aegis {
 
 /// Backend type
-enum BACKEND_TYPE {
+enum class BACKEND_TYPE {
     CPU,
     GPU,
-};
-
-/// Compile Mode
-enum COMPILE_MODE {
-    COMPILE,
-    TRANSPILER,
 };
 
 /// Specification of the exit stage of the compilation pipeline
@@ -53,12 +47,12 @@ enum class TARGET {
 /// Compilation options
 typedef struct tagCompileOptions {
     BACKEND_TYPE beType;
-    COMPILE_MODE mode;
+    TARGET target;
     bool verbose;
 
     tagCompileOptions() {
         beType = BACKEND_TYPE::CPU;
-        mode = COMPILE_MODE::COMPILE;
+        target = TARGET::SECRET;
         verbose = false;
     }
 } CompileOptions;
