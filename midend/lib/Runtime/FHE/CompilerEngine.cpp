@@ -1,5 +1,6 @@
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEPipeline.h"
+#include "Runtime/FHE/ProgramSpecGeneration.h"
 #include "Common/Error.h"
 #include "mlir/Parser/Parser.h"
 
@@ -43,31 +44,35 @@ llvm::Expected<CompileResult> CompileContext::compile(mlir::ModuleOp module, TAR
     }
 
     // Lower high mlir to low mlir.(eg: unroll affine.for ...)
+    if (aegis::fhepipeline::lowerHighLevelMlir(mlirContext, module, enablePass, options.verbose).failed()) {
+        return ErrorMsg("Failed to lower higher level mlir.");
+    }
     if (target == TARGET::LOWER_MLIR) {
-        if (aegis::fhepipeline::lowerHighLevelMlir(mlirContext, module, enablePass, options.verbose).failed()) {
-            return ErrorMsg("Failed to lower higher level mlir.");
-        }
+        return res;
     }
 
     // Lower build-in mlir to Secret IR
+    if (aegis::fhepipeline::lowerMlirToSecret(mlirContext, module, enablePass, options.verbose).failed()) {
+        return ErrorMsg("Failed to lower buildin mlir to secret ir.");
+    }
     if (target == TARGET::SECRET) {
-        if (aegis::fhepipeline::lowerMlirToSecret(mlirContext, module, enablePass, options.verbose).failed()) {
-            return ErrorMsg("Failed to lower buildin mlir to secret ir.");
-        }
+        return res;
     }
 
     // Lower secret ir to fhe ir
+    if (aegis::fhepipeline::lowerSecretToFhe(mlirContext, module, enablePass, options.verbose).failed()) {
+        return ErrorMsg("Failed to lower secret ir to fhe ir.");
+    }
     if (target == TARGET::FHE) {
-        if (aegis::fhepipeline::lowerSecretToFhe(mlirContext, module, enablePass, options.verbose).failed()) {
-            return ErrorMsg("Failed to lower secret ir to fhe ir.");
-        }
+        return res;
     }
 
     // Lower fhe ir to emitc ir
+    if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, options.verbose).failed()) {
+        return ErrorMsg("Failed to lower fhe ir to emitc ir.");
+    }
     if (target == TARGET::EMITC) {
-        if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, options.verbose).failed()) {
-            return ErrorMsg("Failed to lower fhe ir to emitc ir.");
-        }
+        return res;
     }
 
     // Transform emitc ir to cpp
@@ -78,12 +83,18 @@ llvm::Expected<CompileResult> CompileContext::compile(mlir::ModuleOp module, TAR
     }
 
     // Compile cpp to library
-    if (target == TARGET::CPP) {
-        // TODO
+    if (target == TARGET::LIBRARY) {
+        if (aegis::fhepipeline::emitSharedLibrary(res.cppFileName, res.binFileName).failed()) {
+            return ErrorMsg("Failed to compile cpp to share library.");
+        }
     }
 
     // Generate prog_spec file.
-    // TODO
+    if (target == TARGET::CPP || target == TARGET::LIBRARY) {
+        auto progSpecOrErr = createProgramSpec(module);
+        if (!progSpecOrErr)
+            return progSpecOrErr.takeError();
+    }
 
     return res;
 }
