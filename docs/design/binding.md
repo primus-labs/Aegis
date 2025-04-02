@@ -17,12 +17,12 @@ version 1: 2025.03.05
 
 ## Overview
 
-- The module name is `primus.aegis_c`.
-- The default backend is CPU. (Maybe add .gpu for GPU backend, such as` primus.aegis_c.gpu.XXX`.)
+- The module name is `primus_aegis`.
+- The default backend is CPU. (Maybe add .gpu for GPU backend, such as` primus_aegis.gpu.XXX`.)
 - The source folder is `./midend/lib/Binding`.
 - The way how to import the module:
   ```py
-  import primus.aegis_c
+  import primus_aegis
   ```
 
 <br/>
@@ -36,7 +36,7 @@ Basic flow:
 
 ## FHE
 
-Namespace: `primus.aegis_c.fhe`.
+Namespace: `primus_aegis.fhe`.
 
 **KeyInfo**
 
@@ -99,7 +99,7 @@ classDiagram
 ### Simple Usage
 
 ```py
-from aegis_c.fhe import KeyInfo as FHEKeyInfo
+from primus_aegis.fhe import KeyInfo as FHEKeyInfo
 
 # make keyInfo (load from program_spec.json)
 fheKeyInfo = FHEKeyInfo()
@@ -110,7 +110,7 @@ fheKeyInfo.batchSize = 8
 fheKeyInfo.galoisIndices = [1, -2]
 
 
-from aegis_c.fhe import Keyset as FHEKeyset
+from primus_aegis.fhe import Keyset as FHEKeyset
 
 # generate keys
 fheKeyset = FHEKeyset.getInstance()
@@ -182,7 +182,7 @@ Use `privateInput/processOutput` for `encrypt/decrypt`.
 
 ```py
 import numpy as np
-from aegis_c.runtime import DataProcessor as FHEDataProcessor
+from primus_aegis.runtime import DataProcessor as FHEDataProcessor
 
 plainInputData = np.array([[1.1, 2.2, 3.3, 4.4], [5.5, 6.6, 7.7, 8.8]], dtype=np.float64)
 
@@ -257,7 +257,7 @@ classDiagram
 ### Simple Usage
 
 ```py
-from aegis_c.runtime import CompileOption, FHERuntime
+from primus_aegis.runtime import CompileOption, FHERuntime
 
 mlir_file = "/path/to/xxx.mlir"
 compile_option = CompileOption()

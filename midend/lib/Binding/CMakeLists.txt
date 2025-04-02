@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
-project(aegis_c)
-set(target_name aegis_c)
+project(primus_aegis)
+set(target_name primus_aegis)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -13,14 +13,14 @@ FetchContent_MakeAvailable(pybind11)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 include_directories(${Python_INCLUDE_DIRS})
 
-# The following two forms of library files can be imported directly into python by `import aegis_c`
+# The following two forms of library files can be imported directly into python by `import primus_aegis`
 IF(TRUE)
-  # generate such as "aegis_c.cpython-version-arch-xxx.so"
-  pybind11_add_module(aegis_c aegis_c.cpp)
+  # generate such as "primus_aegis.cpython-version-arch-xxx.so"
+  pybind11_add_module(primus_aegis primus_aegis.cpp)
 ELSE()
-  # generate "aegis_c.so", more general
-  add_library(aegis_c SHARED aegis_c.cpp)
-  set_target_properties(aegis_c PROPERTIES PREFIX "")
+  # generate "primus_aegis.so", more general
+  add_library(primus_aegis SHARED primus_aegis.cpp)
+  set_target_properties(primus_aegis PROPERTIES PREFIX "")
 ENDIF()
 target_link_libraries(${target_name} PRIVATE pybind11::headers)
 
@@ -28,6 +28,7 @@ target_link_libraries(${target_name}
   PRIVATE
   aegis_cpu
   AegisCommon
+  AegisRuntime
   OPENFHEcore
   OPENFHEpke
 )
