@@ -89,19 +89,57 @@ mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleO
 
 mlir::LogicalResult lowerMlirToSecret(mlir::MLIRContext &context, mlir::ModuleOp &module,
                                     std::function<bool(mlir::Pass *)> enablePass, bool verbose) {
-    return success();
+    mlir::PassManager pm(&context);
+    printPipeline("lowerMlirToSecret", pm, context, verbose);
+
+    addNestedAwarePass(pm, std::make_unique<LowerArithToSecretPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<LowerFuncToSecretPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<LowerMemrefToSecretPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    
+    return pm.run(module.getOperation());
 }
 
 
 mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp &module,
                                     std::function<bool(mlir::Pass *)> enablePass, bool verbose) {
-    return success();
+    mlir::PassManager pm(&context);
+    printPipeline("lowerSecretToFhe", pm, context, verbose);
+
+    addNestedAwarePass(pm, std::make_unique<LowerSecretToFhePass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<FoldArithChainPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<LweToRlwePass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+
+    return pm.run(module.getOperation());
 }
 
 
 mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &module,
                                     std::function<bool(mlir::Pass *)> enablePass, bool verbose) {
-    return success();
+    mlir::PassManager pm(&context);
+    printPipeline("lowerFheToEmitc", pm, context, verbose);
+
+    addNestedAwarePass(pm, std::make_unique<LowerFheToEmitcPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<LowerCastToEmitcStubPass>(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<InsertEmitcPreamblePass>(), enablePass);
+
+    return pm.run(module.getOperation());
 }
 
 
