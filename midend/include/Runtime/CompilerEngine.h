@@ -76,6 +76,17 @@ public:
 
     static std::shared_ptr<CompileContext> createContext();
 
+protected:
+    mlir::MLIRContext *mlirCtx;
+    llvm::LLVMContext *llvmCtx;
+};
+
+class CompilerEngine {
+public:
+    CompilerEngine(std::shared_ptr<CompileContext> complileCtx) 
+    : compileContext(complileCtx), compileOptions(),
+      enablePass([](mlir::Pass *pass) { return true; }) {}
+
 public:
     llvm::Expected<CompileResult> compile(mlir::ModuleOp module, TARGET target);
     llvm::Expected<CompileResult> compile(llvm::SourceMgr &sm, TARGET target);
@@ -85,10 +96,20 @@ public:
     void setEnablePass(std::function<bool(mlir::Pass *)> enablePass) {
       this->enablePass = enablePass;
     }
+    void setCompileOptions(CompileOptions options) {
+        compileOptions = options;
+    }
+    CompileOptions getCompileOptions() { 
+        return compileOptions; 
+    }
+
+private:
+    llvm::Expected<std::string> emitSharedLib(const std::string &fullSrcCodeFileName, 
+                                const std::string &outputDirPath, const std::string &sharedLibName);
+
 
 protected:
-    mlir::MLIRContext *mlirCtx;
-    llvm::LLVMContext *llvmCtx;
+    std::shared_ptr<CompileContext> compileContext;
     CompileOptions compileOptions;
     std::function<bool(mlir::Pass *)> enablePass;
 };
