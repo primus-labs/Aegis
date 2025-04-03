@@ -305,10 +305,6 @@ mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::Module
 }
 
 
-mlir::LogicalResult emitSharedLibrary(const std::string &cppFileName, std::string &sharedLibName) {
-    return success();
-}
-
 
 } // namespace fhepipeline
 } // namespace aegis

@@ -95,7 +95,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
 
     // Compile cpp to library
     if (target == TARGET::LIBRARY) {
-        if (aegis::fhepipeline::emitSharedLibrary(res.cppFileName, res.binFileName).failed()) {
+        if (!emitSharedLib(res.cppFileName, res.outputDirPath, res.binFileName)) {
             return ErrorMsg("Failed to compile cpp to share library.");
         }
     }

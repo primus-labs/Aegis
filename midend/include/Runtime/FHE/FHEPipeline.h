@@ -28,8 +28,6 @@ mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &
 mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::ModuleOp &module,
                                         std::string &cppFileName, bool verbose);
 
-mlir::LogicalResult emitSharedLibrary(const std::string &cppFileName, std::string &sharedLibName);
-
 
 } // namespace fhepipeline
 } // namespace aegis
