@@ -98,26 +98,28 @@ private:
 
 class FHERuntime : public Runtime {
 public:
-    FHERuntime()    {
+    FHERuntime(const std::string &progSpecFileName)    {
+        this->progSpecFileName = progSpecFileName;
         libHandle = nullptr;
+        funcPtr = nullptr;
     }
     virtual ~FHERuntime() {
         if (libHandle != nullptr) {
             dlclose(libHandle);
+            libHandle = nullptr;
+            funcPtr = nullptr;
         }
     }
 
 public:
     bool open(const std::string &sharedLibPath) override;
     bool load(const std::string &sharedLibPath, const std::string &funcName) override;
-    std::vector<Value> call(const std::vector<Value> &input) override;
+    llvm::Expected<std::vector<Value>> call(const std::vector<Value> &input) override;
 
 private:
     void *libHandle;
-    // void (*func)(void *...);
-    // std::vector<Value> argsBuf;
-    // std::vector<Value> retsBuf;
     void* funcPtr;
+    std::string progSpecFileName;
 };
 
 

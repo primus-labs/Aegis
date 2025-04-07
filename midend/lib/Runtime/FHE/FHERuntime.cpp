@@ -1,12 +1,22 @@
 #include "Runtime/FHE/FHERuntime.h"
 #include "Common/Error.h"
+#include "Common/ProgramSpec.h"
+#include "Common/Protocol.h"
+
 
 
 namespace mlir {
 namespace aegis {
 
-std::vector<Value> FHERuntime::call(const std::vector<Value> &input) {
+llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &input) {
     try {
+        // Get ProtoMessage<aegisprotocol::ProgSpec>
+        ProgramSpec &progSpec = ProgramSpec::getInstance();
+        if (!progSpec.initialize(progSpecFileName)) {
+            return ErrorMsg("call ProgramSpec::initilize failure.");
+        }
+        ProtoMessage<aegisprotocol::ProgSpec> protoProgSpec = progSpec.getProgSpec();
+
         // Prepare parameters
         std::vector<std::unique_ptr<ArgWrapperBase>> args;
         
@@ -24,9 +34,9 @@ std::vector<Value> FHERuntime::call(const std::vector<Value> &input) {
         return std::vector<Value> {};
     }
     catch (const std::exception& e) {
-        ErrorMsg err;
-        err << "error:" << e.what() << "\n";
-        return std::vector<Value> {};
+        std::string err("error:");
+        err += e.what();
+        return ErrorMsg(err.c_str());
     }
 }
 
