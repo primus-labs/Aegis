@@ -1,4 +1,4 @@
-add_compile_options(-fexceptions -fno-rtti)
+add_compile_options(-fexceptions -frtti)
 
 add_mlir_library(
     AegisCommon
