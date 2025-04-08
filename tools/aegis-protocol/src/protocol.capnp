@@ -74,7 +74,7 @@ struct FuncParam {
 }
 
 
-struct GlobalInfo {
+struct StatsInfo {
   mulCount @0 :UInt32;  # multiply numbers.
   rotCount @1 :UInt32;  # rotate numbers.
   bsCount @2  :UInt32;  # boostraping numbers.
@@ -85,5 +85,5 @@ struct GlobalInfo {
 struct ProgSpec {
   keyInfo @0 :KeyInfo;        # keyset informations
   funcsInfo @1 :Functions;    # function informations
-  globalInfo @2 :GlobalInfo;  # global informations
+  statsInfo @2 :StatsInfo;  # statistic informations
 }

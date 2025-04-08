@@ -40,9 +40,10 @@ llvm::LLVMContext *CompileContext::getLLVMContext() {
 }
 
 llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TARGET target) {
-    CompileResult res;
     CompileOptions &options = this->compileOptions;
     mlir::MLIRContext &mlirContext = *this->compileContext->getMLIRContext();
+    CompileResult res;
+    res.outputDirPath = options.outputDir;
 
     // The current compiler does not yet support GPU.
     if (options.beType == BACKEND_TYPE::GPU) {
@@ -103,8 +104,16 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     // Generate prog_spec file.
     if (target == TARGET::CPP || target == TARGET::LIBRARY) {
         auto progSpecOrErr = createProgramSpec(module);
-        if (!progSpecOrErr)
+        if (!progSpecOrErr) {
             return progSpecOrErr.takeError();
+        }
+
+        std::string fullProgSpecJsonFileName;
+        res.progSpecFileName = "prog_spec.json";
+        fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
+        if (!emitProgragSpecToJson(fullProgSpecJsonFileName, progSpecOrErr.get())) {
+            return ErrorMsg("Failed to generate program spec json file.");
+        }
     }
 
     return res;
@@ -167,6 +176,21 @@ llvm::Expected<std::string> CompilerEngine::emitSharedLib(const std::string &ful
         return ErrorMsg("Command failed:" + compileCmd + "\nCode:" + std::to_string(status) + "\n" + outputContent);
     }
 }
+
+llvm::Expected<bool> CompilerEngine::emitProgragSpecToJson(const std::string &fullProgSpecFileName,
+                                                        ProtoMessage<aegisprotocol::ProgSpec> progSpec) {
+    std::error_code error;
+    llvm::raw_fd_ostream out(fullProgSpecFileName, error);
+    auto jsonContent = progSpec.writeJsonToString();
+    if (jsonContent.empty()) {
+        return ErrorMsg("call writeJsonToString() failure.");
+    }
+    out << jsonContent;
+    out.close();
+
+    return true;
+}
+
 
 } // namespace aegis
 } // namespace mlir

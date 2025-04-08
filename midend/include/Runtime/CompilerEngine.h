@@ -9,6 +9,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/SourceMgr.h"
+#include "Common/Protocol.h"
 
 namespace mlir {
 namespace aegis {
@@ -49,11 +50,13 @@ typedef struct tagCompileOptions {
     BACKEND_TYPE beType;
     TARGET target;
     bool verbose;
+    std::string outputDir;
 
     tagCompileOptions() {
         beType = BACKEND_TYPE::CPU;
         target = TARGET::SECRET;
         verbose = false;
+        outputDir = "/tmp/aegis/";
     }
 } CompileOptions;
 
@@ -81,6 +84,7 @@ protected:
     llvm::LLVMContext *llvmCtx;
 };
 
+
 class CompilerEngine {
 public:
     CompilerEngine(std::shared_ptr<CompileContext> complileCtx) 
@@ -106,6 +110,8 @@ public:
 private:
     llvm::Expected<std::string> emitSharedLib(const std::string &fullSrcCodeFileName, 
                                 const std::string &outputDirPath, const std::string &sharedLibName);
+    llvm::Expected<bool> emitProgragSpecToJson(const std::string &fullProgSpecFileName, 
+                                ProtoMessage<aegisprotocol::ProgSpec> progSpec);
 
 
 protected:

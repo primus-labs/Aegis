@@ -15,7 +15,7 @@ private:
   ProtoMessage<aegisprotocol::ProgSpec> progSpec;
   ProtoMessage<aegisprotocol::KeyInfo> keyInfo;
   std::vector<ProtoMessage<aegisprotocol::Function>> funcsInfo;
-  ProtoMessage<aegisprotocol::GlobalInfo> globalInfo;
+  ProtoMessage<aegisprotocol::StatsInfo> statsInfo;
 
 private:
   ProgramSpec() = default;
@@ -46,7 +46,7 @@ public:
 
       progSpec.readJsonFromString(content);
       keyInfo = progSpec.asReader().getKeyInfo();
-      globalInfo = progSpec.asReader().getGlobalInfo();
+      statsInfo = progSpec.asReader().getStatsInfo();
       auto funcs = progSpec.asReader().getFuncsInfo();
       for (auto func : funcs.getFunctions()) {
         funcsInfo.push_back((ProtoMessage<aegisprotocol::Function>)func);
@@ -65,8 +65,8 @@ public:
     return funcsInfo;
   }
 
-  ProtoMessage<aegisprotocol::GlobalInfo> getGlobalInfo() const {
-    return globalInfo;
+  ProtoMessage<aegisprotocol::StatsInfo> getStatsInfo() const {
+    return statsInfo;
   }
 };
 

@@ -37,9 +37,9 @@ llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::Mo
     auto keyInfo = getKeyInfo(module);
     progSpes.asBuilder().setKeyInfo(keyInfo.get().asReader());
 
-    // Get global infos from the module.
-    auto globalInfo = getGlobalInfo(module);
-    progSpes.asBuilder().setGlobalInfo(globalInfo.get().asReader());
+    // Get statistic infos from the module.
+    auto statsInfo = getStatsInfo(module);
+    progSpes.asBuilder().setStatsInfo(statsInfo.get().asReader());
 
     return progSpes;
 }
@@ -146,15 +146,16 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     return std::move(keyInfos);
 }
 
-llvm::Expected<ProtoMessage<aegisprotocol::GlobalInfo>> getGlobalInfo(mlir::ModuleOp module) {
+
+llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::ModuleOp module) {
     // TODO: We must analyze the program to generate the global info,
     // here we simply set the default value. 
-    auto globalInfo = ProtoMessage<aegisprotocol::GlobalInfo>();
-    globalInfo.asBuilder().setMulCount(0);
-    globalInfo.asBuilder().setRotCount(0);
-    globalInfo.asBuilder().setBsCount(0);
-    globalInfo.asBuilder().setLevel(0);
-    return std::move(globalInfo);
+    auto statsInfo = ProtoMessage<aegisprotocol::StatsInfo>();
+    statsInfo.asBuilder().setMulCount(0);
+    statsInfo.asBuilder().setRotCount(0);
+    statsInfo.asBuilder().setBsCount(0);
+    statsInfo.asBuilder().setLevel(0);
+    return std::move(statsInfo);
 }
 
 } // namespace aegis

@@ -21,7 +21,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
 
 llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp module);
 
-llvm::Expected<ProtoMessage<aegisprotocol::GlobalInfo>> getGlobalInfo(mlir::ModuleOp module);
+llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::ModuleOp module);
 
 } // namespace aegis
 } // namespace mlir
