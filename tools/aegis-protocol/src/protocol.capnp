@@ -56,14 +56,14 @@ struct KeyInfo {
 
 
 struct Functions {
-  function @0 :List(Function);   # The function overview.
+  functions @0 :List(Function);   # The function overview.
 }
 
 
 struct Function {
-  name @0 :Text;          # The name of the function.
-  inputs @1 :FuncParam;   # function input.
-  outputs @2 :FuncParam;  # function output.
+  name @0 :Text;                # The name of the function.
+  inputs @1 :List(FuncParam);   # function input.
+  outputs @2 :List(FuncParam);  # function output.
 }
 
 
@@ -83,7 +83,7 @@ struct GlobalInfo {
 
 
 struct ProgSpec {
-  keyInfo @0 :KeyInfo;     # keyset informations
+  keyInfo @0 :KeyInfo;        # keyset informations
   funcsInfo @1 :Functions;    # function informations
   globalInfo @2 :GlobalInfo;  # global informations
 }

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "Common/Protocol.h"
 
 using mlir::aegis::ProtoMessage;
@@ -10,8 +11,17 @@ using mlir::aegis::ProtoMessage;
 namespace mlir {
 namespace aegis {
 
-llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> 
-    createProgramSpec(mlir::ModuleOp module);
+llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::ModuleOp module);
+
+llvm::Expected<ProtoMessage<aegisprotocol::Functions>> getAllFunctionsInfo(mlir::ModuleOp module);
+
+llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::func::FuncOp funcOp);
+
+llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty);
+
+llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp module);
+
+llvm::Expected<ProtoMessage<aegisprotocol::GlobalInfo>> getGlobalInfo(mlir::ModuleOp module);
 
 } // namespace aegis
 } // namespace mlir

@@ -48,7 +48,7 @@ public:
       keyInfo = progSpec.asReader().getKeyInfo();
       globalInfo = progSpec.asReader().getGlobalInfo();
       auto funcs = progSpec.asReader().getFuncsInfo();
-      for (auto func : funcs.getFunction()) {
+      for (auto func : funcs.getFunctions()) {
         funcsInfo.push_back((ProtoMessage<aegisprotocol::Function>)func);
       }
     });
