@@ -33,7 +33,7 @@ struct KeyInfo {
     uint32_t batchSize;
     std::vector<int32_t> galoisIndices;
     bool enableBootstrapping;
-    uint32_t numSlot;
+    // uint32_t numSlot;
 };
 
 static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol::KeyInfo> &protoKeyInfo) {
@@ -43,7 +43,7 @@ static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol:
     protoKeyInfo.asBuilder().setScaleModSize(keyInfo.scaleModSize);
     protoKeyInfo.asBuilder().setBatchSize(keyInfo.batchSize);
     protoKeyInfo.asBuilder().setEnableBootstrapping(keyInfo.enableBootstrapping);
-    protoKeyInfo.asBuilder().setNumSlot(keyInfo.numSlot);
+    // protoKeyInfo.asBuilder().setNumSlot(keyInfo.numSlot);
 
     auto coff = keyInfo.coffModCh;
     auto coffModCh = protoKeyInfo.asBuilder().initCoffModCh(coff.size());
@@ -229,8 +229,8 @@ PYBIND11_MODULE(primus_aegis, m) {
         .def_readwrite("scaleModSize", &KeyInfo::scaleModSize, "scale modulus size")
         .def_readwrite("batchSize", &KeyInfo::batchSize, "batch size")
         .def_readwrite("galoisIndices", &KeyInfo::galoisIndices, "index list for Galois Key")
-        .def_readwrite("enableBootstrapping", &KeyInfo::enableBootstrapping, "whether to enable bootstrapping")
-        .def_readwrite("numSlot", &KeyInfo::numSlot, "number of slots");
+        .def_readwrite("enableBootstrapping", &KeyInfo::enableBootstrapping, "whether to enable bootstrapping");
+        // .def_readwrite("numSlot", &KeyInfo::numSlot, "number of slots");
 
     py::class_<FHEPrivateKey, std::shared_ptr<FHEPrivateKey>>(m_fhe, "PrivateKey")
         .def(py::init<>())

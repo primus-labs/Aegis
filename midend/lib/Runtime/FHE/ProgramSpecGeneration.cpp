@@ -134,14 +134,17 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     // TODO: We must analyze the specific code to generate the most efficient keyinfo,
     // here we simply set the default value.
     auto keyInfos = ProtoMessage<aegisprotocol::KeyInfo>();
-    keyInfos.asBuilder().setPolyModDegree(8192);
-    auto coffModChBuilder = keyInfos.asBuilder().initCoffModCh(3);
-    coffModChBuilder.set(0, 60);
-    coffModChBuilder.set(1, 60);
-    coffModChBuilder.set(2, 60);
-    keyInfos.asBuilder().setScale(40);
-    keyInfos.asBuilder().setMultDepth(3);
-    //...
+    // keyInfos.asBuilder().setPolyModDegree(8192);
+    // auto coffModChBuilder = keyInfos.asBuilder().initCoffModCh(3);
+    // coffModChBuilder.set(0, 60);
+    // coffModChBuilder.set(1, 60);
+    // coffModChBuilder.set(2, 60);
+    // keyInfos.asBuilder().setScale(40);
+    keyInfos.asBuilder().setMultDepth(8);
+    keyInfos.asBuilder().setFirstModSize(60);
+    keyInfos.asBuilder().setScaleModSize(50);
+    keyInfos.asBuilder().setBatchSize(4096/2); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
+    
 
     return std::move(keyInfos);
 }

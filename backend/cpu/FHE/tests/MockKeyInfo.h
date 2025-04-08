@@ -25,7 +25,7 @@ static void _buildKeyInfo(const MockKeyInfo &mockKeyInfo,
   keyInfo.asBuilder().setScaleModSize(mockKeyInfo.scaleModSize);
   keyInfo.asBuilder().setBatchSize(mockKeyInfo.batchSize);
   keyInfo.asBuilder().setEnableBootstrapping(mockKeyInfo.enableBootstrapping);
-  keyInfo.asBuilder().setNumSlot(mockKeyInfo.numSlot);
+  // keyInfo.asBuilder().setNumSlot(mockKeyInfo.numSlot);
 
   auto coff = mockKeyInfo.coffModCh;
   auto coffModCh = keyInfo.asBuilder().initCoffModCh(coff.size());

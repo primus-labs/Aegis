@@ -40,7 +40,7 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
     if (keyInfo.asReader().getEnableBootstrapping()) {
       cryptoContext->Enable(FHE);
       cryptoContext->EvalBootstrapKeyGen(keyPair.secretKey,
-                                         keyInfo.asReader().getNumSlot());
+                                         keyInfo.asReader().getBatchSize());
     }
 
     // create Key obj
