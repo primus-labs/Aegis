@@ -148,12 +148,30 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
 
 
 llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::ModuleOp module) {
-    // TODO: We must analyze the program to generate the global info,
-    // here we simply set the default value. 
+    unsigned int mulCnt = 0;
+    unsigned int rotateCnt = 0;
+    unsigned int cmpCnt = 0;
+    unsigned int selectCnt = 0;
+    module.walk([&](mlir::func::FuncOp funcOp) {
+        funcOp.walk([&](Operation *op) {
+        if (mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
+            mulCnt++;
+        } else if (mlir::isa<fhe::RotateOp>(op)) {
+            rotateCnt++;
+        } else if (mlir::isa<fhe::CmpOp>(op)) {
+            cmpCnt++;
+        } else if (mlir::isa<fhe::SelectOp>(op)) {
+            selectCnt++;
+        }
+        });
+    });
+
     auto statsInfo = ProtoMessage<aegisprotocol::StatsInfo>();
-    statsInfo.asBuilder().setMulCount(0);
-    statsInfo.asBuilder().setRotCount(0);
+    statsInfo.asBuilder().setMulCount(mulCnt);
+    statsInfo.asBuilder().setRotCount(rotateCnt);
     statsInfo.asBuilder().setBsCount(0);
+    statsInfo.asBuilder().setCmpCount(cmpCnt);
+    statsInfo.asBuilder().setSelCount(selectCnt);
     statsInfo.asBuilder().setLevel(0);
     return std::move(statsInfo);
 }
