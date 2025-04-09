@@ -29,6 +29,9 @@ public:
   }
 
   bool initialize(const std::string &progSpecFile) {
+    if (progSpecFile.empty()) {
+      return false;
+    }
     static std::once_flag flag;
     static bool initSuccess = true;
 
@@ -57,16 +60,19 @@ public:
   }
 
 public:
-  ProtoMessage<aegisprotocol::ProgSpec> getProgSpec() const { return progSpec; }
+  ProtoMessage<aegisprotocol::ProgSpec> getProgSpec() const { 
+      return progSpec; 
+  }
 
-  ProtoMessage<aegisprotocol::KeyInfo> getKeyInfo() const { return keyInfo; }
+  ProtoMessage<aegisprotocol::KeyInfo> getKeyInfo() const { 
+      return keyInfo; }
 
   std::vector<ProtoMessage<aegisprotocol::Function>> getFuncInfo() const {
-    return funcsInfo;
+      return funcsInfo;
   }
 
   ProtoMessage<aegisprotocol::StatsInfo> getStatsInfo() const {
-    return statsInfo;
+      return statsInfo;
   }
 };
 

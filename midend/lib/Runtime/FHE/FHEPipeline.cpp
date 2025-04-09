@@ -53,21 +53,6 @@ static void printPipeline(llvm::StringRef name, mlir::PassManager &pm, mlir::MLI
     }
 }
 
-static void addNestedAwarePass(mlir::PassManager &pm, std::unique_ptr<Pass> pass,
-                               std::function<bool(mlir::Pass *)> enablePass) {
-    if (!enablePass(pass.get())) {
-        llvm::outs() << "Warning: Disable " << pass.get()->getName() << ".\n";
-        return;
-    }
-
-    if (!pass->getOpName() || *pass->getOpName() == "builtin.module") {
-        pm.addPass(std::move(pass));
-    } else {
-        mlir::OpPassManager &opm = pm.nest(*pass->getOpName());
-        opm.addPass(std::move(pass));
-    }
-}
-
 static bool findEmitcTranslateTool(std::string &toolPath) {
     toolPath.clear();
 
@@ -201,6 +186,21 @@ static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, std::s
 
     cppFileName = outputPath;
     return success();
+}
+
+static void addNestedAwarePass(mlir::PassManager &pm, std::unique_ptr<Pass> pass,
+                               std::function<bool(mlir::Pass *)> enablePass) {
+    if (!enablePass(pass.get())) {
+        llvm::outs() << "Warning: Disable " << pass.get()->getName() << ".\n";
+        return;
+    }
+
+    if (!pass->getOpName() || *pass->getOpName() == "builtin.module") {
+        pm.addPass(std::move(pass));
+    } else {
+        mlir::OpPassManager &opm = pm.nest(*pass->getOpName());
+        opm.addPass(std::move(pass));
+    }
 }
 
 mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleOp &module,

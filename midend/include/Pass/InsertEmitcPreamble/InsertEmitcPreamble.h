@@ -11,6 +11,9 @@
 /// This pass is useful for injecting boilerplate code (e.g., headers, namespaces, or macros) required by downstream C++ code generation.
 struct InsertEmitcPreamblePass : public mlir::PassWrapper<InsertEmitcPreamblePass, mlir::OperationPass<mlir::ModuleOp>>
 {
+    InsertEmitcPreamblePass() = default;
+    explicit InsertEmitcPreamblePass(std::string progSpecFile) : progSpecFileName(progSpecFile) {}
+
     void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
     void runOnOperation() override;
@@ -19,6 +22,9 @@ struct InsertEmitcPreamblePass : public mlir::PassWrapper<InsertEmitcPreamblePas
     {
         return "insert-emitc-preamble";
     }
+
+private:
+    std::string progSpecFileName;
 };
 
 

@@ -1,3 +1,4 @@
+add_compile_options(-fexceptions)
 
 add_mlir_library(
     AegisInsertEmitcPreamble

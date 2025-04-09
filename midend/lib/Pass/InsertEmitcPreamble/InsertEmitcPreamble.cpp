@@ -3,14 +3,18 @@
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "llvm/include/llvm/Support/Debug.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "mlir/include/mlir/Support/LLVM.h" 
 #include "mlir/include/mlir/IR/MLIRContext.h"            
 #include "mlir/include/mlir/IR/PatternMatch.h"           
 #include "Pass/InsertEmitcPreamble/InsertEmitcPreamble.h"
+#include "Common/ProgramSpec.h"
+#include "Common/Protocol.h"
 
 #define DEBUG_TYPE "insert-emitc-preamble"
 
 using namespace mlir;
+using namespace aegis;
 
 void InsertEmitcPreamblePass::getDependentDialects(mlir::DialectRegistry &registry) const
 {
@@ -58,18 +62,51 @@ void InsertEmitcPreamblePass::runOnOperation()
         "#define Native_Load(v, idx) v[idx]",
     };
 
-    // TODO, We must dynamically generate the corresponding encryption parameters based on the program.
-    SmallVector<StringRef> verbatimInitCC = {
-        "CryptoContext<DCRTPoly> cryptoCtx;",
-        "void init_cryptcontext() {",
-        "   CCParams<CryptoContextCKKSRNS> parameters;",
-        "   //TODO",
-        "   cryptoCtx = GenCryptoContext(parameters);",
-        "   cryptoCtx->Enable(PKE);",
-        "   cryptoCtx->Enable(KEYSWITCH);",
-        "   cryptoCtx->Enable(LEVELEDSHE);",
-        "}",
-    };
+    // We must dynamically generate the corresponding encryption parameters based on the program.
+    int mulDepth = 8;
+    int firstModSize = 60;
+    int scaleModeSize = 50;
+    int batchSize = 4096/2;
+    ProgramSpec &progSpecObj = ProgramSpec::getInstance();
+    if (progSpecObj.initialize(progSpecFileName)) {
+        ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpecObj.getKeyInfo();
+        mulDepth = keyInfos.asBuilder().getMultDepth();
+        firstModSize = keyInfos.asBuilder().getFirstModSize();
+        scaleModeSize = keyInfos.asBuilder().getScaleModSize();
+        batchSize = keyInfos.asBuilder().getBatchSize();
+    }
+
+    SmallVector<StringRef> verbatimInitCC;
+    std::string lineMulDepth     = std::string(llvm::formatv("   parameters.SetMultiplicativeDepth({0});", mulDepth));
+    std::string lineFirstModSize = std::string(llvm::formatv("   parameters.SetFirstModSize({0});", firstModSize));
+    std::string lineScaleModSize = std::string(llvm::formatv("   parameters.SetScalingModSize({0});", scaleModeSize));
+    std::string lineBatchSize    = std::string(llvm::formatv("   parameters.SetBatchSize({0});", batchSize));
+    verbatimInitCC.push_back("CryptoContext<DCRTPoly> cryptoCtx;");
+    verbatimInitCC.push_back("void init_cryptcontext() {");
+    verbatimInitCC.push_back("   CCParams<CryptoContextCKKSRNS> parameters;"); 
+    verbatimInitCC.push_back(lineMulDepth);
+    verbatimInitCC.push_back(lineFirstModSize);
+    verbatimInitCC.push_back(lineScaleModSize);
+    verbatimInitCC.push_back(lineBatchSize);
+    verbatimInitCC.push_back("   cryptoCtx = GenCryptoContext(parameters);");
+    verbatimInitCC.push_back("   cryptoCtx->Enable(PKE);");
+    verbatimInitCC.push_back("   cryptoCtx->Enable(KEYSWITCH);");
+    verbatimInitCC.push_back("   cryptoCtx->Enable(LEVELEDSHE);");
+
+    // SmallVector<StringRef> verbatimInitCC = {
+    //     "CryptoContext<DCRTPoly> cryptoCtx;",
+    //     "void init_cryptcontext() {",
+    //     "   CCParams<CryptoContextCKKSRNS> parameters;",
+    //     "   parameters.SetMultiplicativeDepth(8);",
+    //     "   parameters.SetFirstModSize(60);",
+    //     "   parameters.SetScalingModSize(50);",
+    //     "   parameters.SetBatchSize(4096/2);",
+    //     "   cryptoCtx = GenCryptoContext(parameters);",
+    //     "   cryptoCtx->Enable(PKE);",
+    //     "   cryptoCtx->Enable(KEYSWITCH);",
+    //     "   cryptoCtx->Enable(LEVELEDSHE);",
+    //     "}",
+    // };
 
     // Traverse all ModuleOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
     // Terminate traversal after finding the first one.
