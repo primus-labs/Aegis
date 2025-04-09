@@ -18,8 +18,7 @@ struct InsertEmitcPreamblePass : public mlir::PassWrapper<InsertEmitcPreamblePas
 
     void runOnOperation() override;
 
-    mlir::StringRef getArgument() const final
-    {
+    mlir::StringRef getArgument() const final {
         return "insert-emitc-preamble";
     }
 

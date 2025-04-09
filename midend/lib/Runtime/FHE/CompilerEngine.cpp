@@ -79,8 +79,25 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
         return res;
     }
 
+    // Generate prog_spec file.
+    // We must first generate the prog_spec.json file, because in the lowerFheToEmitc pipeline, 
+    // we need to generate the corresponding cpp code based on the prog_spec.json.
+    std::string fullProgSpecJsonFileName;
+    res.progSpecFileName = "prog_spec.json";
+    fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
+    if (target == TARGET::CPP || target == TARGET::LIBRARY) {
+        auto progSpecOrErr = createProgramSpec(module);
+        if (!progSpecOrErr) {
+            return progSpecOrErr.takeError();
+        }
+
+        if (!emitProgragSpecToJson(fullProgSpecJsonFileName, progSpecOrErr.get())) {
+            return ErrorMsg("Failed to generate program spec json file.");
+        }
+    }
+
     // Lower fhe ir to emitc ir
-    if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, options.verbose).failed()) {
+    if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, fullProgSpecJsonFileName, options.verbose).failed()) {
         return ErrorMsg("Failed to lower fhe ir to emitc ir.");
     }
     if (target == TARGET::EMITC) {
@@ -98,21 +115,6 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     if (target == TARGET::LIBRARY) {
         if (!emitSharedLib(res.cppFileName, res.outputDirPath, res.binFileName)) {
             return ErrorMsg("Failed to compile cpp to share library.");
-        }
-    }
-
-    // Generate prog_spec file.
-    if (target == TARGET::CPP || target == TARGET::LIBRARY) {
-        auto progSpecOrErr = createProgramSpec(module);
-        if (!progSpecOrErr) {
-            return progSpecOrErr.takeError();
-        }
-
-        std::string fullProgSpecJsonFileName;
-        res.progSpecFileName = "prog_spec.json";
-        fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
-        if (!emitProgragSpecToJson(fullProgSpecJsonFileName, progSpecOrErr.get())) {
-            return ErrorMsg("Failed to generate program spec json file.");
         }
     }
 
