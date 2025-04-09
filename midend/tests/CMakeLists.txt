@@ -17,3 +17,12 @@ add_lit_testsuite(check-aegis "Running Tests for aegis"
 set_target_properties(check-aegis PROPERTIES FOLDER "Tests")
 
 add_lit_testsuites(AEGIS ${CMAKE_CURRENT_LIST_DIR} DEPENDS ${AEGIS_TEST_DEPENDS})
+
+
+# -------------------------------------------------------------------------------
+#                                   Unit tests
+# -------------------------------------------------------------------------------
+option(AEGIS_UNIT_TESTS "Enables the build of unittests" ON)
+if(AEGIS_UNIT_TESTS)
+  add_subdirectory(unit_tests)
+endif()

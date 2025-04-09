@@ -11,11 +11,6 @@ add_mlir_library(
 
     DEPENDS
     aegis-protocol
-
-    LINK_LIBS
-    PUBLIC
-    capnp
-    kj
 )
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
@@ -24,6 +19,7 @@ set(RT_DEP_LIBS
     ${dialect_libs}
     ${conversion_libs}
     aegis_cpu
+    aegis-protocol 
 
     MLIREmitCDialect
     MLIROptLib
@@ -66,9 +62,9 @@ set(RT_DEP_LIBS
 )
 
 set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
-target_link_libraries(AegisRuntime PRIVATE ${RT_DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore)
-target_link_options(AegisRuntime PRIVATE -fuse-ld=gold)
-#target_link_options(AegisRuntime PRIVATE "-Wl,--verbose")
+target_link_libraries(AegisRuntime PUBLIC ${RT_DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore OPENFHEpke OPENFHEbinfhe)
+target_link_options(AegisRuntime PUBLIC -fuse-ld=gold)
+#target_link_options(AegisRuntime PUBLIC "-Wl,--verbose")
 
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/pke/include)

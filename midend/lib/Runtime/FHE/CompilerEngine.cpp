@@ -39,6 +39,12 @@ llvm::LLVMContext *CompileContext::getLLVMContext() {
     return this->llvmCtx;
 }
 
+CompileContext::CompileContext() : mlirCtx(nullptr), llvmCtx(nullptr) {}
+CompileContext::~CompileContext() {
+    delete this->mlirCtx;
+    delete this->llvmCtx;
+}
+
 llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TARGET target) {
     CompileOptions &options = this->compileOptions;
     mlir::MLIRContext &mlirContext = *this->compileContext->getMLIRContext();
