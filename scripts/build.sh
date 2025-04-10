@@ -13,7 +13,7 @@ mkdir -p build
 cd build
 
 cmake -G Ninja ../llvm \
--DLLVM_ENABLE_PROJECTS="mlir;openmp" \
+-DLLVM_ENABLE_PROJECTS="mlir;clang;openmp" \
 -DLLVM_BUILD_EXAMPLES=OFF \
 -DLLVM_TARGETS_TO_BUILD=X86 \
 -DCMAKE_BUILD_TYPE=Release \
@@ -24,10 +24,14 @@ cmake -G Ninja ../llvm \
 -DLLVM_ENABLE_LLD=ON \
 -DLLVM_CCACHE_BUILD=OFF \
 -DLLVM_INSTALL_UTILS=ON \
--DMLIR_INCLUDE_INTEGRATION_TESTS=OFF
+-DMLIR_INCLUDE_INTEGRATION_TESTS=OFF  \
+-DMLIR_INCLUDE_TESTS=OFF
 
-cmake --build .
-make -j8
+ninja -j8
+
+# we use ninja to build mlir, so we not make componet
+#cmake --build .
+#make -j8
 
 
 echo "****************************************************"
