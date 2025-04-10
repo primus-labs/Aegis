@@ -2,7 +2,20 @@
 #include "Runtime/FHE/FHEPipeline.h"
 #include "Runtime/FHE/ProgramSpecGeneration.h"
 #include "Common/Error.h"
+#include "Dialect/FHE/FHEDialect.h"
+#include "Dialect/FHE/FHEOps.h"
+#include "Dialect/FHE/FHETypes.h"
+#include "Dialect/Secret/SecretDialect.h"
+#include "Dialect/Secret/SecretOps.h"
+#include "Dialect/Secret/SecretTypes.h"
 #include "mlir/Parser/Parser.h"
+#include "mlir/IR/Diagnostics.h"
+#include "mlir/include/mlir/Dialect/MemRef/IR/MemRef.h"  
+#include "mlir/include/mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/include/mlir/Dialect/Affine/IR/AffineOps.h"
+#include "mlir/include/mlir/Dialect/Arith/IR/Arith.h"   
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
 
 
 namespace mlir {
@@ -25,7 +38,17 @@ std::shared_ptr<CompileContext> CompileContext::createContext() { return std::ma
 /// Returns the MLIR context for a compile context.
 mlir::MLIRContext *CompileContext::getMLIRContext() {
     if (this->mlirCtx == nullptr) {
+        mlir::DialectRegistry registry;
+        registry.insert<
+            secret::SecretDialect, fhe::FHEDialect,
+            mlir::func::FuncDialect, mlir::linalg::LinalgDialect,
+            mlir::arith::ArithDialect, mlir::memref::MemRefDialect, 
+            mlir::scf::SCFDialect>();
+
         this->mlirCtx = new mlir::MLIRContext();
+        this->mlirCtx->appendDialectRegistry(registry);
+        this->mlirCtx->loadAllAvailableDialects();
+        this->mlirCtx->disableMultithreading();
     }
 
     return this->mlirCtx;
@@ -128,12 +151,31 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
 }
 
 llvm::Expected<CompileResult> CompilerEngine::compile(llvm::SourceMgr &sm, TARGET target) {
+    // Catching errors with ScopedDiagnosticHandler
+    std::string errorMsg;
+    mlir::SourceMgrDiagnosticHandler sourceMgrHandler(sm, this->compileContext->getMLIRContext(), llvm::errs());
+
+    // Redirect diagnostic information to errorMsg;
+    llvm::raw_string_ostream errorStream(errorMsg);
+    this->compileContext->getMLIRContext()->getDiagEngine().registerHandler(
+        [&](mlir::Diagnostic& diag) -> mlir::LogicalResult {
+            if (diag.getSeverity() == mlir::DiagnosticSeverity::Error) {
+                errorStream << diag << "\n";
+            }
+            return mlir::failure();
+        }
+    );
+
+    // parser source code to moduleOp
     mlir::OwningOpRef<mlir::ModuleOp> mlirModuleRef = mlir::parseSourceFile<mlir::ModuleOp>(sm, 
                                                         this->compileContext->getMLIRContext());
+
     if (!mlirModuleRef) {
-        return ErrorMsg("Could not parse source code.");
+        errorStream.flush();
+        return ErrorMsg("Parse failed: " + errorMsg);
     }
 
+    // compile ModuleOp
     return compile(mlirModuleRef.release(), target);
 }
 
