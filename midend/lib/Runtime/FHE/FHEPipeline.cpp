@@ -32,6 +32,7 @@
 #include "mlir/InitAllPasses.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
+#include "llvm/Support/FormatVariadic.h"
 
 namespace mlir {
 namespace aegis {
@@ -57,10 +58,10 @@ static bool findEmitcTranslateTool(std::string &toolPath) {
     toolPath.clear();
 
     // Check environment variables
-    if (const char* env_path = std::getenv("EMITC_TRANSLATE_PATH")) {
+    if (const char* env_path = std::getenv("MLIR_TRANSLATE_PATH")) {
         struct stat statbuf;
         if (stat(env_path, &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
-            toolPath = env_path;
+            toolPath = std::string(llvm::formatv("{0}/mlir-translate", env_path));
             return true;
         }
     }
@@ -83,7 +84,7 @@ static bool findEmitcTranslateTool(std::string &toolPath) {
 
     // Traverse search paths
     for (const auto& dir : search_paths) {
-        std::string full_path = dir + "/emitc-translate";
+        std::string full_path = dir + "/mlir-translate";
         struct stat statbuf;
         if (stat(full_path.c_str(), &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
             toolPath = full_path;
@@ -114,11 +115,11 @@ static mlir::LogicalResult moduleOpToString(mlir::ModuleOp &moduleOp, std::strin
     return success();
 }
 
-static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, std::string &cppFileName) {
+static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, const std::string &cppFullFileName) {
     // Find emitc-translate tool path
     std::string emitcTranTool;
     if (!findEmitcTranslateTool(emitcTranTool)) {
-        llvm::errs() << "emitc-translate not found in PATH or EMITC_TRANSLATE_PATH.\n";
+        llvm::errs() << "mlir-translate not found in PATH or MLIR_TRANSLATE_PATH.\n";
         return failure();
     }
 
@@ -141,18 +142,8 @@ static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, std::s
         inputFile << mlirContent;
     }
 
-    // Generate output path
-    char outputTemp[] = "/tmp/output_XXXXXX.cpp";
-    int fdOutput = mkstemps(outputTemp, 4);
-    if (fdOutput == -1) {
-        unlink(inputPath.c_str());
-        llvm::errs() << "Failed to create output file.\n";
-        return failure();
-    }
-    close(fdOutput);
-    const std::string outputPath(outputTemp);
-
     // exec emitc-translate tool
+    const std::string outputPath(cppFullFileName);
     pid_t pid = fork();
     if (pid == -1) {
         unlink(inputPath.c_str());
@@ -179,12 +170,11 @@ static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, std::s
 
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
             unlink(outputPath.c_str());
-            llvm::errs() << "emitc-translate execution failed.\n";
+            llvm::errs() << "mlir-translate execution failed.\n";
             return failure();
         }
     }
 
-    cppFileName = outputPath;
     return success();
 }
 
@@ -263,9 +253,9 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
     addNestedAwarePass(pm, std::make_unique<FoldArithChainPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
-    addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);
-    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
-    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    // addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);
+    // addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    // addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<LweToRlwePass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
@@ -276,7 +266,7 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
 
 mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &module,
                                     std::function<bool(mlir::Pass *)> enablePass, 
-                                    const std::string progSpecFileName, bool verbose) {
+                                    const std::string &progSpecFileName, bool verbose) {
     mlir::PassManager pm(&context);
     printPipeline("lowerFheToEmitc", pm, context, verbose);
 
@@ -291,7 +281,7 @@ mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &
 
 
 mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                                        std::string &cppFileName, bool verbose) {
+                                        const std::string &cppFullFileName, bool verbose) {
     mlir::PassManager pm(&context);
     printPipeline("transformEmitcToCpp", pm, context, verbose);
 
@@ -302,7 +292,7 @@ mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::Module
     }
 
     // Exec emit-translate tool to generate cpp file
-    return fromEmitcToCpp(mlirContent, cppFileName);
+    return fromEmitcToCpp(mlirContent, cppFullFileName);
 }
 
 

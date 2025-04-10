@@ -24,6 +24,7 @@ bool compileMlir(std::string_view mlirContent) {
     CompilerEngine engine(compile_context);
     CompileOptions compileOpts = engine.getCompileOptions();
     compileOpts.target = TARGET::LOWER_MLIR;
+    // compileOpts.verbose = true;
     engine.setCompileOptions(compileOpts);
     auto compile_res = engine.compile(mlirContent);
     if (!compile_res) {

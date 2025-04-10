@@ -16,6 +16,8 @@
 #include "mlir/include/mlir/Dialect/Arith/IR/Arith.h"   
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 
 
 namespace mlir {
@@ -114,6 +116,14 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
     std::string fullProgSpecJsonFileName;
     res.progSpecFileName = "prog_spec.json";
     fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
+
+    // Recursively create directories (eg: auto-create /tmp/aegis if missing)
+    std::error_code error = llvm::sys::fs::create_directories(res.outputDirPath);
+    if (error) {
+        return ErrorMsg("Directory creation failed: " + error.message());
+    }
+
+    // Generate prog_spec.json
     if (options.target == TARGET::CPP || options.target == TARGET::LIBRARY) {
         auto progSpecOrErr = createProgramSpec(module);
         if (!progSpecOrErr) {
@@ -135,7 +145,10 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
 
     // Transform emitc ir to cpp
     if (options.target == TARGET::CPP) {
-        if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, res.cppFileName, options.verbose).failed()) {
+        std::string fullCppFileName;
+        res.cppFileName = "output.cpp";
+        fullCppFileName = res.outputDirPath + '/' + res.cppFileName;
+        if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, fullCppFileName, options.verbose).failed()) {
             return ErrorMsg("Failed to transform emitc to cpp.");
         }
     }
@@ -230,12 +243,21 @@ llvm::Expected<std::string> CompilerEngine::emitSharedLib(const std::string &ful
 llvm::Expected<bool> CompilerEngine::emitProgragSpecToJson(const std::string &fullProgSpecFileName,
                                                         ProtoMessage<aegisprotocol::ProgSpec> progSpec) {
     std::error_code error;
-    llvm::raw_fd_ostream out(fullProgSpecFileName, error);
+    llvm::raw_fd_ostream out(fullProgSpecFileName, error, llvm::sys::fs::OF_None);
+    if (error) {
+        return ErrorMsg("Failed to open file: " + error.message());
+    }
+
     auto jsonContent = progSpec.writeJsonToString();
     if (jsonContent.empty()) {
         return ErrorMsg("call writeJsonToString() failure.");
     }
+
     out << jsonContent;
+    if (out.has_error()) { 
+        return ErrorMsg("Failed to write content: " + out.error().message());
+    }
+
     out.close();
 
     return true;

@@ -24,10 +24,10 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
 
 mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &module,
                                     std::function<bool(mlir::Pass *)> enablePass, 
-                                    const std::string progSpecFileName, bool verbose);
+                                    const std::string &progSpecFileName, bool verbose);
 
 mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                                        std::string &cppFileName, bool verbose);
+                                        const std::string &cppFullFileName, bool verbose);
 
 
 } // namespace fhepipeline
