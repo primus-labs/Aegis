@@ -68,7 +68,7 @@ CompileContext::~CompileContext() {
     delete this->llvmCtx;
 }
 
-llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TARGET target) {
+llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
     CompileOptions &options = this->compileOptions;
     mlir::MLIRContext &mlirContext = *this->compileContext->getMLIRContext();
     CompileResult res;
@@ -80,7 +80,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     }
 
     // higher mlir(using onnx-mlir conver module to mlir)
-    if (target == TARGET::MLIR) {
+    if (options.target == TARGET::MLIR) {
         return res;
     }
 
@@ -88,7 +88,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     if (aegis::fhepipeline::lowerHighLevelMlir(mlirContext, module, enablePass, options.verbose).failed()) {
         return ErrorMsg("Failed to lower higher level mlir.");
     }
-    if (target == TARGET::LOWER_MLIR) {
+    if (options.target == TARGET::LOWER_MLIR) {
         return res;
     }
 
@@ -96,7 +96,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     if (aegis::fhepipeline::lowerMlirToSecret(mlirContext, module, enablePass, options.verbose).failed()) {
         return ErrorMsg("Failed to lower buildin mlir to secret ir.");
     }
-    if (target == TARGET::SECRET) {
+    if (options.target == TARGET::SECRET) {
         return res;
     }
 
@@ -104,7 +104,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     if (aegis::fhepipeline::lowerSecretToFhe(mlirContext, module, enablePass, options.verbose).failed()) {
         return ErrorMsg("Failed to lower secret ir to fhe ir.");
     }
-    if (target == TARGET::FHE) {
+    if (options.target == TARGET::FHE) {
         return res;
     }
 
@@ -114,7 +114,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     std::string fullProgSpecJsonFileName;
     res.progSpecFileName = "prog_spec.json";
     fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
-    if (target == TARGET::CPP || target == TARGET::LIBRARY) {
+    if (options.target == TARGET::CPP || options.target == TARGET::LIBRARY) {
         auto progSpecOrErr = createProgramSpec(module);
         if (!progSpecOrErr) {
             return progSpecOrErr.takeError();
@@ -129,19 +129,19 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, fullProgSpecJsonFileName, options.verbose).failed()) {
         return ErrorMsg("Failed to lower fhe ir to emitc ir.");
     }
-    if (target == TARGET::EMITC) {
+    if (options.target == TARGET::EMITC) {
         return res;
     }
 
     // Transform emitc ir to cpp
-    if (target == TARGET::CPP) {
+    if (options.target == TARGET::CPP) {
         if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, res.cppFileName, options.verbose).failed()) {
             return ErrorMsg("Failed to transform emitc to cpp.");
         }
     }
 
     // Compile cpp to library
-    if (target == TARGET::LIBRARY) {
+    if (options.target == TARGET::LIBRARY) {
         if (!emitSharedLib(res.cppFileName, res.outputDirPath, res.binFileName)) {
             return ErrorMsg("Failed to compile cpp to share library.");
         }
@@ -150,7 +150,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module, TAR
     return res;
 }
 
-llvm::Expected<CompileResult> CompilerEngine::compile(llvm::SourceMgr &sm, TARGET target) {
+llvm::Expected<CompileResult> CompilerEngine::compile(llvm::SourceMgr &sm) {
     // Catching errors with ScopedDiagnosticHandler
     std::string errorMsg;
     mlir::SourceMgrDiagnosticHandler sourceMgrHandler(sm, this->compileContext->getMLIRContext(), llvm::errs());
@@ -176,14 +176,14 @@ llvm::Expected<CompileResult> CompilerEngine::compile(llvm::SourceMgr &sm, TARGE
     }
 
     // compile ModuleOp
-    return compile(mlirModuleRef.release(), target);
+    return compile(mlirModuleRef.release());
 }
 
-llvm::Expected<CompileResult> CompilerEngine::compile(llvm::StringRef s, TARGET target) {
-    std::unique_ptr<llvm::MemoryBuffer> memBuf = llvm::MemoryBuffer::getMemBuffer(s);
+llvm::Expected<CompileResult> CompilerEngine::compile(llvm::StringRef code) {
+    std::unique_ptr<llvm::MemoryBuffer> memBuf = llvm::MemoryBuffer::getMemBuffer(code);
     llvm::SourceMgr sm;
     sm.AddNewSourceBuffer(std::move(memBuf), llvm::SMLoc());
-    return this->compile(sm, target);
+    return this->compile(sm);
 }
 
 llvm::Expected<std::string> CompilerEngine::emitSharedLib(const std::string &fullSrcCodeFileName, 

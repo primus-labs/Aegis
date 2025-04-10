@@ -54,7 +54,7 @@ typedef struct tagCompileOptions {
 
     tagCompileOptions() {
         beType = BACKEND_TYPE::CPU;
-        target = TARGET::SECRET;
+        target = TARGET::LIBRARY;
         verbose = false;
         outputDir = "/tmp/aegis/";
     }
@@ -92,9 +92,9 @@ public:
       enablePass([](mlir::Pass *pass) { return true; }) {}
 
 public:
-    llvm::Expected<CompileResult> compile(mlir::ModuleOp module, TARGET target);
-    llvm::Expected<CompileResult> compile(llvm::SourceMgr &sm, TARGET target);
-    llvm::Expected<CompileResult> compile(llvm::StringRef s, TARGET target);
+    llvm::Expected<CompileResult> compile(mlir::ModuleOp module);
+    llvm::Expected<CompileResult> compile(llvm::SourceMgr &sm);
+    llvm::Expected<CompileResult> compile(llvm::StringRef code);
 
 public:
     void setEnablePass(std::function<bool(mlir::Pass *)> enablePass) {

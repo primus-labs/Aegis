@@ -22,32 +22,45 @@ module {
 bool compileMlir(std::string_view mlirContent) {
     auto compile_context =  CompileContext::createContext();
     CompilerEngine engine(compile_context);
-    auto compile_res = engine.compile(mlirContent, TARGET::LOWER_MLIR);
+    CompileOptions compileOpts = engine.getCompileOptions();
+    compileOpts.target = TARGET::LOWER_MLIR;
+    engine.setCompileOptions(compileOpts);
+    auto compile_res = engine.compile(mlirContent);
     if (!compile_res) {
         return false;
     }
 
-    compile_res = engine.compile(mlirContent, TARGET::SECRET);
+    compileOpts.target = TARGET::SECRET;
+    engine.setCompileOptions(compileOpts);
+    compile_res = engine.compile(mlirContent);
     if (!compile_res) {
         return false;
     }
 
-    compile_res = engine.compile(mlirContent, TARGET::FHE);
+    compileOpts.target = TARGET::FHE;
+    engine.setCompileOptions(compileOpts);
+    compile_res = engine.compile(mlirContent);
     if (!compile_res) {
         return false;
     }
 
-    compile_res = engine.compile(mlirContent, TARGET::EMITC);
+    compileOpts.target = TARGET::EMITC;
+    engine.setCompileOptions(compileOpts);
+    compile_res = engine.compile(mlirContent);
     if (!compile_res) {
         return false;
     }
 
-    compile_res = engine.compile(mlirContent, TARGET::CPP);
+    compileOpts.target = TARGET::CPP;
+    engine.setCompileOptions(compileOpts);
+    compile_res = engine.compile(mlirContent);
     if (!compile_res) {
         return false;
     }
 
-    compile_res = engine.compile(mlirContent, TARGET::LIBRARY);
+    compileOpts.target = TARGET::LIBRARY;
+    engine.setCompileOptions(compileOpts);
+    compile_res = engine.compile(mlirContent);
     if (!compile_res) {
         return false;
     }
