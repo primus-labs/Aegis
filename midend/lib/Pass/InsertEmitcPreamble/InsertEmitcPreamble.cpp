@@ -92,6 +92,7 @@ void InsertEmitcPreamblePass::runOnOperation()
     verbatimInitCC.push_back("   cryptoCtx->Enable(PKE);");
     verbatimInitCC.push_back("   cryptoCtx->Enable(KEYSWITCH);");
     verbatimInitCC.push_back("   cryptoCtx->Enable(LEVELEDSHE);");
+    verbatimInitCC.push_back("}");
 
     // SmallVector<StringRef> verbatimInitCC = {
     //     "CryptoContext<DCRTPoly> cryptoCtx;",
