@@ -142,7 +142,7 @@ static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, const 
         inputFile << mlirContent;
     }
 
-    // exec emitc-translate tool
+    // exec mlir-translate tool
     const std::string outputPath(cppFullFileName);
     pid_t pid = fork();
     if (pid == -1) {

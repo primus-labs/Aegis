@@ -108,8 +108,8 @@ public:
     }
 
 private:
-    llvm::Expected<std::string> emitSharedLib(const std::string &fullSrcCodeFileName, 
-                                const std::string &outputDirPath, const std::string &sharedLibName);
+    llvm::Expected<bool> emitSharedLib(const std::string &fullSrcCodeFileName, 
+                                    const std::string &fullSharedFileName);
     llvm::Expected<bool> emitProgragSpecToJson(const std::string &fullProgSpecFileName, 
                                 ProtoMessage<aegisprotocol::ProgSpec> progSpec);
 

@@ -17,7 +17,11 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Process.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/FormatVariadic.h"
 
 
 namespace mlir {
@@ -144,20 +148,22 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
     }
 
     // Transform emitc ir to cpp
-    if (options.target == TARGET::CPP) {
-        std::string fullCppFileName;
-        res.cppFileName = "output.cpp";
-        fullCppFileName = res.outputDirPath + '/' + res.cppFileName;
-        if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, fullCppFileName, options.verbose).failed()) {
-            return ErrorMsg("Failed to transform emitc to cpp.");
-        }
+    std::string fullCppFileName;
+    res.cppFileName = "output.cpp";
+    fullCppFileName = res.outputDirPath + '/' + res.cppFileName;
+    if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, fullCppFileName, options.verbose).failed()) {
+        return ErrorMsg("Failed to transform emitc to cpp.");
     }
-
+    if (options.target == TARGET::CPP) {
+        return res;
+    }
+    
     // Compile cpp to library
-    if (options.target == TARGET::LIBRARY) {
-        if (!emitSharedLib(res.cppFileName, res.outputDirPath, res.binFileName)) {
-            return ErrorMsg("Failed to compile cpp to share library.");
-        }
+    std::string fullBinFileName;
+    res.binFileName = "libaegisshared" + SHARED_LIB_EXT;
+    fullBinFileName = res.outputDirPath + '/' + res.binFileName;
+    if (!emitSharedLib(fullCppFileName, fullBinFileName)) {
+        return ErrorMsg("Failed to compile cpp to share library.");
     }
 
     return res;
@@ -199,45 +205,89 @@ llvm::Expected<CompileResult> CompilerEngine::compile(llvm::StringRef code) {
     return this->compile(sm);
 }
 
-llvm::Expected<std::string> CompilerEngine::emitSharedLib(const std::string &fullSrcCodeFileName, 
-                                            const std::string &outputDirPath, const std::string &sharedLibName) {
+llvm::Expected<bool> CompilerEngine::emitSharedLib(const std::string &fullSrcCodeFileName, 
+                                                   const std::string &fullSharedFileName) {
     if (fullSrcCodeFileName.empty()) {
         return ErrorMsg("source code file name is empty.");
     }
+    if (fullSharedFileName.empty()) {
+        return ErrorMsg("shared file name is empty.");
+    }
 
-    std::string sharedFullLibName(outputDirPath);
-    if (!sharedLibName.empty()) {
-        sharedFullLibName += sharedLibName + SHARED_LIB_EXT;
-    } else {
-        sharedFullLibName += "libaegisshared" + SHARED_LIB_EXT;
+    llvm::ErrorOr<std::string> GppPath = llvm::sys::findProgramByName(COMPILER);
+    if (!GppPath) {
+        return ErrorMsg(COMPILER + "not found in the system env path.");
     }
 
     // Combine compiler command.
     // eg: g++ func.cpp --shared -o func.so
-    std::string compileCmd = COMPILER + fullSrcCodeFileName + LINKER_SHARED_OPT + sharedFullLibName;
-    
-    errno = 0;
-    FILE *fp = popen(compileCmd.c_str(), "r");
-    if (NULL == fp) {
-        return ErrorMsg(strerror(errno)) << "\nCannot call the compiler command: " << compileCmd;
-    }
+    std::string compileCmd = std::string(llvm::formatv("{0} {1} {2} {3}", 
+                                *GppPath, fullSrcCodeFileName, LINKER_SHARED_OPT, fullSharedFileName));;
 
-    std::string outputContent;
-    const int CHUNK_SIZE = 1024;
-    char chunk[CHUNK_SIZE];
+    // Lambda signature: Takes StringRef command, returns llvm::Expected<bool>
+    auto execCompileCmd = [](StringRef compileCmd) -> llvm::Expected<bool>  {
+        // Parse command line arguments
+        SmallVector<StringRef, 8> Args;
+        compileCmd.split(Args, ' ', -1, false);
 
-    while (fgets(chunk, CHUNK_SIZE, fp) != NULL) {
-        outputContent += chunk;
-    }
-    int status = pclose(fp);
+        if (Args.empty()) {
+            auto errMsg = std::string(llvm::formatv("Empty compile command:{0}" , compileCmd));
+            return ErrorMsg(errMsg);
+        }
 
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        return sharedFullLibName;
-    } else if (status == -1) {
-        return ErrorMsg("Cannot pclose: " + compileCmd);
-    } else {
-        return ErrorMsg("Command failed:" + compileCmd + "\nCode:" + std::to_string(status) + "\n" + outputContent);
-    }
+        // Create temporary file for capturing command output
+        SmallString<256> OutputPath;
+        std::error_code EC = llvm::sys::fs::createTemporaryFile("aegis-compile-result", "log", OutputPath);
+        if (EC) {
+            auto errMsg = std::string(llvm::formatv("Failed to create temp file:{0}" , EC.message()));
+            return ErrorMsg(errMsg);
+        }
+
+        // Configure standard stream redirection:
+        // - stdin: Inherit from parent
+        // - stdout: Redirect to temporary file
+        // - stderr: Inherit from parent
+        std::optional<StringRef> Redirects[3] = {
+            std::nullopt,   // stdin
+            OutputPath,     // stdout
+            OutputPath      // stderr
+        };
+
+
+        // Execute child process synchronously
+        int ExitCode = llvm::sys::ExecuteAndWait(
+            Args[0],        // Executable path
+            Args,           // Command arguments
+            std::nullopt,   // The program's environment
+            Redirects,      // Redirect strings
+            0,              // No timeout
+            0               // No memory limit
+        );
+
+        // Read captured output from temporary file
+        std::string OutputContent;
+        if (auto Buf = llvm::MemoryBuffer::getFile(OutputPath)) {
+            OutputContent = Buf.get()->getBuffer().str();
+        } else {
+            return ErrorMsg("Failed to read output");
+        }
+
+        // Clean up temporary file
+        if (llvm::sys::fs::remove(OutputPath)) {
+            return ErrorMsg("Failed to remove temp file");
+        }
+
+        // Validate exit status
+        if (ExitCode != 0) {
+            auto errMsg = std::string(llvm::formatv("Command failed, Exit code:{0}, Output log:{1}",
+                                                    ExitCode, OutputContent));
+            return ErrorMsg(errMsg);
+        }
+
+        return true;
+    };
+
+    return execCompileCmd(compileCmd);
 }
 
 llvm::Expected<bool> CompilerEngine::emitProgragSpecToJson(const std::string &fullProgSpecFileName,
