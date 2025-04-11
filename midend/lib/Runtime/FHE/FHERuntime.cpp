@@ -40,26 +40,20 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
     }
 }
 
-bool FHERuntime::open(const std::string &sharedLibPath) {
+llvm::Expected<bool> FHERuntime::open(const std::string &sharedLibPath) {
     libHandle = dlopen(sharedLibPath.c_str(), RTLD_LAZY);
     if (!libHandle) {
-        ErrorMsg err;
-        err << "Cannot open shared library " << dlerror();
-        return false;
+        return ErrorMsg("Cannot open shared library " + std::string(dlerror()));
     }
 
     return true;
 }
 
-bool FHERuntime::load(const std::string &sharedLibPath, const std::string &funcName) {
-    assert(!sharedLibPath.empty());
+llvm::Expected<bool> FHERuntime::resolveSymbol(const std::string &funcName) {
     assert(!funcName.empty());
     funcPtr = dlsym(libHandle, funcName.c_str());
     if (auto error = dlerror()) {
-        ErrorMsg err;
-        err << "Circuit symbol not found in dynamic module: "
-            << std::string(error);
-        return false;
+        return ErrorMsg("Circuit symbol not found in dynamic module: " + std::string(error));
     }
 
     return true;

@@ -99,6 +99,7 @@ private:
 class FHERuntime : public Runtime {
 public:
     FHERuntime(const std::string &progSpecFileName)    {
+        assert(!progSpecFileName.empty());
         this->progSpecFileName = progSpecFileName;
         libHandle = nullptr;
         funcPtr = nullptr;
@@ -112,8 +113,8 @@ public:
     }
 
 public:
-    bool open(const std::string &sharedLibPath) override;
-    bool load(const std::string &sharedLibPath, const std::string &funcName) override;
+    llvm::Expected<bool> open(const std::string &sharedLibPath) override;
+    llvm::Expected<bool> resolveSymbol(const std::string &funcName) override;
     llvm::Expected<std::vector<Value>> call(const std::vector<Value> &input) override;
 
 private:

@@ -13,5 +13,4 @@ function(create_executable target_name)
   set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 endfunction()
 
-#target_link_options(AegisRuntime PRIVATE "-Wl,--verbose")
 create_executable(test_compile test_compile.cpp)
