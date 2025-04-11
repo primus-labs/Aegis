@@ -136,6 +136,9 @@ void InsertEmitcPreamblePass::runOnOperation()
             builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
         }
 
+        // Insert extern "C" decl
+        builder.create<emitc::VerbatimOp>(op->getLoc(), "extern \"C\"");
+
         return mlir::WalkResult::interrupt();
     });
 

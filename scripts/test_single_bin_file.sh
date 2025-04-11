@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
-echo $SCRIPT_DIR
+#echo $SCRIPT_DIR
 
 if [ $# -ne 1 ]; then
     echo "\e[1;31mError: Please provide an c/cpp full file name.\e[0m"

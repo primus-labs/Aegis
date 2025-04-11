@@ -37,6 +37,7 @@ void init_cryptcontext() {
    cryptoCtx->Enable(LEVELEDSHE);
 }
 
+extern "C"
 RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
   init_cryptcontext();
   RLWECipher v3 = Mul(v1, v2);
