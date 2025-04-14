@@ -1,4 +1,5 @@
 ---
+version 6: 2025.04.14
 version 5: 2025.04.02
 version 4: 2025.03.28
 version 3: 2025.03.14
@@ -7,6 +8,7 @@ version 1: 2025.03.05
 ---
 
 - [Overview](#overview)
+- [Type](#type)
 - [FHE](#fhe)
   - [Simple Usage](#simple-usage)
 - [DataProcessor](#dataprocessor)
@@ -34,6 +36,20 @@ Basic flow:
 - Call `Runtime.run(input)` and so on.
 
 
+
+## Type
+
+Namespace: `primus_aegis`.
+
+```mermaid {align="center"}
+classDiagram
+  class Value {
+    +from_bytes(bytes)$
+    +to_bytes() bytes
+  }
+```
+
+
 ## FHE
 
 Namespace: `primus_aegis.fhe`.
@@ -48,10 +64,9 @@ classDiagram
     +scale : uint32               // Scale factor.
     +multDepth : uint32           // Multiplication depth
     +scaleModSize : uint32        // Scale modulus size
-    +batchSize : uint32           // Batch size
+    +batchSize : uint32           // Batch size, number of slots
     +galoisIndices : list~int32~  // Index list for Galois Key
     +enableBootstrapping : bool   // Whether to enable bootstrapping
-    +numSlot : uint32             // Number of slots
   }
 ```
 
@@ -141,13 +156,16 @@ FHEKeyset.getInstance().from_bytes(pub_keys)
 
 ## DataProcessor
 
+Namespace: `primus_aegis.fhe` for FHEDataProcessor.
+
+
 ```mermaid {align="center"}
 classDiagram
   class DataProcessor {
     <<abstract>>
-    +privateInput(numpy.ndarray[numpy.float64]) bytes
-    +publicInput(numpy.ndarray[numpy.float64]) bytes
-    +processOutput(bytes) numpy.ndarray[numpy.float64]
+    +privateInput(numpy.ndarray[numpy.float64]) Value
+    +publicInput(numpy.ndarray[numpy.float64]) Value // todo
+    +processOutput(Value) numpy.ndarray[numpy.float64]
   }
   
   DataProcessor <|.. FHEDataProcessor
@@ -187,12 +205,13 @@ from primus_aegis.runtime import DataProcessor as FHEDataProcessor
 plainInputData = np.array([[1.1, 2.2, 3.3, 4.4], [5.5, 6.6, 7.7, 8.8]], dtype=np.float64)
 
 privateData = FHEDataProcessor.privateInput(plainInputData)
-print("type of privateData:", type(privateData)) # <class 'bytes'>
+print("type of privateData:", type(privateData)) # <class 'primus_aegis.Value'>
 outputData = FHEDataProcessor.processOutput(privateData)
 ```
 
 ## Runtime
 
+Namespace: `primus_aegis.runtime`.
 
 ```mermaid {align="center"}
 classDiagram
@@ -232,8 +251,11 @@ classDiagram
 classDiagram
   class Runtime {
     <<abstract>>
-    +compile(mlir_file:string, CompileOption) CompileResult
-    +run(input:bytes, CompileResult) bytes
+    +compile(mlir_file:str, CompileOption) CompileResult
+    +open(shared_library_path:str) bool
+    +load(shared_library_path:str, function_name: str) bool
+    +run(input:Value, CompileResult) Value
+    +run(input:List[Value], CompileResult) List[Value]
   }
 
   Runtime <|.. FHERuntime
