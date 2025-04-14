@@ -2,6 +2,7 @@
 #include "Common/ProgramSpec.h"
 #include "../../backend/cpu/FHE/include/Operate.h"
 
+#include <numeric> // for std::accumulate
 
 namespace mlir {
 namespace aegis {
@@ -24,11 +25,10 @@ std::vector<Value> FHEDataProcessor::publicInput(std::vector<Value> &args) {
     return inputData;
 }
 
-std::vector<Value> FHEDataProcessor::processOutput(std::vector<Value> &outputs, std::vector<size_t>& plaintextSizes) {
-    assert(outputs.size() == plaintextSizes.size());
+std::vector<Value> FHEDataProcessor::processOutput(std::vector<Value> &outputs) {
     std::vector<Value> outputData;
-    for (size_t i = 0; i < outputs.size(); i++) {
-        outputData.push_back(processOutput(outputs[i], plaintextSizes[i]));
+    for (auto& output : outputs) {
+        outputData.push_back(processOutput(output));
     }
 
     return outputData;
@@ -45,8 +45,10 @@ Value FHEDataProcessor::publicInput(Value &arg) {
     return arg;
 }
 
-Value FHEDataProcessor::processOutput(Value &output, size_t plaintextSize) {
+Value FHEDataProcessor::processOutput(Value &output) {
     auto tensor = output.getTensor<uint8_t>().value();
+    auto dims = output.getDims();
+    size_t plaintextSize = std::accumulate(dims.begin(), dims.end(), (size_t)1, std::multiplies<size_t>());
     std::vector<double> res = aegiscpu::decrypt(tensor.values, plaintextSize);
     Tensor<double> resBuf(res, output.getDims());
     return Value(resBuf);
