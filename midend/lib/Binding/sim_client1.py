@@ -26,15 +26,15 @@ with open("all_keys.bin", "wb") as f:
 with open("pub_keys.bin", "wb") as f:
     f.write(pub_keys)
 
-# test private input, and checked in client2.py
+
+# private input
 import numpy as np
 from primus_aegis.fhe import DataProcessor as FHEDataProcessor
 
-plainInputData = np.array([[1.1, 2.2, 3.3, 4.4], [5.5, 6.6, 7.7, 8.8]], dtype=np.float64)
+plainInputData = np.array([[1.51, 2.52, 3.53, 4.54], [5.55, 6.56, 7.57, 8.58]], dtype=np.float64)
 print("plainInputData:", plainInputData)
 
-privateData = FHEDataProcessor.privateInput(plainInputData)
-print("len of privateData:", len(privateData))
+privateInputData = FHEDataProcessor.privateInput(plainInputData)
 
-with open("privateData.bin", "wb") as f:
-    f.write(privateData)
+with open("privateInputData.bin", "wb") as f:
+    f.write(privateInputData.to_bytes())

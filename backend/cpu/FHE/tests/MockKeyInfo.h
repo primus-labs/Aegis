@@ -8,10 +8,9 @@ struct MockKeyInfo {
   uint32_t scale;                     // scale factor.
   uint32_t multDepth;                 // Multiplication depth
   uint32_t scaleModSize;              // Scale modulus size
-  uint32_t batchSize;                 // Batch size
+  uint32_t batchSize;                 // Batch size (number of slots)
   std::vector<int32_t> galoisIndices; // Index list for Galois Key
   bool enableBootstrapping;           // Whether to enable bootstrapping
-  uint32_t numSlot;                   // number of slots
 };
 
 #include "Common/Protocol.h"
@@ -25,7 +24,6 @@ static void _buildKeyInfo(const MockKeyInfo &mockKeyInfo,
   keyInfo.asBuilder().setScaleModSize(mockKeyInfo.scaleModSize);
   keyInfo.asBuilder().setBatchSize(mockKeyInfo.batchSize);
   keyInfo.asBuilder().setEnableBootstrapping(mockKeyInfo.enableBootstrapping);
-  // keyInfo.asBuilder().setNumSlot(mockKeyInfo.numSlot);
 
   auto coff = mockKeyInfo.coffModCh;
   auto coffModCh = keyInfo.asBuilder().initCoffModCh(coff.size());

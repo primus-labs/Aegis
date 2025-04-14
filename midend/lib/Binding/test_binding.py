@@ -61,7 +61,6 @@ plainInputData = np.array([[1.1, 2.2, 3.3, 4.4], [5.5, 6.6, 7.7, 8.8]], dtype=np
 print("plainInputData:", plainInputData)
 
 privateData = FHEDataProcessor.privateInput(plainInputData)
-print("len of privateData:", len(privateData))
 
 outputData = FHEDataProcessor.processOutput(privateData)
 print("len of outputData:", len(outputData))
@@ -72,8 +71,50 @@ plainInputData = np.array([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6], [7.7, 8.8]], dtyp
 print("plainInputData:", plainInputData)
 
 privateData = FHEDataProcessor.privateInput(plainInputData)
-print("len of privateData:", len(privateData))
 
 outputData = FHEDataProcessor.processOutput(privateData)
 print("len of outputData:", len(outputData))
 print("outputData:", outputData)
+
+# compiler engine
+from primus_aegis.runtime import BACKEND_TYPE, COMPILE_TARGET, CompileOption
+
+print("BACKEND_TYPE:", BACKEND_TYPE.CPU, ".value", BACKEND_TYPE.CPU.value)
+print("BACKEND_TYPE:", BACKEND_TYPE.GPU, ".value", BACKEND_TYPE.GPU.value)
+print("COMPILE_TARGET:", COMPILE_TARGET.SECRET, ".value", COMPILE_TARGET.SECRET.value)
+print("COMPILE_TARGET:", COMPILE_TARGET.FHE, ".value", COMPILE_TARGET.FHE.value)
+print("COMPILE_TARGET:", COMPILE_TARGET.EMITC, ".value", COMPILE_TARGET.EMITC.value)
+print("COMPILE_TARGET:", COMPILE_TARGET.CPP, ".value", COMPILE_TARGET.CPP.value)
+print("COMPILE_TARGET:", COMPILE_TARGET.LIBRARY, ".value", COMPILE_TARGET.LIBRARY.value)
+
+compileOption = CompileOption()
+print("compileOption.backendType:", compileOption.backendType)
+print("compileOption.compileTarget:", compileOption.compileTarget)
+
+compileOption.compileTarget = COMPILE_TARGET.EMITC
+print("compileOption.backendType:", compileOption.backendType)
+print("compileOption.compileTarget:", compileOption.compileTarget)
+
+# runtime/compile
+from primus_aegis.runtime import FHERuntime
+
+mlir_file = ""
+fheRuntime = FHERuntime()
+compileResult = fheRuntime.compile(mlir_file, compileOption)
+print("compileResult.outputDirPath:", compileResult.outputDirPath)
+print("compileResult.cppFileName:", compileResult.cppFileName)
+print("compileResult.binFileName:", compileResult.binFileName)
+print("compileResult.progSpecFileName:", compileResult.progSpecFileName)
+
+
+# runtime/run
+plainInputData = np.array([[1.21, 2.12], [33.3, 41.4], [57.5, 6.66], [73.7, 18.8]], dtype=np.float64)
+print("plainInputData:", plainInputData)
+
+privateData = FHEDataProcessor.privateInput(plainInputData)
+print("privateData:", type(privateData))
+run_result = fheRuntime.run(privateData, compileResult)
+
+# get the plain result
+plain_result = FHEDataProcessor.processOutput(run_result)
+print("plain_result:", plain_result)

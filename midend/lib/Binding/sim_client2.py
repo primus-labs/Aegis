@@ -15,12 +15,13 @@ with open("all_keys.bin", "rb") as f:
         pub_keys = fheKeyset.to_bytes(contain_sk=False)
         print("(test2) len of pub_keys:", len(pub_keys))
 
-# test private input, and checked in client2.py
+# decrypt run_result
 import numpy as np
+from primus_aegis import Value
 from primus_aegis.fhe import DataProcessor as FHEDataProcessor
 
-with open("privateData.bin", "rb") as f:
-    privateData = f.read()
-    outputData = FHEDataProcessor.processOutput(privateData)
+with open("resultData.bin", "rb") as f:
+    resultData = Value.from_bytes(f.read())
+    outputData = FHEDataProcessor.processOutput(resultData)
     print("len of outputData:", len(outputData))
     print("outputData:", outputData)

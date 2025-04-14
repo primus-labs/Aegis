@@ -6,7 +6,9 @@ namespace py = pybind11;
 
 #include "Common/Protocol.h"
 #include "Common/Value.h"
+#include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEDataProcessor.h"
+#include "Runtime/FHE/FHERuntime.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <capnp/serialize.h>
@@ -33,7 +35,6 @@ struct KeyInfo {
     uint32_t batchSize;
     std::vector<int32_t> galoisIndices;
     bool enableBootstrapping;
-    // uint32_t numSlot;
 };
 
 static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol::KeyInfo> &protoKeyInfo) {
@@ -43,7 +44,6 @@ static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol:
     protoKeyInfo.asBuilder().setScaleModSize(keyInfo.scaleModSize);
     protoKeyInfo.asBuilder().setBatchSize(keyInfo.batchSize);
     protoKeyInfo.asBuilder().setEnableBootstrapping(keyInfo.enableBootstrapping);
-    // protoKeyInfo.asBuilder().setNumSlot(keyInfo.numSlot);
 
     auto coff = keyInfo.coffModCh;
     auto coffModCh = protoKeyInfo.asBuilder().initCoffModCh(coff.size());
@@ -198,23 +198,58 @@ class Utils {
 /// @brief
 class PyFHEDataProcessor {
   public:
-    static py::bytes privateInput(const py::array_t<double> &input) {
+    static Value privateInput(const py::array_t<double> &input) {
         auto plainValue = Utils::Numpy2Value(input);
-        std::vector<Value> plainValues = {plainValue}; // TODO: no need vector<Value> for DataProcessor.privateInput
+        std::vector<Value> plainValues = {plainValue};
         auto cipherValues = FHEDataProcessor().privateInput(plainValues);
-        return Utils::Value2PyBytes(cipherValues[0]);
+        return cipherValues[0];
     }
-    static py::array_t<double> processOutput(const py::bytes &input) {
-        auto cipherValue = Utils::PyBytes2Value(input);
-        std::vector<Value> cipherValues = {cipherValue}; // TODO: no need vector<Value> for DataProcessor.processOutput
-        std::vector<size_t> pp = {8};
-        auto plainValues = FHEDataProcessor().processOutput(cipherValues, pp);
+    static py::array_t<double> processOutput(const Value &input) {
+        std::vector<Value> cipherValues = {input};
+        auto plainValues = FHEDataProcessor().processOutput(cipherValues);
         return Utils::Value2Numpy(plainValues[0]);
+    }
+};
+
+class PyFHERuntime {
+  public:
+    CompileResult compile(const std::string &mlir_file, const CompileOptions &compileOption) {
+        // TODO:
+        auto cr = CompileResult();
+        cr.outputDirPath = "test.todo.outputDirPath";
+        cr.cppFileName = "test.todo.cppFileName";
+        cr.binFileName = "test.todo.binFileName";
+        cr.progSpecFileName = "test.todo.progSpecFileName";
+        return cr;
+    }
+
+    bool open(const std::string &sharedLibPath) {
+        // TODO:
+        return true;
+    }
+    bool load(const std::string &sharedLibPath, const std::string &funcName) {
+        // TODO:
+        return true;
+    }
+    vector<Value> run(const vector<Value> &inputs, const CompileResult &compileResult) {
+        // TODO:
+        return inputs;
+    }
+
+    Value run(const Value &input, const CompileResult &compileResult) {
+        vector<Value> inputs = {input};
+        auto outputs = run(inputs, compileResult);
+        return outputs[0];
     }
 };
 
 PYBIND11_MODULE(primus_aegis, m) {
     m.doc() = "Aegis";
+
+    // Type
+    py::class_<Value>(m, "Value")
+        .def_static("from_bytes", [](const py::bytes &b) { return Utils::PyBytes2Value(b); })
+        .def("to_bytes", [](Value &self) { return Utils::Value2PyBytes(self); });
 
     // FHE
     py::module m_fhe = m.def_submodule("fhe");
@@ -227,10 +262,9 @@ PYBIND11_MODULE(primus_aegis, m) {
         .def_readwrite("scale", &KeyInfo::scale, "scale factor.")
         .def_readwrite("multDepth", &KeyInfo::multDepth, "multiplication depth")
         .def_readwrite("scaleModSize", &KeyInfo::scaleModSize, "scale modulus size")
-        .def_readwrite("batchSize", &KeyInfo::batchSize, "batch size")
+        .def_readwrite("batchSize", &KeyInfo::batchSize, "batch size (number of slots)")
         .def_readwrite("galoisIndices", &KeyInfo::galoisIndices, "index list for Galois Key")
         .def_readwrite("enableBootstrapping", &KeyInfo::enableBootstrapping, "whether to enable bootstrapping");
-        // .def_readwrite("numSlot", &KeyInfo::numSlot, "number of slots");
 
     py::class_<FHEPrivateKey, std::shared_ptr<FHEPrivateKey>>(m_fhe, "PrivateKey")
         .def(py::init<>())
@@ -254,4 +288,42 @@ PYBIND11_MODULE(primus_aegis, m) {
     py::class_<PyFHEDataProcessor>(m_fhe, "DataProcessor")
         .def_static("privateInput", &PyFHEDataProcessor::privateInput)
         .def_static("processOutput", &PyFHEDataProcessor::processOutput);
+
+    // Runtime
+    py::module m_rt = m.def_submodule("runtime");
+
+    // Compiler Engine
+    py::enum_<BACKEND_TYPE>(m_rt, "BACKEND_TYPE")
+        .value("CPU", BACKEND_TYPE::CPU)
+        .value("GPU", BACKEND_TYPE::GPU)
+        .export_values();
+    py::enum_<TARGET>(m_rt, "COMPILE_TARGET")
+        .value("SECRET", TARGET::SECRET)
+        .value("FHE", TARGET::FHE)
+        .value("EMITC", TARGET::EMITC)
+        .value("CPP", TARGET::CPP)
+        .value("LIBRARY", TARGET::LIBRARY)
+        .export_values();
+
+    py::class_<CompileOptions>(m_rt, "CompileOption")
+        .def(py::init<>())
+        .def_readwrite("backendType", &CompileOptions::beType)
+        .def_readwrite("compileTarget", &CompileOptions::target);
+    py::class_<CompileResult>(m_rt, "CompileResult")
+        .def(py::init<>())
+        .def_readwrite("outputDirPath", &CompileResult::outputDirPath)
+        .def_readwrite("cppFileName", &CompileResult::cppFileName)
+        .def_readwrite("binFileName", &CompileResult::binFileName)
+        .def_readwrite("progSpecFileName", &CompileResult::progSpecFileName);
+
+    // FHE Runtime
+    py::class_<PyFHERuntime>(m_rt, "FHERuntime")
+        .def(py::init<>())
+        .def("compile", &PyFHERuntime::compile, py::arg("mlir_file"), py::arg("compile_options"))
+        .def("open", &PyFHERuntime::open, py::arg("shared_library_path"))
+        .def("load", &PyFHERuntime::load, py::arg("shared_library_path"), py::arg("function_name"))
+        .def("run", py::overload_cast<const Value &, const CompileResult &>(&PyFHERuntime::run), py::arg("input"),
+             py::arg("compile_result"))
+        .def("run", py::overload_cast<const vector<Value> &, const CompileResult &>(&PyFHERuntime::run),
+             py::arg("input"), py::arg("compile_result"));
 }
