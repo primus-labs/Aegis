@@ -1,9 +1,11 @@
+#include <complex>
 #include "Runtime/FHE/FHERuntime.h"
 #include "Common/Error.h"
 #include "Common/ProgramSpec.h"
 #include "Common/Protocol.h"
-
-
+#include "Common/Value.h"
+#include "cpu/FHE/include/Operate.h"
+#include "cpu/FHE/include/CryptoContextMgr.h"
 
 namespace mlir {
 namespace aegis {
@@ -16,22 +18,48 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
             return ErrorMsg("call ProgramSpec::initilize failure.");
         }
         ProtoMessage<aegisprotocol::ProgSpec> protoProgSpec = progSpec.getProgSpec();
+        std::vector<ProtoMessage<aegisprotocol::Function>> vectFuncs = progSpec.getFuncInfo();
+        assert(input.size() == vectFuncs.size());
 
         // Prepare parameters
-        std::vector<std::unique_ptr<ArgWrapperBase>> args;
-        
-        // TODO: Assume the first parameter is Ciphertext and the second parameter is Plaintext
-        Ciphertext<DCRTPoly> c1;
-        Plaintext p1; 
-        args.emplace_back(new CiphertextWrapper(std::move(c1)));
-        args.emplace_back(new PlaintextWrapper(std::move(p1)));
+        int idx = 0;
+        std::vector<ArgWrapperBase*> args;
+        for (auto func : vectFuncs) {
+            for (auto param : func.asReader().getInputs()) {
+                if (param.getType()) {
+                    Ciphertext<DCRTPoly> ct;
+                    Tensor<uint8_t> tensorVal = input[idx].getTensor<uint8_t>().value();
+                    ct = aegiscpu::deserializeCiphertext(tensorVal.values);
+                    args.emplace_back(new CiphertextWrapper(ct));
+                } else {
+                    Plaintext pt;
+                    std::vector<uint8_t> realData = input[idx].getTensor<uint8_t>().value().values;
+                    std::vector<std::complex<double>> complexData;
+                    for (uint8_t x : realData) {
+                        complexData.emplace_back((double)x, 0.0);
+                    }
+                    auto cc = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+                    pt = cc->MakeCKKSPackedPlaintext(complexData);
+                    args.emplace_back(new PlaintextWrapper(pt));
+                }
+                idx++;
+            }
+        }
 
         // Call the function (explicitly specify return type and parameter types)
-        Ciphertext<DCRTPoly> result = FuncInvoker::invoke<Ciphertext<DCRTPoly>, Ciphertext<DCRTPoly>, Plaintext>(
-                                                    funcPtr, {args[0].get(), args[1].get()});
+        Ciphertext<DCRTPoly> result = dispatchInvoke<Ciphertext<DCRTPoly>>(funcPtr, args);
 
-        // TODO: we must deserial result to Value
-        return std::vector<Value> {};
+        // Clean up parameter wrapping
+        for (auto arg : args) {
+            delete arg;
+        }
+        args.clear();
+
+        // TODO: we must kown the result value dims.
+        std::vector<uint8_t> bytes;
+        aegiscpu::serializeCiphertext(result, bytes);
+        Value res((Tensor<uint8_t>)(bytes, 0));
+        return std::vector<Value>{res};
     }
     catch (const std::exception& e) {
         std::string err("error:");

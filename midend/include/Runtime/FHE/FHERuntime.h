@@ -2,6 +2,9 @@
 #define RUNTIME_FHERUNTIME_H
 
 #include <dlfcn.h>
+#include <stdexcept>
+#include <type_traits>
+#include <utility>
 #include "../Runtime.h"
 #include "openfhe.h"
 using namespace lbcrypto;
@@ -92,6 +95,102 @@ private:
         if (arg->type() != expectedType) {
             throw std::runtime_error("parameter " + std::to_string(index) + " type does not match.");
         }
+    }
+};
+
+
+// type sequence container
+template<ArgType... Types>
+struct TypeSequence {
+    template<ArgType NewType>
+    using Push = TypeSequence<NewType, Types...>; // Adding new types to the sequence frontend
+};
+
+// Generates a sequence of types from high to low bits.
+// If N=3, Mask=5 (binary 101), TypeSequence<Cipher, Plain, Cipher> is generated.
+template<size_t N, uint32_t Mask>
+struct GenerateTypeSequence {
+    using Type = typename GenerateTypeSequence<N - 1, Mask>::Type::template Push<
+        ((Mask >> (N - 1)) & 0x1) ? ArgType::CipherType : ArgType::PlainType>;
+};
+
+// Recursion termination condition
+template<uint32_t Mask>
+struct GenerateTypeSequence<0, Mask> {
+    using Type = TypeSequence<>;
+};
+
+// Conversion of type sequences to actual calls
+template<typename Ret, typename TypeSeq>
+struct InvokeWithTypeSeq;
+
+template<typename Ret, ArgType... Types>
+struct InvokeWithTypeSeq<Ret, TypeSequence<Types...>> {
+    static Ret call(void* funcPtr, const std::vector<ArgWrapperBase*>& args) {
+        return FuncInvoker::invoke<Ret,
+            std::conditional_t<Types == ArgType::CipherType,
+                              Ciphertext<DCRTPoly>,
+                              Plaintext>...>(funcPtr, args);
+    }
+};
+
+// Recursively check the type and call the corresponding Mask branch
+template<typename Ret, size_t N, uint32_t Mask, uint32_t TotalMasks>
+struct DynamicInvokerMaskBranch {
+    static Ret checkAndInvoke(void* funcPtr, const std::vector<ArgWrapperBase*>& args) {
+        //Start checking from bit 0
+        if (checkArgTypes<Mask, N, 0>(args)) { 
+            return InvokeWithTypeSeq<Ret, typename GenerateTypeSequence<N, Mask>::Type>::call(funcPtr, args);
+        }
+        // Otherwise try the next Mask
+        return DynamicInvokerMaskBranch<Ret, N, Mask + 1, TotalMasks>::checkAndInvoke(funcPtr, args);
+    }
+
+private:
+    template<uint32_t CurrentMask, size_t TotalBits, size_t BitPos>
+    static bool checkArgTypes(const std::vector<ArgWrapperBase*>& args) {
+        if constexpr (BitPos >= TotalBits) {
+            return true;
+        } else {
+            constexpr ArgType expectedType = (CurrentMask & (1 << BitPos)) 
+                                           ? ArgType::CipherType 
+                                           : ArgType::PlainType;
+            if (args[BitPos]->type() != expectedType) {
+                return false;
+            }
+            return checkArgTypes<CurrentMask, TotalBits, BitPos + 1>(args);
+        }
+    }
+};
+
+// Specialized termination condition: throw an exception when Mask >= TotalMasks
+template<typename Ret, size_t N, uint32_t TotalMasks>
+struct DynamicInvokerMaskBranch<Ret, N, TotalMasks, TotalMasks> {
+    static Ret checkAndInvoke(void*, const std::vector<ArgWrapperBase*>&) {
+        throw std::runtime_error("No matching type combination");
+    }
+};
+
+// Dynamically calling the executor
+template<typename Ret, size_t N>
+struct DynamicInvoker {
+    static Ret invoke(void* funcPtr, const std::vector<ArgWrapperBase*>& args) {
+        constexpr uint32_t TotalMasks = 1 << N;
+        return DynamicInvokerMaskBranch<Ret, N, 0, TotalMasks>::checkAndInvoke(funcPtr, args);
+    }
+};
+
+template<typename Ret>
+Ret dispatchInvoke(void* funcPtr, const std::vector<ArgWrapperBase*>& args) {
+    const size_t n = args.size();
+    switch(n) {
+        case 0: return DynamicInvoker<Ret, 0>::invoke(funcPtr, args);
+        case 1: return DynamicInvoker<Ret, 1>::invoke(funcPtr, args);
+        case 2: return DynamicInvoker<Ret, 2>::invoke(funcPtr, args);
+        case 3: return DynamicInvoker<Ret, 3>::invoke(funcPtr, args);
+        case 4: return DynamicInvoker<Ret, 4>::invoke(funcPtr, args);
+        case 5: return DynamicInvoker<Ret, 5>::invoke(funcPtr, args);
+        default: throw std::runtime_error("Unsupported parameter count");
     }
 };
 

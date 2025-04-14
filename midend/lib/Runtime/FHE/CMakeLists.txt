@@ -67,6 +67,7 @@ target_link_options(AegisRuntime PUBLIC -fuse-ld=gold)
 #target_link_options(AegisRuntime PUBLIC "-Wl,--verbose")
 
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/../backend)
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/pke/include)
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/binfhe/include)
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/../third_party/openfhe/src/core/include)
