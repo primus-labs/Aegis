@@ -12,6 +12,7 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
     CCParams<CryptoContextCKKSRNS> parameters;
     parameters.SetMultiplicativeDepth(keyInfo.asReader().getMultDepth());
     parameters.SetScalingModSize(keyInfo.asReader().getScaleModSize());
+    parameters.SetFirstModSize(keyInfo.asReader().getFirstModSize());
     parameters.SetBatchSize(keyInfo.asReader().getBatchSize());
 
     // Create crypto context

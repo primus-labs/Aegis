@@ -19,7 +19,6 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         }
         ProtoMessage<aegisprotocol::ProgSpec> protoProgSpec = progSpec.getProgSpec();
         std::vector<ProtoMessage<aegisprotocol::Function>> vectFuncs = progSpec.getFuncInfo();
-        assert(input.size() == vectFuncs.size());
 
         // Prepare parameters
         int idx = 0;
@@ -58,7 +57,7 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         // TODO: we must kown the result value dims.
         std::vector<uint8_t> bytes;
         aegiscpu::serializeCiphertext(result, bytes);
-        Value res((Tensor<uint8_t>)(bytes, 0));
+        Value res(Tensor<uint8_t>(bytes, std::vector<size_t>{0}));
         return std::vector<Value>{res};
     }
     catch (const std::exception& e) {

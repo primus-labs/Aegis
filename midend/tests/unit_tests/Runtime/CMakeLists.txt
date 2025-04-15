@@ -10,6 +10,7 @@ function(create_executable target_name)
   )
 
   target_include_directories(${target_name} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+  target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/../backend)
   set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 endfunction()
 
