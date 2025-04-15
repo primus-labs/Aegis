@@ -253,9 +253,9 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
     addNestedAwarePass(pm, std::make_unique<FoldArithChainPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
-    // addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);
-    // addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
-    // addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<LweToRlwePass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);

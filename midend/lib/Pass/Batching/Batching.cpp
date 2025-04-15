@@ -211,6 +211,21 @@ void BatchingPass::runOnOperation() {
         return std::optional<Value>(std::nullopt);
     });
 
+    // If FHE::LoadOp is not found, return directly
+    bool hasLoadOp = false;
+    getOperation()->walk([&](Operation *op) {
+        if (isa<fhe::LoadOp>(op)) {
+            hasLoadOp = true;
+            return WalkResult::interrupt();
+        }
+
+        return WalkResult::advance();
+    });
+
+    if (!hasLoadOp) {
+        return;
+    }
+
     // Batching many thousands of values into a single vector-like ciphertext.
     // Get the (default) block in the module's only region:
     auto &block = getOperation()->getRegion(0).getBlocks().front();
