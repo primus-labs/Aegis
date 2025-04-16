@@ -219,6 +219,7 @@ public:
 
             if (operand.getType() != operandDestTy) {
                 auto newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+                assert(newOperand);
                 materialized_ops.push_back(newOperand);
             }
             else {
@@ -396,17 +397,41 @@ public:
         }
 
         // Get arith::ConstOp interger value.
-        double dVal;
+        std::string strVal;
         auto valueAttr = op.getValue(); 
         if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(valueAttr)) {
-            dVal = intAttr.getInt();
+            auto nVal = intAttr.getInt();
+            strVal = std::to_string(nVal);
         } else if (auto floatAttr = mlir::dyn_cast<mlir::FloatAttr>(valueAttr)) {
-            dVal = floatAttr.getValueAsDouble();
+            auto dVal = floatAttr.getValueAsDouble();
+            strVal = std::to_string(dVal);
+        } if (auto denseAttr = mlir::dyn_cast<mlir::DenseElementsAttr>(valueAttr)) {
+            auto processValues = [&strVal](auto vals) {
+                for (size_t i = 0; i < vals.size(); ++i) {
+                    strVal += std::to_string(vals[i]);
+                    if (i != vals.size() - 1) {
+                        strVal += ",";
+                    }
+                }
+            };
+            
+            Type elementType = denseAttr.getElementType();
+            if (elementType.isF64()) {
+                processValues(denseAttr.getValues<double>());
+            } else if (elementType.isF32()) {
+                processValues(denseAttr.getValues<float>());
+            } else if (elementType.isInteger(32)) {
+                processValues(denseAttr.getValues<int32_t>());
+            } else if (elementType.isInteger(64)) {
+                processValues(denseAttr.getValues<int64_t>());
+            } else {
+                llvm_unreachable("Unsupported element type.(FheConstantPattern::matchAndRewrite)\n");
+            }
         }
 
         // Combine emitc::OpaqueAttr using the value.
         emitc::OpaqueAttr emitcAttrVal;
-        emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakePlain(" + std::to_string(dVal) + ")"));
+        emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakePlain(" + strVal + ")"));
         rewriter.replaceOpWithNewOp<emitc::ConstantOp>(op, TypeRange(destTy), emitcAttrVal);
         
         return success();
@@ -745,16 +770,18 @@ void LowerFheToEmitcPass::runOnOperation()
             else if (mlir::isa<mlir::FloatType>(srcTy) || mlir::isa<mlir::IntegerType>(srcTy) || mlir::isa<mlir::IndexType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
             }
+            else if (mlir::isa<mlir::VectorType>(srcTy)) {
+                return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
+            }
             // The global op type is emitc.array and needs to be converted to !emitc.opaque.
             else if (mlir::isa<emitc::ArrayType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
             }
             else {
-                llvm::outs() << "Warning:No handling for the ValueRange type:" << srcTy <<"[at FheToEmitcPass materializeCommon].\n";
+                llvm::errs() << "Error:No handling for the ValueRange type:" << srcTy <<"[at FheToEmitcPass materializeCommon].\n";
             }
         }
  
-        llvm::outs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n";
         LLVM_DEBUG(llvm::dbgs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n");
         return std::optional<Value>(std::nullopt);
     };
@@ -808,8 +835,10 @@ void LowerFheToEmitcPass::runOnOperation()
                  mlir::isa<mlir::IndexType>(t)) {
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
         }
+        else if (mlir::isa<mlir::VectorType>(t)) {
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>"));
+        }
 
-        llvm::outs() << "Warning: No conver type:(" << t << ")[at FheToEmitcPass addConversion].\n";
         LLVM_DEBUG(llvm::dbgs() << "Warning: No conver type:(" << t << ")[at FheToEmitcPass addConversion].\n");
         return std::optional<Type>(t);
     
@@ -906,9 +935,12 @@ void LowerFheToEmitcPass::runOnOperation()
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
+        else if (mlir::isa<mlir::VectorType>(t)) {
+            assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
+            return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
+        }
 
-        llvm::outs() << "Warning: No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n";
-        LLVM_DEBUG(llvm::dbgs() << "No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n");
+        llvm::errs() << "Error: No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n";
         return std::optional<Value>(std::nullopt);
     });
 
