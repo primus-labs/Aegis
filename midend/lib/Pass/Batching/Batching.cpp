@@ -219,6 +219,7 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
         %inverted_mask = arith.constant dense<[0,1,1,1...]> : tensor<16xf64> 
         %existing = fhe.mulplain %arg1, %inverted_mask : !fhe.lweciphervec<16xf64>
         %new_val = fhe.add %existing, %7 : !fhe.lweciphervec<16xf64>
+        fhe.copy %new_val, %arg1 :!fhe.lweciphervec<16xf64> -> !fhe.lweciphervec<16xf64>
         ***********************************************************************************/
         auto storeOp = llvm::cast<fhe::StoreOp>(op);
         assert(static_cast<int64_t>(storeOp.getIndices().size()) == 1 && "StoreOp indices size > 1 not support");
@@ -234,8 +235,8 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
             }
         }
 
-        for (auto u : storeOp->getUsers()) {
-            if (fhe::LWEMulPlainOp mulplainOp = mlir::dyn_cast_or_null<fhe::LWEMulPlainOp>(u)) {
+        for (auto curOperand : storeOp->getOperands()) {
+            if (fhe::LWEMulPlainOp mulplainOp = curOperand.template getDefiningOp<fhe::LWEMulPlainOp>()) {
                 for (auto operand : mulplainOp.getOperands()) {
                     if (auto constOp = operand.getDefiningOp<arith::ConstantOp>()) {
                         Attribute valueAttr = constOp.getValue();
@@ -264,15 +265,19 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                                                                               ValueRange({storeOp.getMemref(), invertMaskOp}));
 
                             // Combine new and existing values
-                            auto result = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
+                            auto addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
                                                                          ValueRange({mulVal, storeOp.getValueToStore()}));
 
-                            // Replace the store operation with fheAddOp
+                            // copy the new values(fhe::LWEAddOp) to StoreOp memref value
+                            auto result = rewriter.create<fhe::CopyOp>(storeOp.getLoc(), addOp, storeOp.getMemref());
+
+                            // Replace the store operation with fhe::CopyOp
                             rewriter.replaceOp(op, result);
                             break;               
                         }
                     }
                 }
+                break;
             }
         }
     }
@@ -388,7 +393,6 @@ void BatchingPass::runOnOperation() {
     if (failed(nestedPM.run(getOperation()))) {
         signalPassFailure();
     }
-
 
     // After the batch operation is completed, load & store pairs may be reserved. At this time, 
     // the load & store pairs need to be optimized and converted into rotate and corresponding arith operations.

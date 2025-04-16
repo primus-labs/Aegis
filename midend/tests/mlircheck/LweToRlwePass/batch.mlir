@@ -38,10 +38,11 @@ module  {
 // CHECK-NOT: fhe.lwemul
 // CHECK-NOT: fhe.lweadd
 // CHECK-NOT: fhe.lweadd
+// CHECK-NOT: fhe.load
+// CHECK-NOT: fhe.store
 
 // CHECK: fhe.rlwemul
 // CHECK: fhe.rotate
 // CHECK: fhe.rlweadd
 // CHECK: fhe.rlweadd
-// CHECK: fhe.load
-// CHECK: fhe.store
+// CHECK: fhe.copy

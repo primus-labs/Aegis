@@ -32,9 +32,13 @@ module  {
 // CHECK-NOT: affine.for
 // CHECK-NOT: arith.mulf
 // CHECK-NOT: arith.addf
+// CHECK-NOT: fhe.load
+// CHECK-NOT: fhe.store
 // CHECK: memref.load
 // CHECK: fhe.lwemul_plain
 // CHECK: fhe.rotate
 // CHECK: fhe.lweadd
-// CHECK: fhe.load
-// CHECK: fhe.store
+// CHECK: fhe.lwemul_plain
+// CHECK: fhe.lweadd
+// CHECK: fhe.copy
+// CHECK: fhe.copy
