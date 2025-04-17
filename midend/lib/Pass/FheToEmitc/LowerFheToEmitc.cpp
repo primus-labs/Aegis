@@ -56,6 +56,7 @@ public:
 
         if (operand.getType() != operandDestTy) {
             newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+            assert(newOperand);
         }
         else {
             newOperand = operand;
@@ -109,6 +110,7 @@ public:
 
             if (operand.getType() != operandDestTy) {
                 auto newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+                assert(newOperand);
                 materialized_ops.push_back(newOperand);
             }
             else {
@@ -143,7 +145,9 @@ public:
             opName = "MulPlain";
         }
         else {
-            LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
+            llvm::errs() << "[FhetoEmitcPass] ERROR: Unhandled operation detected\n"
+                         << "   Operation: " << op << "\n"
+                         << "   Location:  " << op.getLoc() << "\n";
             return failure();
         }
         
@@ -178,6 +182,7 @@ public:
         Value newOperand;
         if (operand.getType() != operandDestTy) {
             newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+            assert(newOperand);
         }
         else {
             newOperand = operand;
@@ -297,6 +302,7 @@ public:
         if (auto _ = mlir::dyn_cast_or_null<emitc::OpaqueType>(destTy)) {
             rewriter.setInsertionPoint(op);
             auto castOp = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getOperands());
+            assert(castOp);
             rewriter.replaceOpWithNewOp<func::ReturnOp>(op, castOp);
 
         }
@@ -495,6 +501,7 @@ public:
         Value newOperand;
         if (memOperand.getType() != operandDestTy) {
             newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, memOperand);
+            assert(newOperand);
         }
         else {
             newOperand = memOperand;
@@ -537,6 +544,7 @@ public:
         Value newOperand;
         if (memOperand.getType() != operandDestTy) {
             newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, memOperand);
+            assert(newOperand);
             if (auto castOp = mlir::dyn_cast_or_null<fhe::CastOp>(memOperand.getDefiningOp())) {
                 if (auto castOp2 = mlir::dyn_cast_or_null<fhe::CastOp>(castOp.getOperand().getDefiningOp())) {
                     newOperand = castOp2.getOperand();
@@ -588,6 +596,7 @@ public:
                                                                 destMemrefTy, op.getMemref());
         auto newValueToStore = typeConverter->materializeTargetConversion(rewriter, op.getValueToStore().getLoc(),
                                                                 destStoreValTy, op.getValueToStore());
+        assert(newMemref && newValueToStore);
       
         operands.push_back(newMemref);
         operands.push_back(newValueToStore);
@@ -627,6 +636,7 @@ public:
                                                                 newSrcTy, op.getSource());
         auto newDestVal = typeConverter->materializeTargetConversion(rewriter, op.getTarget().getLoc(),
                                                                 newDestTy, op.getTarget());
+        assert(newSrcVal && newDestVal);
         llvm::SmallVector<Value, 8> operands;
         operands.push_back(newSrcVal);
         operands.push_back(newDestVal);
@@ -694,6 +704,7 @@ public:
 
         auto newMemref = typeConverter->materializeTargetConversion(rewriter, op.getMemref().getLoc(),
                                                                 destMemrefTy, op.getMemref());
+        assert(newMemref);
         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange{}, "Dealloc", newMemref);
         return success();
     }
@@ -778,11 +789,13 @@ void LowerFheToEmitcPass::runOnOperation()
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
             }
             else {
-                llvm::errs() << "Error:No handling for the ValueRange type:" << srcTy <<"[at FheToEmitcPass materializeCommon].\n";
+                llvm::errs() << "[FheToEmitcPass] Materialization(materializeCommon) failed for type '" << srcTy << "\n";
             }
+        } else {
+            llvm::errs() << "[FheToEmitcPass] Materialization(materializeCommon) failed for type '" << t << "\n";
         }
  
-        LLVM_DEBUG(llvm::dbgs() << "No handling for the type:(" << t << ")[at FheToEmitcPass materializeCommon].\n");
+
         return std::optional<Value>(std::nullopt);
     };
 
@@ -940,7 +953,7 @@ void LowerFheToEmitcPass::runOnOperation()
             return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
 
-        llvm::errs() << "Error: No handling for the type:(" << t << ")[at FheToEmitcPass addSourceMaterialization].\n";
+        llvm::errs() << "[FheToEmitcPass] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 

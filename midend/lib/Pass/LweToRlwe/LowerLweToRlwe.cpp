@@ -126,6 +126,7 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
         Value fheMemrefVal = loadOp.getMemref();
         if (srcTy != destTy) {
             fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, loadOp.getLoc(), destTy, loadOp.getMemref());
+            assert(fheMemrefVal);
         }
 
         // Get rlwecipher Plaintext Type
@@ -153,12 +154,14 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
 
         Value fheValToStore = storeOp.getValueToStore();
         if (valueToStoreDestTy != storeOp.getValueToStore().getType()) {
-            typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), valueToStoreDestTy, storeOp.getValueToStore());
+            fheValToStore = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), valueToStoreDestTy, storeOp.getValueToStore());
+            assert(fheValToStore);
         }
 
         Value fheMemrefVal = storeOp.getMemref();
         if (destTy != srcTy) {
             fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), destTy, storeOp.getMemref());
+            assert(fheMemrefVal);
         }
         
         rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheMemrefVal, storeOp.getIndices());
@@ -171,7 +174,8 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
         }
         Value sourceVal = copyOp.getSource();
         if (sourceValTy != copyOp.getSource().getType()) {
-            typeConverter.materializeTargetConversion(rewriter, copyOp.getLoc(), sourceValTy, copyOp.getSource());
+            sourceVal = typeConverter.materializeTargetConversion(rewriter, copyOp.getLoc(), sourceValTy, copyOp.getSource());
+            assert(sourceVal);
         }
 
         auto srcRetTy = copyOp.getTarget().getType();
@@ -182,6 +186,7 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
         Value targetVal = copyOp.getTarget();
         if (srcRetTy != destRetTy) {
             targetVal = typeConverter.materializeTargetConversion(rewriter, copyOp.getLoc(), destRetTy, copyOp.getTarget());
+            assert(targetVal);
         }
 
         rewriter.replaceOpWithNewOp<fhe::CopyOp>(op, sourceVal, targetVal);
@@ -229,7 +234,7 @@ void LweToRlwePass::runOnOperation() {
             }
         }
 
-        llvm::errs() << "call addTargetMaterialization return null value for type:" << t << ".[LweToRlwe pass]\n";
+        llvm::errs() << "[LweToRlwePass] Materialization(addTargetMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -248,7 +253,7 @@ void LweToRlwePass::runOnOperation() {
             }
         }
 
-        llvm::errs() << "call addArgumentMaterialization return null value for type:" << t << ".[LweToRlwe pass]\n";
+        llvm::errs() << "[LweToRlwePass] Materialization(addArgumentMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -265,7 +270,7 @@ void LweToRlwePass::runOnOperation() {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
 
-        llvm::errs() << "call addSourceMaterialization return null value for type:" << t << ".[LweToRlwe pass]\n";
+        llvm::errs() << "[LweToRlwePass] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 

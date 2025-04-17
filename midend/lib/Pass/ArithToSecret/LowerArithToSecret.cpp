@@ -60,6 +60,7 @@ class ArithSelectPattern final : public OpConversionPattern<arith::SelectOp> {
         auto material_true = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), trueDestTy, trueVal);
         auto material_false = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), falseDestTy, falseVal);
         auto material_cond = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), conDestTy, cond);
+        assert(material_true && material_false && material_cond);
         LLVM_DEBUG(llvm::dbgs() << "material_true=" << material_true << "material_false=" << material_false
                                 << "material_cond=" << material_cond << "\n");
 
@@ -344,8 +345,7 @@ void LowerArithToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(
-            llvm::dbgs() << "call addTargetMaterialization failure, return null type.(at LowerArithToSecret Pass)\n");
+        llvm::errs() << "[ArithToSecret] Materialization(addTargetMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -370,8 +370,7 @@ void LowerArithToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(
-            llvm::dbgs() << "call addArgumentMaterialization failure, return null type.(at LowerArithToSecret Pass)\n");
+        llvm::errs() << "[ArithToSecret] Materialization(addArgumentMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -396,8 +395,7 @@ void LowerArithToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(
-            llvm::dbgs() << "call addSourceMaterialization failure, return null type.(at LowerArithToSecret Pass)\n");
+        llvm::errs() << "[ArithToSecret] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 

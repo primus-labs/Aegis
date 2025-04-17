@@ -56,12 +56,14 @@ public:
                 int sizes = memrefTy.getShape().front();
                 secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                         SecretVectorType::get(getContext(), st, sizes), op.getMemRef());
+                assert(secretVal);
             }
             else if (memrefTy.getShape().size() == 2) {
                 int row = memrefTy.getShape().front();
                 int col = memrefTy.getShape().back();
                 secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                         SecretMatrixType::get(getContext(), st, row, col), op.getMemRef());
+                assert(secretVal);
             } 
             else {
                 LLVM_DEBUG(llvm::dbgs() << "unsupport shape for " << memrefTy.getShape().size() << ".\n");
@@ -124,18 +126,21 @@ public:
                 int sizes = memrefTy.getShape().front();
                 secretArrVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretVectorType::get(getContext(), st, sizes), op.getMemRef());
+                assert(secretArrVal);
             }
             else if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 2) {
                 int row = memrefTy.getShape().front();
                 int col = memrefTy.getShape().back();
                 secretArrVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretMatrixType::get(getContext(), st, row, col), op.getMemRef());
+                assert(secretArrVal);
             }
 
             SmallVector<Value, 8> indices(adaptor.getIndices());
             auto memValToStore = op.getValueToStore();
             auto secretValToStroe = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(), 
                                                             SecretType::get(getContext(), memValToStore.getType()), memValToStore);
+            assert(secretValToStroe);
             rewriter.replaceOpWithNewOp<secret::StoreOp>(op, secretValToStroe, secretArrVal, indices);
         }
         
@@ -176,6 +181,7 @@ public:
                 int sizes = memrefTy.getShape().front();
                 secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretVectorType::get(getContext(), st, sizes), op.getMemRef());
+                assert(secretVal);
             }
 
             else if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 2) {
@@ -183,6 +189,7 @@ public:
                 int col = memrefTy.getShape().back();
                 secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretMatrixType::get(getContext(), st, row, col), op.getMemRef());
+                assert(secretVal);
             }
 
             SmallVector<Value, 8> indices(op.getMapOperands());
@@ -231,12 +238,14 @@ public:
                 int sizes = memrefTy.getShape().front();
                 secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretVectorType::get(getContext(), st, sizes), op.getMemRef());
+                assert(secretVal);
             }
             else if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 2) {
                 int row = memrefTy.getShape().front();
                 int col = memrefTy.getShape().back();
                 secretVal = typeConverter->materializeTargetConversion(rewriter, op.getMemRef().getLoc(),
                                             SecretMatrixType::get(getContext(), st, row, col), op.getMemRef());
+                assert(secretVal);
             }
 
             SmallVector<Value, 8> indices(op.getMapOperands());
@@ -288,12 +297,14 @@ public:
                 int sizes = memrefTy.getShape().front();
                 newSrcOrDestVal = typeConverter->materializeTargetConversion(rewriter, SrcOrDestVal.getLoc(),
                                             SecretVectorType::get(getContext(), elementTy, sizes), SrcOrDestVal);
+                assert(newSrcOrDestVal);
             }
             else if (memrefTy.hasStaticShape() && memrefTy.getShape().size() == 2) {
                 int row = memrefTy.getShape().front();
                 int col = memrefTy.getShape().back();
                 newSrcOrDestVal = typeConverter->materializeTargetConversion(rewriter, SrcOrDestVal.getLoc(),
                                             SecretMatrixType::get(getContext(), elementTy, row, col), SrcOrDestVal);
+                assert(newSrcOrDestVal);
             }
             else {
                 llvm::outs() << "Unsupport rank:" << memrefTy.getShape().size() << ".\n";
@@ -444,7 +455,7 @@ void LowerMemrefToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addTargetMaterialization failure.[at MemrefToSecret pass]\n");
+        llvm::errs() << "[MemrefToSecretPass] Materialization(addTargetMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -465,7 +476,7 @@ void LowerMemrefToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure.[at MemrefToSecret pass]\n");
+        llvm::errs() << "[MemrefToSecretPass] Materialization(addArgumentMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -479,7 +490,7 @@ void LowerMemrefToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addSourceMaterialization failure.[at MemrefToSecret pass]\n");
+        llvm::errs() << "[MemrefToSecretPass] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
     

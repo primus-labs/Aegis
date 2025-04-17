@@ -229,6 +229,7 @@ class SecretSelectPattern final : public OpConversionPattern<secret::SelectOp> {
         auto material_true = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), trueDestTy, trueVal);
         auto material_false = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), falseDestTy, falseVal);
         auto material_cond = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), conDestTy, cond);
+        assert(material_true && material_false && material_cond);
         LLVM_DEBUG(llvm::dbgs() << "material_true=" << material_true << "material_false=" << material_false
                                 << "material_cond=" << material_cond << "\n");
 
@@ -400,6 +401,7 @@ class SecretLoadPattern final : public OpConversionPattern<secret::LoadOp> {
             return failure();
         }
         auto fheVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
+        assert(fheVal);
 
         // Get lwecipher Plaintext Type
         mlir::Type destUnitTy;
@@ -445,8 +447,9 @@ class SecretStorePattern final : public OpConversionPattern<secret::StoreOp> {
         }
 
         auto fheArrVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), destTy, op.getMemref());
-        auto fheValToStore =
-            typeConverter->materializeTargetConversion(rewriter, op.getLoc(), valueToStoreDestTy, op.getValueToStore());
+        assert(fheArrVal);
+        auto fheValToStore = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), valueToStoreDestTy, op.getValueToStore());
+        assert(fheValToStore);
         SmallVector<Value, 8> indices(adaptor.getIndices());
         rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheArrVal, indices);
 
@@ -483,6 +486,7 @@ class SecretCopyPattern final : public OpConversionPattern<secret::CopyOp> {
 
         auto newSrcVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), newSrcTy, op.getSource());
         auto newDestVal = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), newDestTy, op.getTarget());
+        assert(newSrcVal && newDestVal);
         rewriter.replaceOpWithNewOp<fhe::CopyOp>(op, newSrcVal, newDestVal);
 
         LLVM_DEBUG(llvm::dbgs() << "run SecretCopyPattern success.\n");
@@ -664,25 +668,27 @@ void LowerSecretToFhePass::runOnOperation() {
             if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy) || mlir::isa<secret::SecretType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
-            llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
+            llvm::errs() << "[SecretToFhePass] Unsupported type detected, mybe don't handle this type " 
+                         << srcTy << "\n";
         } else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::isa<MemRefType>(srcTy) || mlir::isa<secret::SecretVectorType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
-            llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
+            llvm::errs() << "[SecretToFhePass] Unsupported type detected, mybe don't handle this type " 
+                         << srcTy << "\n";
         } else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::isa<MemRefType>(srcTy) || mlir::isa<secret::SecretMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
-            llvm::outs() << "Don't handle this type:(" << srcTy << ").\n";
+            llvm::errs() << "[SecretToFhePass] Unsupported type detected, mybe don't handle this type " 
+                         << srcTy << "\n";
         }
 
-        LLVM_DEBUG(llvm::dbgs()
-                   << "call materializeCommon(Target or Argument) failure, return null type.(at SecretToFhePass)\n");
+        llvm::errs() << "[SecretToFhePass] Materialization(materializeCommon) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     };
 
@@ -733,8 +739,7 @@ void LowerSecretToFhePass::runOnOperation() {
             }
         }
 
-        llvm::outs() << "Don't handle source type:(" << t << ")[at SecretToFhePass SourceMaterialization].\n";
-        LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure, return null type.(at SecretToFhePass)\n");
+        llvm::errs() << "[SecretToFhePass] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 

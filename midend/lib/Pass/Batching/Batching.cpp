@@ -310,6 +310,8 @@ void BatchingPass::runOnOperation() {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         } 
+
+        llvm::errs() << "[BatchingPass] Materialization(addTargetMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -321,6 +323,8 @@ void BatchingPass::runOnOperation() {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         }
+
+        llvm::errs() << "[BatchingPass] Materialization(addArgumentMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -330,7 +334,9 @@ void BatchingPass::runOnOperation() {
             auto srcTy = vs.front().getType();
             if (mlir::isa<fhe::RLWECipherType>(srcTy))
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
-        } 
+        }
+
+        llvm::errs() << "[BatchingPass] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -424,6 +430,7 @@ void BatchingPass::runOnOperation() {
         auto operand = op.getOperand();
         auto operandDestTy = typeConverter.convertType(operand.getType());
         auto newOperand = typeConverter.materializeTargetConversion(rewriter, op.getLoc(), operandDestTy, operand);
+        assert(newOperand);
         auto rotIndex = op.getI();
         rewriter.replaceOpWithNewOp<fhe::RotateOp>(op, destTy, newOperand, rotIndex);
         return success();

@@ -221,8 +221,7 @@ void LowerFuncToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addTargetMaterialization failure, return "
-                                   "null type.(at LowerFuncToSecret Pass)\n");
+        llvm::errs() << "[FuncToSecretPass] Materialization(addTargetMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -247,8 +246,7 @@ void LowerFuncToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addArgumentMaterialization failure, return null "
-                                   "type.(at LowerFuncToSecret Pass)\n");
+        llvm::errs() << "[FuncToSecretPass] Materialization(addArgumentMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
@@ -267,8 +265,7 @@ void LowerFuncToSecretPass::runOnOperation() {
             }
         }
 
-        LLVM_DEBUG(llvm::dbgs() << "call addSourceMaterialization failure, return "
-                                   "null type.(at LowerFuncToSecret Pass)\n");
+        llvm::errs() << "[FuncToSecretPass] Materialization(addSourceMaterialization) failed for type '" << t << "\n";
         return std::optional<Value>(std::nullopt);
     });
 
