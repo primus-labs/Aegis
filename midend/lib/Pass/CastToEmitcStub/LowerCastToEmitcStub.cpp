@@ -21,10 +21,24 @@ using namespace aegis;
 using namespace fhe;
 
 
+bool isOpaqueRLWE(Type type) {
+    return mlir::isa<emitc::OpaqueType>(type) && 
+                (mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipher" ||
+                 mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipherGrid");
+}
+
+int32_t getElementSizes(Type type) {
+    if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(type)) {
+        return operandTy.getSize();
+    } else if (auto operandTy = mlir::dyn_cast_or_null<fhe::RLWECipherType>(type)) {
+        return operandTy.getSize();
+    } else {
+        return 1;
+    }
+}
 
 // CastPattern replace fhe::CastOp to a dummy emitc function call. 
-class CastPattern : public OpRewritePattern<fhe::CastOp> 
-{
+class CastPattern : public OpRewritePattern<fhe::CastOp> {
 public:
     using OpRewritePattern<fhe::CastOp>::OpRewritePattern;
 
@@ -46,12 +60,77 @@ public:
                 }
             }
         } else {
-            llvm::errs() << "Unexpected execution path reached in LowerCastToEmitcStubPass::matchAndRewrite, "
-                         << "Possible incompatible casting operation found.\n"; 
+            auto optimizeCastChain = [&](CastOp op, PatternRewriter &rewriter) -> LogicalResult {
+                // Check if CastOp operand type is not RLWE opaque type, and dest type is RLWE opaque type,
+                // if this condition is not met, return directly. (bottom-up search)
+                /*********************************************************************
+                // original operation chain:
+                %1 = fhe.cast(%0) : !opaque -> !rlwe<4>  
+                %2 = fhe.cast(%1) : !rlwe<4> -> !lwe<4>
+                %3 = fhe.cast(%2) : !lwe<4> -> !lwe<16>
+                %4 = fhe.cast(%3) : !lwe<16> -> !rlwe<16>
+                %5 = fhe.cast(%4) : !rlwe<16> -> !opaque
+
+                // After optimization:
+                %5 = fhe.cast(%arg1) {from_params = 4 : i64, to_params = 16 : i64} : 
+                                (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+                **********************************************************************/
+                // TODO: need ResizeOp replace the fhe.cast Op?
+                auto root = op.getOperand();
+                if (!(!isOpaqueRLWE(root.getType()) && isOpaqueRLWE(op.getType()))) {
+                    return failure();
+                }
+
+                // Collect intermediate cast chains
+                SmallVector<fhe::CastOp> castChain;
+                while (auto prevCast = root.getDefiningOp<CastOp>()) {
+                    if (!prevCast->hasOneUse()) {
+                        break;
+                    }
+                    castChain.push_back(prevCast);
+                    root = prevCast.getOperand();
+                }
+
+                // Verify the validity of the transformation chain
+                if (castChain.empty()) {
+                    return failure();
+                }
+
+                int64_t toDim = getElementSizes(castChain.front().getType());
+                int64_t fromDim = getElementSizes(castChain.back().getType());
+                // llvm::outs() << "toDim type:" << castChain.front().getType() << "\n";
+                // llvm::outs() << "fromDim type:" << castChain.back().getType() << "\n";
+                assert(fromDim>0 && toDim>0);
+
+                // Create a new cast operation and replace
+                //auto newCast = rewriter.create<CastOp>(op.getLoc(), op.getType(), operand);
+                OperationState state(op.getLoc(), fhe::CastOp::getOperationName());
+                state.addOperands(root);
+                state.addTypes(op.getType());
+
+                // Create attributes
+                auto fromAttr = rewriter.getI64IntegerAttr(fromDim);
+                auto toAttr = rewriter.getI64IntegerAttr(toDim);
+                state.addAttribute("from_params", fromAttr);
+                state.addAttribute("to_params", toAttr);
+                auto newCast = mlir::cast<CastOp>(rewriter.create(state));
+
+                rewriter.replaceOp(op, newCast);
+                
+                // Clean up old cast ops
+                for (fhe::CastOp cast : castChain) {
+                    rewriter.eraseOp(cast);
+                }
+
+                return success();
+            };
+            return optimizeCastChain(op, rewriter);
         }
 
+        auto fromDim = op->getAttrOfType<IntegerAttr>("from_params").getInt();
+        auto toDim = op->getAttrOfType<IntegerAttr>("to_params").getInt();
         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
-                                    ArrayAttr(), ArrayAttr(), operand);
+                        rewriter.getI64ArrayAttr({fromDim}), rewriter.getI64ArrayAttr({fromDim}), operand);
         return success();
     }
 };
