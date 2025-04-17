@@ -116,7 +116,7 @@ template <typename OpType>
 LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *context, OpType op,
                                          TypeConverter typeConverter) {
     rewriter.setInsertionPoint(op);
-    if (std::is_same<OpType, fhe::LoadOp>()) {
+    if (mlir::isa<fhe::LoadOp>(op)) {
         auto loadOp = llvm::cast<fhe::LoadOp>(op);
         auto srcTy = loadOp.getMemref().getType();
         auto destTy = typeConverter.convertType(srcTy);
@@ -139,7 +139,7 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
          
         rewriter.replaceOpWithNewOp<fhe::LoadOp>(op, unitCipherTy, fheMemrefVal, loadOp.getIndices());
         return success();
-    } else if (std::is_same<OpType, fhe::StoreOp>()) {
+    } else if (mlir::isa<fhe::StoreOp>(op)) {
         auto storeOp = llvm::cast<fhe::StoreOp>(op);
         auto srcTy = storeOp.getMemref().getType();
         auto destTy = typeConverter.convertType(srcTy);
@@ -163,9 +163,31 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
         
         rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheMemrefVal, storeOp.getIndices());
         return success();
+    } else if (mlir::isa<fhe::CopyOp>(op)) {
+        auto copyOp = llvm::cast<fhe::CopyOp>(op);
+        auto sourceValTy = typeConverter.convertType(copyOp.getSource().getType());
+        if (!sourceValTy) {
+            return failure();
+        }
+        Value sourceVal = copyOp.getSource();
+        if (sourceValTy != copyOp.getSource().getType()) {
+            typeConverter.materializeTargetConversion(rewriter, copyOp.getLoc(), sourceValTy, copyOp.getSource());
+        }
+
+        auto srcRetTy = copyOp.getTarget().getType();
+        auto destRetTy = typeConverter.convertType(srcRetTy);
+        if (!destRetTy) {
+            return failure();
+        }
+        Value targetVal = copyOp.getTarget();
+        if (srcRetTy != destRetTy) {
+            targetVal = typeConverter.materializeTargetConversion(rewriter, copyOp.getLoc(), destRetTy, copyOp.getTarget());
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::CopyOp>(op, sourceVal, targetVal);
+        return success();
     }
 
-    llvm::outs() << "Catched a unhandle op.\n";
     return success(); 
 }
 
@@ -254,7 +276,7 @@ void LweToRlwePass::runOnOperation() {
     for (auto f : llvm::make_early_inc_range(block.getOps<func::FuncOp>())) {
         // handle function body stmts
         if (f.walk([&](Operation *op) {
-                // binary operator
+                // binary operation
                 if (fhe::LWESubOp subOp = llvm::dyn_cast_or_null<fhe::LWESubOp>(op)) {
                     if (LweBinOpToRlweBinOp<fhe::LWESubOp>(rewriter, &getContext(), subOp, type_converter).failed()) {
                         return WalkResult::interrupt();
@@ -279,18 +301,23 @@ void LweToRlwePass::runOnOperation() {
                     if (LweBinOpToRlweBinOp<fhe::LWEMulPlainOp>(rewriter, &getContext(), mulPlainOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
-                // unary operator
+                // unary operation
                 } else if (fhe::LWENegOp negOp = llvm::dyn_cast_or_null<fhe::LWENegOp>(op)) {
                     if (LweUnaryOpToRlweUnaryOp<fhe::LWENegOp>(rewriter, &getContext(), negOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
-                // load/store operator
+                // load/store operation
                 } else if (fhe::LoadOp loadOp = llvm::dyn_cast_or_null<fhe::LoadOp>(op)) {
                     if (ConvertOpLWETypeToRLWEType<fhe::LoadOp>(rewriter, &getContext(), loadOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
                 } else if (fhe::StoreOp storeOp = llvm::dyn_cast_or_null<fhe::StoreOp>(op)){
                     if (ConvertOpLWETypeToRLWEType<fhe::StoreOp>(rewriter, &getContext(), storeOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                // copy operation
+                } else if (fhe::CopyOp copyOp = llvm::dyn_cast_or_null<fhe::CopyOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::CopyOp>(rewriter, &getContext(), copyOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
                 }
