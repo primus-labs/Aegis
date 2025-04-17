@@ -32,7 +32,7 @@ public:
     {
         auto destTy = op.getType();
         auto operand = op.getOperand();
-        if (auto constantOp = mlir::dyn_cast<emitc::ConstantOp>(operand.getDefiningOp())) {
+        if (auto constantOp = mlir::dyn_cast_or_null<emitc::ConstantOp>(operand.getDefiningOp())) {
             // Get value attribute
             Attribute valueAttr = constantOp.getValueAttr();
 
@@ -45,8 +45,10 @@ public:
                     return success();
                 }
             }
+        } else {
+            llvm::errs() << "Unexpected execution path reached in LowerCastToEmitcStubPass::matchAndRewrite, "
+                         << "Possible incompatible casting operation found.\n"; 
         }
-
 
         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
                                     ArrayAttr(), ArrayAttr(), operand);
