@@ -6,7 +6,9 @@ using CiphertextT = Ciphertext<DCRTPoly>;
 using RLWECipher = Ciphertext<DCRTPoly>;
 using LWECipher = Ciphertext<DCRTPoly>;
 using PlaintextT = Plaintext;
-using Plain = Plaintext;
+using Plain = double; 
+using PlainVector = std::vector<double>; 
+using PlainMatrix = std::vector<PlainVector>; 
 using MutableCiphertextT = Ciphertext<DCRTPoly>;
 using CCParamsT = CCParams<CryptoContextCKKSRNS>;
 using CryptoContextT = CryptoContext<DCRTPoly>;
@@ -16,10 +18,14 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define Add(a, b) cryptoCtx->EvalAdd((a), (b))
 #define AddPlain(c, p) cryptoCtx->EvalAdd((c), (p))
 #define Mul(a, b) cryptoCtx->EvalMult((a), (b))
-#define MulPlain(c, p) cryptoCtx->EvalMult((c), (p))
+// #define MulPlain(c, p) cryptoCtx->EvalMult((c), (p))
+#define MulPlain(c, p) MulPlainImpl((c), (p)) 
 #define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))
-#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector<double>{__VA_ARGS__})
-#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]
+//#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector<double>{__VA_ARGS__})
+#define MakePlain(a) double(a) 
+#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__} 
+//#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]
+#define Cast_Plain_To_Index(pl) size_t(pl)
 #define Native_Load(v, idx) v[idx]
 
 CryptoContext<DCRTPoly> cryptoCtx;
@@ -31,8 +37,13 @@ void init_cryptcontext() {
    cryptoCtx->Enable(KEYSWITCH);
    cryptoCtx->Enable(LEVELEDSHE);
 }
-
-RLWECipher MVP(std::vector<Plain> v1, RLWECipher v2) {
+inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) { 
+    return cryptoCtx->EvalMult(a, b);
+}
+inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) { 
+    return cryptoCtx->EvalMult(a, cryptoCtx->MakeCKKSPackedPlaintext(b));
+}
+RLWECipher MVP(PlainVector v1, RLWECipher v2) {
   init_cryptcontext();
   Plain v3 = MakePlain(0.000000);
   Plain v4 = MakePlain(1.000000);

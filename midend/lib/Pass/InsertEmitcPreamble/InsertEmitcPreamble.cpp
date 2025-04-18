@@ -40,7 +40,9 @@ void InsertEmitcPreamblePass::runOnOperation()
         "using RLWECipher = Ciphertext<DCRTPoly>;",
         "using LWECipher = Ciphertext<DCRTPoly>;",
         "using PlaintextT = Plaintext;",
-        "using Plain = Plaintext;",
+        "using Plain = double;",
+        "using PlainVector = std::vector<double>;",
+        "using PlainMatrix = std::vector<PlainVector>;",
         "using MutableCiphertextT = Ciphertext<DCRTPoly>;",
         "using CCParamsT = CCParams<CryptoContextCKKSRNS>;",
         "using CryptoContextT = CryptoContext<DCRTPoly>;",
@@ -50,16 +52,39 @@ void InsertEmitcPreamblePass::runOnOperation()
     };
 
     SmallVector<StringRef> verbatimMacros = {
+        "#define Copy(src, dest) dest = src",
         "#define Add(a, b) cryptoCtx->EvalAdd((a), (b))",
-        "#define AddPlain(c, p) cryptoCtx->EvalAdd((c), (p))",
+        "#define AddPlain(c, p) AddPlainImpl((c), (p))",
         "#define Sub(a, b) cryptoCtx->EvalSub((a), (b))",
-        "#define SubPlain(c, p) cryptoCtx->EvalSub((c), (p))",
+        "#define SubPlain(c, p) SubPlainImpl((c), (p))",
         "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))",
-        "#define MulPlain(c, p) cryptoCtx->EvalMult((c), (p))",
+        "#define MulPlain(c, p) MulPlainImpl((c), (p))",
         "#define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))",
-        "#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector<double>{__VA_ARGS__})",
-        "#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]",
+        "#define MakePlain(a)  double(a)",
+        "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
+        "#define Cast_Plain_To_Index(clr) size_t(clr)",
         "#define Native_Load(v, idx) v[idx]",
+    };
+
+    SmallVector<StringRef> verbatimFuncs = {
+        "inline RLWECipher AddPlainImpl(RLWECipher a, Plain b) {",
+        "    return cryptoCtx->EvalAdd(a, b);",
+        "}",
+        "inline RLWECipher AddPlainImpl(RLWECipher a, PlainVector b) {",
+        "    return cryptoCtx->EvalAdd(a, cryptoCtx->MakeCKKSPackedPlaintext(b));",
+        "}",
+        "inline RLWECipher SubPlainImpl(RLWECipher a, Plain b) {",
+        "    return cryptoCtx->EvalSub(a, b);",
+        "}",
+        "inline RLWECipher SubPlainImpl(RLWECipher a, PlainVector b) {",
+        "    return cryptoCtx->EvalSub(a, cryptoCtx->MakeCKKSPackedPlaintext(b));",
+        "}",
+        "inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {",
+        "    return cryptoCtx->EvalMult(a, b);",
+        "}",
+        "inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {",
+        "    return cryptoCtx->EvalMult(a, cryptoCtx->MakeCKKSPackedPlaintext(b));",
+        "}",
     };
 
     // We must dynamically generate the corresponding encryption parameters based on the program.
@@ -94,21 +119,6 @@ void InsertEmitcPreamblePass::runOnOperation()
     verbatimInitCC.push_back("   cryptoCtx->Enable(LEVELEDSHE);");
     verbatimInitCC.push_back("}");
 
-    // SmallVector<StringRef> verbatimInitCC = {
-    //     "CryptoContext<DCRTPoly> cryptoCtx;",
-    //     "void init_cryptcontext() {",
-    //     "   CCParams<CryptoContextCKKSRNS> parameters;",
-    //     "   parameters.SetMultiplicativeDepth(8);",
-    //     "   parameters.SetFirstModSize(60);",
-    //     "   parameters.SetScalingModSize(50);",
-    //     "   parameters.SetBatchSize(4096/2);",
-    //     "   cryptoCtx = GenCryptoContext(parameters);",
-    //     "   cryptoCtx->Enable(PKE);",
-    //     "   cryptoCtx->Enable(KEYSWITCH);",
-    //     "   cryptoCtx->Enable(LEVELEDSHE);",
-    //     "}",
-    // };
-
     // Traverse all ModuleOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
     // Terminate traversal after finding the first one.
     module.walk([&](mlir::ModuleOp op) {
@@ -133,6 +143,11 @@ void InsertEmitcPreamblePass::runOnOperation()
 
         // Insert init cryptcontext function
         for (auto &stmt : verbatimInitCC) {
+            builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
+        }
+
+        // Insert crypt related implementation functions
+        for (auto &stmt : verbatimFuncs) {
             builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
         }
 
