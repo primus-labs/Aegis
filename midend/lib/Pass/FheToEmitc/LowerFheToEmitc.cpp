@@ -403,6 +403,7 @@ public:
         }
 
         // Get arith::ConstOp interger value.
+        bool bMutiPlain = false;
         std::string strVal;
         auto valueAttr = op.getValue(); 
         if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(valueAttr)) {
@@ -412,7 +413,8 @@ public:
             auto dVal = floatAttr.getValueAsDouble();
             strVal = std::to_string(dVal);
         } if (auto denseAttr = mlir::dyn_cast<mlir::DenseElementsAttr>(valueAttr)) {
-            auto processValues = [&strVal](auto vals) {
+            auto processValues = [&strVal, &bMutiPlain](auto vals) {
+                bMutiPlain = (vals.size() > 1);
                 for (size_t i = 0; i < vals.size(); ++i) {
                     strVal += std::to_string(vals[i]);
                     if (i != vals.size() - 1) {
@@ -437,7 +439,11 @@ public:
 
         // Combine emitc::OpaqueAttr using the value.
         emitc::OpaqueAttr emitcAttrVal;
-        emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakePlain(" + strVal + ")"));
+        if (bMutiPlain) {
+            emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakeMultPlain(" + strVal + ")"));
+        } else {
+            emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakePlain(" + strVal + ")"));
+        }
         rewriter.replaceOpWithNewOp<emitc::ConstantOp>(op, TypeRange(destTy), emitcAttrVal);
         
         return success();

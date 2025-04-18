@@ -31,8 +31,8 @@ module  {
 
 
 
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
+//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(0,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
+//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(1,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
 //CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0)">}> : () -> !emitc.opaque<"Plain">
 //CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1)">}> : () -> !emitc.opaque<"Plain">
 //CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(4)">}> : () -> !emitc.opaque<"Plain">
