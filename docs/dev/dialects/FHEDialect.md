@@ -710,7 +710,7 @@ Effects: `MemoryEffects::Effect{}`
 | :----: | ----------- |
 | `output` | any type
 
-### `fhe.rlwemulplain` (aegis::fhe::RLWEMulPlainOp)
+### `fhe.rlwemul_plain` (aegis::fhe::RLWEMulPlainOp)
 
 _RLWECipher multiplication operation(rlwecipher vs plain)_
 
@@ -718,7 +718,7 @@ _RLWECipher multiplication operation(rlwecipher vs plain)_
 Syntax:
 
 ```
-operation ::= `fhe.rlwemulplain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+operation ::= `fhe.rlwemul_plain` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
 ```
 
 The "mul" operation performs element-wise multiplication between rlwecipher and plain.
