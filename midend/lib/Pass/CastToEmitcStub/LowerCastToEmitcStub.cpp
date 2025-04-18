@@ -42,10 +42,10 @@ class CastPattern : public OpRewritePattern<fhe::CastOp> {
 public:
     using OpRewritePattern<fhe::CastOp>::OpRewritePattern;
 
-    LogicalResult matchAndRewrite(fhe::CastOp op, PatternRewriter &rewriter) const override 
-    {
+    LogicalResult matchAndRewrite(fhe::CastOp op, PatternRewriter &rewriter) const override {
         auto destTy = op.getType();
         auto operand = op.getOperand();
+
         if (auto constantOp = mlir::dyn_cast_or_null<emitc::ConstantOp>(operand.getDefiningOp())) {
             // Get value attribute
             Attribute valueAttr = constantOp.getValueAttr();
@@ -57,8 +57,19 @@ public:
                     rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Plain_To_Index", 
                                     ArrayAttr(), ArrayAttr(), operand);
                     return success();
+                } else {
+                    llvm::errs() << "Cast_Plain_To_Index requires 'MakePlain' prefix and IndexType, but got "
+                                 << valueStr  << " and destTy " << destTy << "\n";
+                    return failure(); 
                 }
+            } else {
+                llvm::errs() << "Expected OpaqueAttr but got " << valueAttr << " for operation " << op << "\n";
+                return failure(); 
             }
+        } else if (auto getGlobalOp = mlir::dyn_cast_or_null<emitc::GetGlobalOp>(operand.getDefiningOp())) {
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
+                                                             ArrayAttr(), ArrayAttr(), operand);
+            return success();
         } else {
             auto optimizeCastChain = [&](CastOp op, PatternRewriter &rewriter) -> LogicalResult {
                 // Check if CastOp operand type is not RLWE opaque type, and dest type is RLWE opaque type,
@@ -114,6 +125,8 @@ public:
                 state.addAttribute("from_params", fromAttr);
                 state.addAttribute("to_params", toAttr);
                 auto newCast = mlir::cast<CastOp>(rewriter.create(state));
+                // auto fromDim = newCast->getAttrOfType<IntegerAttr>("from_params").getInt();
+                // auto toDim = newCast->getAttrOfType<IntegerAttr>("to_params").getInt();
 
                 rewriter.replaceOp(op, newCast);
                 
@@ -124,26 +137,19 @@ public:
 
                 return success();
             };
+
             return optimizeCastChain(op, rewriter);
         }
-
-        auto fromDim = op->getAttrOfType<IntegerAttr>("from_params").getInt();
-        auto toDim = op->getAttrOfType<IntegerAttr>("to_params").getInt();
-        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
-                        rewriter.getI64ArrayAttr({fromDim}), rewriter.getI64ArrayAttr({fromDim}), operand);
-        return success();
     }
 };
 
 
-void LowerCastToEmitcStubPass::getDependentDialects(mlir::DialectRegistry &registry) const
-{
+void LowerCastToEmitcStubPass::getDependentDialects(mlir::DialectRegistry &registry) const {
     registry.insert<fhe::FHEDialect>();
 }
 
 
-void LowerCastToEmitcStubPass::runOnOperation() 
-{
+void LowerCastToEmitcStubPass::runOnOperation()  {
     mlir::RewritePatternSet patterns(&getContext());
     patterns.add<CastPattern>(&getContext());
     (void)applyPatternsAndFoldGreedily(getOperation(), std::move(patterns));
