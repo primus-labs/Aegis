@@ -40,14 +40,14 @@ module {
   emitc.verbatim "}"
   emitc.verbatim "extern \22C\22"
   func.func @MVP(%arg0: !emitc.opaque<"RLWECipher"> {onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: !emitc.opaque<"RLWECipher"> {onnx.name = "input_y", onnx.type = "encrypted"}) -> !emitc.opaque<"RLWECipher"> {
-    %0 = "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)">}> : () -> !emitc.opaque<"std::vector<Plain>">
-    %1 = "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)">}> : () -> !emitc.opaque<"std::vector<Plain>">
+    %0 = "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
+    %1 = "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
     emitc.verbatim "init_cryptcontext();"
     %2 = emitc.call_opaque "Mul"(%arg0, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %3 = emitc.call_opaque "Rotate"(%2) {args = [0 : index, 15 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %4 = emitc.call_opaque "Add"(%2, %3) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %5 = emitc.call_opaque "MulPlain"(%4, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"std::vector<Plain>">) -> !emitc.opaque<"RLWECipher">
-    %6 = emitc.call_opaque "MulPlain"(%arg1, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"std::vector<Plain>">) -> !emitc.opaque<"RLWECipher">
+    %5 = emitc.call_opaque "MulPlain"(%4, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
+    %6 = emitc.call_opaque "MulPlain"(%arg1, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
     %7 = emitc.call_opaque "Add"(%6, %5) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     emitc.call_opaque "Copy"(%7, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
     %8 = emitc.call_opaque "Rotate"(%arg1) {args = [0 : index, 4 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
@@ -58,7 +58,7 @@ module {
     %13 = emitc.call_opaque "Rotate"(%11) {args = [0 : index, 12 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %14 = emitc.call_opaque "Add"(%12, %13) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %15 = emitc.call_opaque "Rotate"(%14) {args = [0 : index, -1 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %16 = emitc.call_opaque "MulPlain"(%15, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"std::vector<Plain>">) -> !emitc.opaque<"RLWECipher">
+    %16 = emitc.call_opaque "MulPlain"(%15, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
     %17 = emitc.call_opaque "Add"(%6, %16) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     emitc.call_opaque "Copy"(%17, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
     return %arg1 : !emitc.opaque<"RLWECipher">
@@ -67,8 +67,8 @@ module {
 
 
 //CHECK: RLWECipher MVP(RLWECipher v1, RLWECipher v2) {
-//CHECK:   std::vector<Plain> v3 = MakePlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-//CHECK:   std::vector<Plain> v4 = MakePlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
+//CHECK:   PlainVector v3 = MakePlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+//CHECK:   PlainVector v4 = MakePlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
 //CHECK:   init_cryptcontext();
 //CHECK:   RLWECipher v5 = Mul(v1, v2);
 //CHECK:   RLWECipher v6 = Rotate(v5, 15);

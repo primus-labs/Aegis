@@ -760,12 +760,12 @@ void LowerFheToEmitcPass::runOnOperation()
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::PlainVectorType>(srcTy)) {
-                if (destTy.getValue().str() == "std::vector<Plain>") {
+                if (destTy.getValue().str() == "PlainVector") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::PlainMatrixType>(srcTy)) {
-                if (destTy.getValue().str() == "std::vector<std::vector<Plain>>") {
+                if (destTy.getValue().str() == "PlainMatrix") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
@@ -819,10 +819,10 @@ void LowerFheToEmitcPass::runOnOperation()
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
         }
         else if (mlir::isa<fhe::PlainVectorType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector"));
         }
         else if (mlir::isa<fhe::PlainMatrixType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<std::vector<Plain>>"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainMatrix"));
         }
         else if (mlir::isa<fhe::IntType>(t)) {
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "int"));
@@ -831,13 +831,13 @@ void LowerFheToEmitcPass::runOnOperation()
         else if (mlir::isa<MemRefType>(t)) {
             auto newTy = mlir::cast<MemRefType>(t);
             if (newTy.hasStaticShape() && newTy.getShape().size() == 0) {
-                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>")); // rank:0
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector")); // rank:0
             }
             else if (newTy.hasStaticShape() && newTy.getShape().size() == 1) {
-                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>"));
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector"));
             }
             else if (newTy.hasStaticShape() && newTy.getShape().size() == 2) {
-                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<std::vector<Plain>>"));
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainMatrix"));
             }
             else {
                 llvm::errs() << "Unknow support rank is:" << newTy.getShape().size() << ".\n";
@@ -849,7 +849,7 @@ void LowerFheToEmitcPass::runOnOperation()
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
         }
         else if (mlir::isa<mlir::VectorType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<Plain>"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector"));
         }
 
         LLVM_DEBUG(llvm::dbgs() << "Warning: No conver type:(" << t << ")[at FheToEmitcPass addConversion].\n");
@@ -917,7 +917,7 @@ void LowerFheToEmitcPass::runOnOperation()
         else if (mlir::isa<fhe::PlainVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "std::vector<Plain>") {
+                if (srcTy.getValue().str() == "PlainVector") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -925,7 +925,7 @@ void LowerFheToEmitcPass::runOnOperation()
         else if (mlir::isa<fhe::PlainMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "std::vector<std::vector<Plain>>") {
+                if (srcTy.getValue().str() == "PlainMatrix") {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }

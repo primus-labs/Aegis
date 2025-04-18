@@ -31,8 +31,8 @@ module  {
 
 
 
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0,1,1,1)">}> : () -> !emitc.opaque<"std::vector<Plain>">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1,0,0,0)">}> : () -> !emitc.opaque<"std::vector<Plain>">
+//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
+//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
 //CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0)">}> : () -> !emitc.opaque<"Plain">
 //CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1)">}> : () -> !emitc.opaque<"Plain">
 //CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(4)">}> : () -> !emitc.opaque<"Plain">
@@ -41,23 +41,23 @@ module  {
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%4) : (!emitc.opaque<"Plain">) -> index
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%3) : (!emitc.opaque<"Plain">) -> index
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"(%2) : (!emitc.opaque<"Plain">) -> index
-//CHECK: emitc.call_opaque "Native_Load"(%arg0, %9) : (!emitc.opaque<"std::vector<Plain>">, index) -> !emitc.opaque<"Plain">
+//CHECK: emitc.call_opaque "Native_Load"(%arg0, %9) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
 //CHECK: emitc.call_opaque "MulPlain"(%arg1, %10) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
-//CHECK: emitc.call_opaque "Native_Load"(%arg0, %8) : (!emitc.opaque<"std::vector<Plain>">, index) -> !emitc.opaque<"Plain">
+//CHECK: emitc.call_opaque "Native_Load"(%arg0, %8) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
 //CHECK: emitc.call_opaque "MulPlain"(%arg1, %12) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Rotate"(%13) {args = [0 : index, 3 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Add"(%11, %14) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-//CHECK: emitc.call_opaque "MulPlain"(%15, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"std::vector<Plain>">) -> !emitc.opaque<"RLWECipher">
-//CHECK: emitc.call_opaque "MulPlain"(%arg1, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"std::vector<Plain>">) -> !emitc.opaque<"RLWECipher">
+//CHECK: emitc.call_opaque "MulPlain"(%15, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
+//CHECK: emitc.call_opaque "MulPlain"(%arg1, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Add"(%17, %16) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Copy"(%18, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
-//CHECK: emitc.call_opaque "Native_Load"(%arg0, %7) : (!emitc.opaque<"std::vector<Plain>">, index) -> !emitc.opaque<"Plain">
+//CHECK: emitc.call_opaque "Native_Load"(%arg0, %7) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
 //CHECK: emitc.call_opaque "MulPlain"(%arg1, %19) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
-//CHECK: emitc.call_opaque "Native_Load"(%arg0, %6) : (!emitc.opaque<"std::vector<Plain>">, index) -> !emitc.opaque<"Plain">
+//CHECK: emitc.call_opaque "Native_Load"(%arg0, %6) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
 //CHECK: emitc.call_opaque "MulPlain"(%arg1, %21) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Rotate"(%20) {args = [0 : index, 1 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Add"(%23, %22) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Rotate"(%24) {args = [0 : index, -1 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-//CHECK: emitc.call_opaque "MulPlain"(%25, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"std::vector<Plain>">) -> !emitc.opaque<"RLWECipher">
+//CHECK: emitc.call_opaque "MulPlain"(%25, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Add"(%17, %26) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
 //CHECK: emitc.call_opaque "Copy"(%27, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
