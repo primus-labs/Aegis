@@ -1,3 +1,5 @@
+// RUN: test_single_bin_file.sh  %s | FileCheck %s
+
 // #include <vector>
 // #include "openfhe.h"
 // using namespace std;
@@ -57,4 +59,6 @@ RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
   return v5;
 }
 
+
+//CHECK: Pass
 

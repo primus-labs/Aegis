@@ -1,3 +1,5 @@
+// RUN: test_single_bin_file.sh  %s | FileCheck %s
+
 #include <vector>
 #include "openfhe.h"
 using namespace std;
@@ -67,3 +69,6 @@ RLWECipher MVP(PlainVector v1, RLWECipher v2) {
   RLWECipher v24 = Add(v23, v22);
   return v2;
 }
+
+
+//CHECK: Pass

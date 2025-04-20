@@ -1,3 +1,4 @@
+// RUN: test_single_bin_file.sh  %s | FileCheck %s
 
 #include <vector>
 #include "openfhe.h"
@@ -91,3 +92,5 @@ RLWECipher MVP(RLWECipher v1, RLWECipher v2) {
   Copy(v20, v2);
   return v2;
 }
+
+//CHECK: Pass

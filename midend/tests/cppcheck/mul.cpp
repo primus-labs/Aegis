@@ -1,3 +1,4 @@
+// RUN: test_single_bin_file.sh  %s | FileCheck %s
 
 #include <vector>
 #include "openfhe.h"
@@ -43,3 +44,6 @@ RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
   RLWECipher v3 = Mul(v1, v2);
   return v3;
 }
+
+
+//CHECK: Pass

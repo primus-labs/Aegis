@@ -20,10 +20,14 @@ config.name = 'AEGIS'
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = ['.mlir', '.xpy']
+config.suffixes = ['.mlir', '.xpy', '.cpp']
 
 # test_source_root: The root path where tests are located.
 config.test_source_root = os.path.dirname(__file__)
+config.test_scripts_dir = os.path.abspath(
+    os.path.join(config.test_source_root, "../../scripts")
+)
+#print("test_scripts_dir in config:", config.test_scripts_dir)
 
 # test_exec_root: The root path where tests should be run.
 config.test_exec_root = os.path.join(config.abc_obj_root, 'tests')
@@ -51,10 +55,11 @@ config.abc_tools_dir = os.path.join(config.abc_obj_root, 'bin')
 # Tweak the PATH to include the tools dir.
 llvm_config.with_environment('PATH', config.llvm_tools_dir, append_path=True)
 
-tool_dirs = [config.abc_tools_dir, config.llvm_tools_dir]
+tool_dirs = [config.abc_tools_dir, config.llvm_tools_dir, config.test_scripts_dir]
 tools = [
     'aegiscompiler',
-    'emitc-translate'
+    'emitc-translate',
+    'test_single_bin_file.sh'
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
