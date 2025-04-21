@@ -65,7 +65,8 @@ public:
   }
 
   ProtoMessage<aegisprotocol::KeyInfo> getKeyInfo() const { 
-      return keyInfo; }
+      return keyInfo; 
+  }
 
   std::vector<ProtoMessage<aegisprotocol::Function>> getFuncInfo() const {
       return funcsInfo;

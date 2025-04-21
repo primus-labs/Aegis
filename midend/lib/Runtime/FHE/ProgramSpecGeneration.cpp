@@ -10,6 +10,7 @@
 #include "Runtime/FHE/ProgramSpecGeneration.h"
 #include "Common/Protocol.h"
 #include "Common/Error.h"
+#include "Common/Utils.h"
 #include "Dialect/FHE/FHEDialect.h"
 #include "Dialect/FHE/FHEOps.h"
 #include "Dialect/FHE/FHETypes.h"
@@ -144,7 +145,13 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     keyInfos.asBuilder().setFirstModSize(60);
     keyInfos.asBuilder().setScaleModSize(50);
     keyInfos.asBuilder().setBatchSize(4096/2); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
-    
+
+    // Set galois key indexs
+    llvm::SmallVector<int32_t> galosIndex = mlir::aegis::getAllGaloisIndexs(module);
+    auto galoisIndices = keyInfos.asBuilder().initGaloisIndices(galosIndex.size());
+    for (size_t i = 0; i < galosIndex.size(); ++i) {
+        galoisIndices.set(i, galosIndex[i]);
+    }
 
     return std::move(keyInfos);
 }

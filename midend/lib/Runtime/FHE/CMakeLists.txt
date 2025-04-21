@@ -39,6 +39,7 @@ set(RT_DEP_LIBS
     MLIRTargetLLVMIRExport
     MLIRTransforms
 
+    AegisCommon
     AegisUnrollAndMemOpt
     AegisUnrollLoops
     AegisGlobalMemrefReplace
@@ -57,8 +58,6 @@ set(RT_DEP_LIBS
     AegisLowerCastToEmitcStub
     AegisInsertEmitcPreamble
     AegisCollectMetadata
-    
-    AegisCommon
 )
 
 set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)

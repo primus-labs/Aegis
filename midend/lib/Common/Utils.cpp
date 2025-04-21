@@ -183,7 +183,7 @@ void addGaloisIndex(mlir::ModuleOp module, int32_t newVal) {
     module->setAttr(GALOIS_KEY_INDEX, newAttr);
 }
 
-llvm::SmallVector<int32_t> getGaloisElements(mlir::ModuleOp module) {
+llvm::SmallVector<int32_t> getAllGaloisIndexs(mlir::ModuleOp module) {
     llvm::SmallVector<int32_t> results;
 
     if (auto attr = module->getAttrOfType<mlir::DenseIntElementsAttr>(GALOIS_KEY_INDEX)) {

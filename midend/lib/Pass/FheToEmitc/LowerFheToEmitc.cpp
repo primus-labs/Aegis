@@ -166,6 +166,12 @@ public:
 
     LogicalResult matchAndRewrite(fhe::RotateOp op, typename fhe::RotateOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
     {
+        // get rotate index and save to metadata
+        auto index = op.getI();
+        ModuleOp moduleOp = op->getParentOfType<ModuleOp>();
+        mlir::aegis::addGaloisIndex(moduleOp, index);
+
+        // convert to emitc type
         auto resTy = getTypeConverter()->convertType(op.getType());
         if (!resTy) {
             LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
