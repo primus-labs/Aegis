@@ -174,6 +174,9 @@ void addGaloisIndex(mlir::ModuleOp module, int32_t newVal) {
     if (auto oldAttr = module->getAttrOfType<mlir::DenseIntElementsAttr>(GALOIS_KEY_INDEX)) {
         auto existing = oldAttr.getValues<int32_t>();
         newIndices.append(existing.begin(), existing.end());
+        if (std::find(existing.begin(), existing.end(), newVal) != existing.end()) {
+            return;
+        }
     }
 
     newIndices.push_back(newVal);
