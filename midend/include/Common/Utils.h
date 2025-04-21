@@ -18,7 +18,7 @@
 #define ENCRYPTED "encrypted"
 #define CLEAR "clear"
 
-#define GALOIS_KEY_INDEX    "GaloisKeyIndex"
+#define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
 
 namespace mlir {
 namespace aegis {
