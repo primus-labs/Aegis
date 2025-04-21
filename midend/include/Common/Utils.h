@@ -2,6 +2,7 @@
 #define COMMON_UTILS_H
 
 #include "mlir/IR/Value.h"
+#include "mlir/include/mlir/IR/BuiltinOps.h"
 #include "mlir/include/mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/include/mlir/Dialect/Affine/Utils.h"
 #include "mlir/include/mlir/IR/Types.h"
@@ -16,6 +17,8 @@
 #define PARAM_ATTR_TYPE "onnx.type"
 #define ENCRYPTED "encrypted"
 #define CLEAR "clear"
+
+#define GALOIS_KEY_INDEX    "GaloisKeyIndex"
 
 namespace mlir {
 namespace aegis {
@@ -47,6 +50,12 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache);
 
 // Helper function to check if a value(func params) is encrypted
 bool isArgEncrypted(Value value);
+
+// Appends an integer element to the GaloisIndex metadata attribute
+void addGaloisIndex(mlir::ModuleOp module, int32_t newVal);
+
+//  Retrieves all elements from GaloisIndex metadata attribute
+llvm::SmallVector<int32_t> getAllGaloisIndexs(mlir::ModuleOp module);
 
 } // namespace aegis
 } // namespace mlir
