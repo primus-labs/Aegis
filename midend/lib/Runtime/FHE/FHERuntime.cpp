@@ -76,12 +76,37 @@ llvm::Expected<bool> FHERuntime::open(const std::string &sharedLibPath) {
     return true;
 }
 
+llvm::Expected<bool> FHERuntime::loadCryptoResources(const std::string &cryptCtxFileName, const std::string &pubKeyFileName, 
+                                                     const std::string &multKeyFileName, const std::string &rotKeyFileName) {
+    assert(libHandle && "open must be called before calling loadCryptoResources");
+    if (cryptCtxFileName.empty()) {
+        return ErrorMsg("crypt context serialization file name must not be empty");
+    }
+    if (pubKeyFileName.empty()) {
+        return ErrorMsg("public key serialization file name must not be empty");
+    }
+    if (multKeyFileName.empty()) {
+        return ErrorMsg("mult eva key serialization file name must not be empty");
+    }
+
+    typedef bool (*InitCryptFunc)(const std::string&, const std::string&, const std::string&, const std::string&);
+    InitCryptFunc initCryptCtxPrt = reinterpret_cast<InitCryptFunc>(dlsym(libHandle, "init_cryptcontext"));
+    if (auto error = dlerror()) {
+        return ErrorMsg("Circuit symbol not found in dynamic module: " + std::string(error));
+    }
+    assert(initCryptCtxPrt);
+
+    return initCryptCtxPrt(cryptCtxFileName, pubKeyFileName, multKeyFileName, rotKeyFileName);
+}
+
 llvm::Expected<bool> FHERuntime::resolveSymbol(const std::string &funcName) {
-    assert(!funcName.empty());
+    assert(libHandle && "open function must be called before calling resolveSymbol");
+    assert(!funcName.empty() && "function name must not be empty");
     funcPtr = dlsym(libHandle, funcName.c_str());
     if (auto error = dlerror()) {
         return ErrorMsg("Circuit symbol not found in dynamic module: " + std::string(error));
     }
+    assert(funcPtr);
 
     return true;
 }
