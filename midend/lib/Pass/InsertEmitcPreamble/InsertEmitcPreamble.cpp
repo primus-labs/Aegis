@@ -16,14 +16,53 @@
 using namespace mlir;
 using namespace aegis;
 
-void InsertEmitcPreamblePass::getDependentDialects(mlir::DialectRegistry &registry) const
-{
+
+constexpr std::string_view kInitCtxFunc = R"cpp(
+CryptoContext<DCRTPoly> clientCC;
+PublicKey<DCRTPoly> clientPubKey;
+extern "C"
+bool init_cryptcontext(const std::string &ccLoc, const std::string &pubKeyLoc, const std::string &multKeyLoc, const std::string &rotKeyLoc) {
+    clientCC->ClearEvalMultKeys();
+    clientCC->ClearEvalAutomorphismKeys();
+    lbcrypto::CryptoContextFactory<lbcrypto::DCRTPoly>::ReleaseAllContexts();
+    if (!Serial::DeserializeFromFile(ccLoc, clientCC, SerType::BINARY)) {
+        std::cerr << "Cannot read serialized data from: " << ccLoc << std::endl;
+        return false;
+    }
+    if (!Serial::DeserializeFromFile(pubKeyLoc, clientPubKey, SerType::BINARY)) {
+        std::cerr << "I cannot read serialized data from: " << pubKeyLoc << std::endl;
+        return false;
+    }
+    std::ifstream multKeyIStream(multKeyLoc, std::ios::in | std::ios::binary);
+    if (!multKeyIStream.is_open()) {
+        std::cerr << "Cannot read serialization from " << multKeyLoc << std::endl;
+        return false;
+    }
+    if (!clientCC->DeserializeEvalMultKey(multKeyIStream, SerType::BINARY)) {
+        std::cerr << "Could not deserialize eval mult key file" << std::endl;
+        return false;
+    }
+    if (!rotKeyLoc.empty()) {
+        std::ifstream rotKeyIStream(rotKeyLoc, std::ios::in | std::ios::binary);
+        if (!rotKeyIStream.is_open()) {
+            std::cerr << "Cannot read serialization from " << rotKeyLoc << std::endl;
+            return false;
+        }
+        if (!clientCC->DeserializeEvalAutomorphismKey(rotKeyIStream, SerType::BINARY)) {
+            std::cerr << "Could not deserialize eval rot key file" << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+)cpp";
+
+
+void InsertEmitcPreamblePass::getDependentDialects(mlir::DialectRegistry &registry) const {
     registry.insert<emitc::EmitCDialect>();
 }
 
-
-void InsertEmitcPreamblePass::runOnOperation() 
-{
+void InsertEmitcPreamblePass::runOnOperation() {
     ModuleOp module = getOperation();
     OpBuilder builder(module.getContext());
 
@@ -53,13 +92,13 @@ void InsertEmitcPreamblePass::runOnOperation()
 
     SmallVector<StringRef> verbatimMacros = {
         "#define Copy(src, dest) dest = src",
-        "#define Add(a, b) cryptoCtx->EvalAdd((a), (b))",
+        "#define Add(a, b) clientCC->EvalAdd((a), (b))",
         "#define AddPlain(c, p) AddPlainImpl((c), (p))",
-        "#define Sub(a, b) cryptoCtx->EvalSub((a), (b))",
+        "#define Sub(a, b) clientCC->EvalSub((a), (b))",
         "#define SubPlain(c, p) SubPlainImpl((c), (p))",
-        "#define Mul(a, b) cryptoCtx->EvalMult((a), (b))",
+        "#define Mul(a, b) clientCC->EvalMult((a), (b))",
         "#define MulPlain(c, p) MulPlainImpl((c), (p))",
-        "#define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))",
+        "#define Rotate(c, idx) clientCC->EvalRotate((c), (idx))",
         "#define MakePlain(a)  double(a)",
         "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
         "#define Cast_Plain_To_Index(clr) size_t(clr)",
@@ -68,56 +107,24 @@ void InsertEmitcPreamblePass::runOnOperation()
 
     SmallVector<StringRef> verbatimFuncs = {
         "inline RLWECipher AddPlainImpl(RLWECipher a, Plain b) {",
-        "    return cryptoCtx->EvalAdd(a, b);",
+        "    return clientCC->EvalAdd(a, b);",
         "}",
         "inline RLWECipher AddPlainImpl(RLWECipher a, PlainVector b) {",
-        "    return cryptoCtx->EvalAdd(a, cryptoCtx->MakeCKKSPackedPlaintext(b));",
+        "    return clientCC->EvalAdd(a, clientCC->MakeCKKSPackedPlaintext(b));",
         "}",
         "inline RLWECipher SubPlainImpl(RLWECipher a, Plain b) {",
-        "    return cryptoCtx->EvalSub(a, b);",
+        "    return clientCC->EvalSub(a, b);",
         "}",
         "inline RLWECipher SubPlainImpl(RLWECipher a, PlainVector b) {",
-        "    return cryptoCtx->EvalSub(a, cryptoCtx->MakeCKKSPackedPlaintext(b));",
+        "    return clientCC->EvalSub(a, clientCC->MakeCKKSPackedPlaintext(b));",
         "}",
         "inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {",
-        "    return cryptoCtx->EvalMult(a, b);",
+        "    return clientCC->EvalMult(a, b);",
         "}",
         "inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {",
-        "    return cryptoCtx->EvalMult(a, cryptoCtx->MakeCKKSPackedPlaintext(b));",
+        "    return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));",
         "}",
     };
-
-    // We must dynamically generate the corresponding encryption parameters based on the program.
-    int mulDepth = 8;
-    int firstModSize = 60;
-    int scaleModeSize = 50;
-    int batchSize = 4096/2;
-    ProgramSpec &progSpecObj = ProgramSpec::getInstance();
-    if (progSpecObj.initialize(progSpecFileName)) {
-        ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpecObj.getKeyInfo();
-        mulDepth = keyInfos.asBuilder().getMultDepth();
-        firstModSize = keyInfos.asBuilder().getFirstModSize();
-        scaleModeSize = keyInfos.asBuilder().getScaleModSize();
-        batchSize = keyInfos.asBuilder().getBatchSize();
-    }
-
-    SmallVector<StringRef> verbatimInitCC;
-    std::string lineMulDepth     = std::string(llvm::formatv("   parameters.SetMultiplicativeDepth({0});", mulDepth));
-    std::string lineFirstModSize = std::string(llvm::formatv("   parameters.SetFirstModSize({0});", firstModSize));
-    std::string lineScaleModSize = std::string(llvm::formatv("   parameters.SetScalingModSize({0});", scaleModeSize));
-    std::string lineBatchSize    = std::string(llvm::formatv("   parameters.SetBatchSize({0});", batchSize));
-    verbatimInitCC.push_back("CryptoContext<DCRTPoly> cryptoCtx;");
-    verbatimInitCC.push_back("void init_cryptcontext() {");
-    verbatimInitCC.push_back("   CCParams<CryptoContextCKKSRNS> parameters;"); 
-    verbatimInitCC.push_back(lineMulDepth);
-    verbatimInitCC.push_back(lineFirstModSize);
-    verbatimInitCC.push_back(lineScaleModSize);
-    verbatimInitCC.push_back(lineBatchSize);
-    verbatimInitCC.push_back("   cryptoCtx = GenCryptoContext(parameters);");
-    verbatimInitCC.push_back("   cryptoCtx->Enable(PKE);");
-    verbatimInitCC.push_back("   cryptoCtx->Enable(KEYSWITCH);");
-    verbatimInitCC.push_back("   cryptoCtx->Enable(LEVELEDSHE);");
-    verbatimInitCC.push_back("}");
 
     // Traverse all ModuleOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
     // Terminate traversal after finding the first one.
@@ -142,9 +149,7 @@ void InsertEmitcPreamblePass::runOnOperation()
         }
 
         // Insert init cryptcontext function
-        for (auto &stmt : verbatimInitCC) {
-            builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
-        }
+        builder.create<emitc::VerbatimOp>(op->getLoc(), kInitCtxFunc);
 
         // Insert crypt related implementation functions
         for (auto &stmt : verbatimFuncs) {
@@ -157,23 +162,19 @@ void InsertEmitcPreamblePass::runOnOperation()
         return mlir::WalkResult::interrupt();
     });
 
-    // Traverse all functions in the module and 
-    // Insert a call to the init_cryptcontext function at the beginning of target function.
-    module.walk([&](func::FuncOp funcOp) {
-        // Only process the target function
-        // if (funcOp.getName() != "main") {
-        //     return;
-        // }
+    // // Traverse all functions in the module and 
+    // // Insert a call to the init_cryptcontext function at the beginning of target function.
+    // module.walk([&](func::FuncOp funcOp) {
 
-        // Get the entry block of the function
-        Block &entryBlock = funcOp.getBody().front();
+    //     // Get the entry block of the function
+    //     Block &entryBlock = funcOp.getBody().front();
         
-        // Create OpBuilder at the beginning of the entry block
-        OpBuilder builder(&entryBlock, entryBlock.begin());
+    //     // Create OpBuilder at the beginning of the entry block
+    //     OpBuilder builder(&entryBlock, entryBlock.begin());
         
-        // Create emitc.VerbatimOp (call init) operation
-        builder.create<emitc::VerbatimOp>(funcOp->getLoc(), "init_cryptcontext();");
+    //     // Create emitc.VerbatimOp (call init) operation
+    //     builder.create<emitc::VerbatimOp>(funcOp->getLoc(), "init_cryptcontext();");
 
-        return mlir::WalkResult::interrupt();
-    });
+    //     return mlir::WalkResult::interrupt();
+    // });
 }
