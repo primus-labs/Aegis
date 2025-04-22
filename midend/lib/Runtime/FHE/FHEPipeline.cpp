@@ -265,8 +265,7 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
 
 
 mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &module,
-                                    std::function<bool(mlir::Pass *)> enablePass, 
-                                    const std::string &progSpecFileName, bool verbose) {
+                                    std::function<bool(mlir::Pass *)> enablePass, bool verbose) {
     mlir::PassManager pm(&context);
     printPipeline("lowerFheToEmitc", pm, context, verbose);
 
@@ -274,8 +273,18 @@ mlir::LogicalResult lowerFheToEmitc(mlir::MLIRContext &context, mlir::ModuleOp &
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<LowerCastToEmitcStubPass>(), enablePass);
-    addNestedAwarePass(pm, std::make_unique<InsertEmitcPreamblePass>(progSpecFileName), enablePass);
 
+    return pm.run(module.getOperation());
+}
+
+
+mlir::LogicalResult lowerEmitcFinalize(mlir::MLIRContext &context, mlir::ModuleOp &module,
+                                    std::function<bool(mlir::Pass *)> enablePass, 
+                                    const std::string &progSpecFileName, bool verbose) {
+    mlir::PassManager pm(&context);
+    printPipeline("lowerEmitcFinalize", pm, context, verbose);
+
+    addNestedAwarePass(pm, std::make_unique<InsertEmitcPreamblePass>(progSpecFileName), enablePass);
     return pm.run(module.getOperation());
 }
 

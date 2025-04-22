@@ -15,6 +15,7 @@
 #include "Dialect/FHE/FHEOps.h"
 #include "Dialect/FHE/FHETypes.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
@@ -101,7 +102,20 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
 
 
 llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty) {
-    if (mlir::isa<fhe::LWECipherType>(ty) || mlir::isa<fhe::LWECipherVectorType>(ty) ||
+    if (mlir::isa<emitc::OpaqueType>(ty)) {
+        auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
+            funcParam.asBuilder().setType(false);
+            funcParam.asBuilder().getShape().initDimensions(0);
+        if (mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipher" ||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipherGrid" || 
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipher" ||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipherVector" ||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipherMatrix") {
+            funcParam.asBuilder().setType(true);
+        }
+        return std::move(funcParam);
+    }
+    else if (mlir::isa<fhe::LWECipherType>(ty) || mlir::isa<fhe::LWECipherVectorType>(ty) ||
         mlir::isa<fhe::LWECipherMatrixType>(ty) || mlir::isa<fhe::RLWECipherType>(ty) ||
         mlir::isa<fhe::RLWECipherGridType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();

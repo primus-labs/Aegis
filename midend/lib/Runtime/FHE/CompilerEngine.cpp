@@ -127,6 +127,11 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
         return ErrorMsg("Directory creation failed: " + error.message());
     }
 
+    // Lower fhe ir to emitc ir
+    if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, options.verbose).failed()) {
+        return ErrorMsg("Failed to lower fhe ir to emitc ir.");
+    }
+
     // Generate prog_spec.json
     if (options.target == TARGET::CPP || options.target == TARGET::LIBRARY) {
         auto progSpecOrErr = createProgramSpec(module);
@@ -139,9 +144,9 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
         }
     }
 
-    // Lower fhe ir to emitc ir
-    if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, fullProgSpecJsonFileName, options.verbose).failed()) {
-        return ErrorMsg("Failed to lower fhe ir to emitc ir.");
+    // Lower emitc ir finalize(prepare for codegen)
+    if (aegis::fhepipeline::lowerEmitcFinalize(mlirContext, module, enablePass, fullProgSpecJsonFileName, options.verbose).failed()) {
+        return ErrorMsg("Failed to lower emitc ir finalize");
     }
     if (options.target == TARGET::EMITC) {
         return res;
