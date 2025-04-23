@@ -15,8 +15,8 @@ namespace aegis {
 
 // Argument type enum
 enum class ArgType {
-    CipherType,
-    PlainType,
+    VectType,
+    MatrixType,
 };
 
 
@@ -28,22 +28,22 @@ struct ArgWrapperBase {
 };
 
 
-// Ciphertext type wrapper
-struct CiphertextWrapper : ArgWrapperBase {
-    Ciphertext<DCRTPoly> argValue;
+// vector type wrapper
+struct VectorWrapper : ArgWrapperBase {
+    std::vector<uint8_t> argValue;
     
-    CiphertextWrapper(Ciphertext<DCRTPoly> val) : argValue(std::move(val)) {}
-    ArgType type() const override { return ArgType::CipherType; }
+    VectorWrapper(std::vector<uint8_t> val) : argValue(std::move(val)) {}
+    ArgType type() const override { return ArgType::VectType; }
     void* ptr() override { return static_cast<void*>(&argValue); }
 };
 
 
-// Plaintext type wrapper 
-struct PlaintextWrapper : ArgWrapperBase {
-    Plaintext argValue;
+// matrix type wrapper 
+struct MatrixtWrapper : ArgWrapperBase {
+    std::vector<std::vector<uint8_t>> argValue;
     
-    PlaintextWrapper(Plaintext val) : argValue(std::move(val)) {}
-    ArgType type() const override { return ArgType::PlainType; }
+    MatrixtWrapper(std::vector<std::vector<uint8_t>> val) : argValue(std::move(val)) {}
+    ArgType type() const override { return ArgType::MatrixType; }
     void* ptr() override { return static_cast<void*>(&argValue); }
 };
 
@@ -84,13 +84,10 @@ private:
 
     template<typename T>
     static void checkType(ArgWrapperBase* arg, size_t index) {
-        constexpr bool isCipher = std::is_same_v<T, Ciphertext<DCRTPoly>>;
-        constexpr bool isPlain = std::is_same_v<T, Plaintext>;
-        
-        static_assert(isCipher || isPlain, "Unsupported parameter type");
-
-        const auto expectedType = isCipher ? ArgType::CipherType 
-                                            : ArgType::PlainType;
+        constexpr bool isVector = std::is_same_v<T, std::vector<uint8_t>>;
+        constexpr bool isMatrix = std::is_same_v<T, std::vector<std::vector<uint8_t>>>;  
+        static_assert(isVector || isMatrix, "Unsupported parameter type");
+        const auto expectedType = isVector ? ArgType::VectType : ArgType::MatrixType;
         
         if (arg->type() != expectedType) {
             throw std::runtime_error("parameter " + std::to_string(index) + " type does not match.");
@@ -107,11 +104,11 @@ struct TypeSequence {
 };
 
 // Generates a sequence of types from high to low bits.
-// If N=3, Mask=5 (binary 101), TypeSequence<Cipher, Plain, Cipher> is generated.
+// If N=3, Mask=5 (binary 101), TypeSequence<vector, matrix, vector> is generated.
 template<size_t N, uint32_t Mask>
 struct GenerateTypeSequence {
     using Type = typename GenerateTypeSequence<N - 1, Mask>::Type::template Push<
-        ((Mask >> (N - 1)) & 0x1) ? ArgType::CipherType : ArgType::PlainType>;
+        ((Mask >> (N - 1)) & 0x1) ? ArgType::VectType : ArgType::MatrixType>;
 };
 
 // Recursion termination condition
@@ -128,9 +125,9 @@ template<typename Ret, ArgType... Types>
 struct InvokeWithTypeSeq<Ret, TypeSequence<Types...>> {
     static Ret call(void* funcPtr, const std::vector<ArgWrapperBase*>& args) {
         return FuncInvoker::invoke<Ret,
-            std::conditional_t<Types == ArgType::CipherType,
-                              Ciphertext<DCRTPoly>,
-                              Plaintext>...>(funcPtr, args);
+            std::conditional_t<Types == ArgType::VectType,
+                              std::vector<uint8_t>,
+                              std::vector<std::vector<uint8_t>>>...>(funcPtr, args);
     }
 };
 
@@ -153,8 +150,8 @@ private:
             return true;
         } else {
             constexpr ArgType expectedType = (CurrentMask & (1 << BitPos)) 
-                                           ? ArgType::CipherType 
-                                           : ArgType::PlainType;
+                                           ? ArgType::VectType 
+                                           : ArgType::MatrixType;
             if (args[BitPos]->type() != expectedType) {
                 return false;
             }
