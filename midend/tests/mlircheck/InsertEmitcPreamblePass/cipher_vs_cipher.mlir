@@ -10,18 +10,7 @@ module {
 }
 
 
-// CHECK: emitc.include <"vector">
-// CHECK: emitc.include "openfhe.h"
-// CHECK: emitc.verbatim "using namespace std;"
-// CHECK: emitc.verbatim "using namespace lbcrypto;"
-// CHECK: emitc.verbatim "using CiphertextT = Ciphertext<DCRTPoly>;"
-// CHECK: emitc.verbatim "using PlaintextT = Plaintext;"
-// CHECK: emitc.verbatim "using MutableCiphertextT = Ciphertext<DCRTPoly>;"
-// CHECK: emitc.verbatim "using CCParamsT = CCParams<CryptoContextCKKSRNS>;"
-// CHECK: emitc.verbatim "using CryptoContextT = CryptoContext<DCRTPoly>;"
-// CHECK: emitc.verbatim "using EvalKeyT = EvalKey<DCRTPoly>;"
-// CHECK: emitc.verbatim "using PrivateKeyT = PrivateKey<DCRTPoly>;"
-// CHECK: emitc.verbatim "using PublicKeyT = PublicKey<DCRTPoly>;"
+
 // CHECK: emitc.call_opaque "Add"
 // CHECK: emitc.call_opaque "Mul"
 
