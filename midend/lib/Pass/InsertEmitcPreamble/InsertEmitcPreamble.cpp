@@ -10,6 +10,7 @@
 #include "Pass/InsertEmitcPreamble/InsertEmitcPreamble.h"
 #include "Common/ProgramSpec.h"
 #include "Common/Protocol.h"
+#include "Common/Utils.h"
 
 #define DEBUG_TYPE "insert-emitc-preamble"
 
@@ -58,6 +59,28 @@ bool init_cryptcontext(const std::string &ccLoc, const std::string &pubKeyLoc, c
 )cpp";
 
 
+constexpr std::string_view kAegisAdaptorFunc = R"cpp(
+extern "C" 
+std::vector<uint8_t> {0}{1}({2}) {
+    {3}
+
+    RLWECipher retV = {4}({5});
+
+    std::stringstream retss;
+    Serial::Serialize(retV, retss, SerType::BINARY);
+    std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
+    return retBuf;
+}
+)cpp";
+
+constexpr std::string_view kDeserisBufCode = R"cpp(
+    Ciphertext<DCRTPoly> v{0};
+    std::stringstream ss{1};
+    ss{2}.write(reinterpret_cast<const char *>(buf{3}.data()), buf{4}.size());
+    Serial::Deserialize(v{5}, ss{6}, SerType::BINARY);
+)cpp";
+
+
 void InsertEmitcPreamblePass::getDependentDialects(mlir::DialectRegistry &registry) const {
     registry.insert<emitc::EmitCDialect>();
 }
@@ -69,6 +92,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
     // Define the content to be inserted for IncludeOp and VerbatimOp.
     SmallVector<std::pair<StringRef, bool>> incLines = {
         {"vector",    /*isSystem=*/true},
+        {"iostream",  /*isSystem=*/true},
         {"openfhe.h", /*isSystem=*/false}
     };
 
@@ -126,6 +150,65 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "}",
     };
 
+    // Assemble the implementation body of function aegis_mlir_adapor_%s
+    // TODO: We consider the first function we need to adapt and call. In the future, 
+    // a unique identifier may need to be added to locate the target function for adaptation and invocation.
+    ProgramSpec &progSpec = ProgramSpec::getInstance();
+    if (!progSpec.initialize(progSpecFileName)) {
+        return;
+    }
+    ProtoMessage<aegisprotocol::Function> theFunc = progSpec.getFuncInfo()[0];
+    std::string mainFuncName = theFunc.asReader().getName();
+    std::vector<bool> paramsType;
+    for (auto param : theFunc.asReader().getInputs()) {
+        if (param.getType()) {
+            paramsType.push_back(true);  //cryptext type
+        } else {
+            paramsType.push_back(false); //plaintext type
+        }
+    }
+
+    // Assemble params string
+    // TODO:If a formal parameter has an clear type annotation, 
+    // the arguments passed to it might be of different types.
+    std::string allParamsStr;
+    for (auto i = 0; i < paramsType.size(); i++) {
+        if (i == (paramsType.size()-1)) {
+            allParamsStr += ("const std::vector<uint8_t> &buf" + std::to_string(i+1));
+        } else {
+            allParamsStr += ("const std::vector<uint8_t> &buf" + std::to_string(i+1) + ", ");
+        }
+    }
+
+    // Assemble the parameter transformation code.
+    std::string allTransStr;
+    for (auto i = 0; i < paramsType.size(); i++) {
+        if (paramsType[i]) {
+            auto idx = std::to_string(i+1);
+            auto toCipher = std::string(
+                    llvm::formatv(kDeserisBufCode.data(), idx, idx, idx, idx, idx, idx, idx));
+            allTransStr += toCipher;
+        }
+    }
+
+    // Assmble the main function all argument string
+    std::string allArgumentsStr;
+    for (auto i = 0; i < paramsType.size(); i++) {
+        if (paramsType[i]) {
+            if (i == (paramsType.size()-1)) {
+                allArgumentsStr += ("v" + std::to_string(i+1));
+            } else {
+                allArgumentsStr += ("v" + std::to_string(i+1) + + ", ");
+            }
+        } else {
+            if (i == (paramsType.size()-1)) {
+                allArgumentsStr += ("buf" + std::to_string(i+1));
+            } else {
+                allArgumentsStr += ("buf" + std::to_string(i+1) + + ", ");
+            }
+        }
+    }
+
     // Traverse all ModuleOp instances and insert emitc::IncludeOp and emitc::VerbatimOp before each of them.
     // Terminate traversal after finding the first one.
     module.walk([&](mlir::ModuleOp op) {
@@ -156,8 +239,12 @@ void InsertEmitcPreamblePass::runOnOperation() {
             builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
         }
 
-        // Insert extern "C" decl
-        builder.create<emitc::VerbatimOp>(op->getLoc(), "extern \"C\"");
+        // Insert aegis_mlir_xxx implementation functions at the end of the block
+        builder.setInsertionPointToEnd(moduleBlock);
+        auto adaptorFunc = std::string(
+                                llvm::formatv(kAegisAdaptorFunc.data(), EXPORT_FUNCNAME_PRIFIX, mainFuncName,   
+                                              allParamsStr, allTransStr, mainFuncName, allArgumentsStr));
+        builder.create<emitc::VerbatimOp>(op->getLoc(), adaptorFunc);
 
         return mlir::WalkResult::interrupt();
     });

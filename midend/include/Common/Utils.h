@@ -19,6 +19,7 @@
 #define CLEAR "clear"
 
 #define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
+#define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
 
 namespace mlir {
 namespace aegis {
