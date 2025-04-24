@@ -210,8 +210,9 @@ public:
 
 public:
     llvm::Expected<bool> open(const std::string &sharedLibPath) override;
-    llvm::Expected<bool> loadCryptoResources(const std::string &cryptCtxFileName, const std::string &pubKeyFileName, 
-                                             const std::string &multKeyFileName, const std::string &rotKeyFileName);
+    llvm::Expected<bool> loadCryptoResources(const std::string &pubKeyFileName, 
+                                             const std::string &multKeyFileName, 
+                                             const std::string &rotKeyFileName);
     llvm::Expected<bool> resolveSymbol(const std::string &funcName) override;
     llvm::Expected<std::vector<Value>> call(const std::vector<Value> &input) override;
     

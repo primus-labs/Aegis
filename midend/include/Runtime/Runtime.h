@@ -17,8 +17,9 @@ class Runtime {
     virtual llvm::Expected<bool> open(const std::string &sharedLibPath) = 0;
 
     // Loads cryptographic resources required for homomorphic encryption operations, including various keys.
-    virtual llvm::Expected<bool> loadCryptoResources(const std::string &cryptCtxFileName, const std::string &pubKeyFileName, 
-                                                     const std::string &multKeyFileName, const std::string &rotKeyFileName) = 0;
+    virtual llvm::Expected<bool> loadCryptoResources(const std::string &pubKeyFileName, 
+                                                     const std::string &multKeyFileName,
+                                                     const std::string &rotKeyFileName) = 0;
     
     // Locates and prepares a target function in the loaded shared library for execution.
     virtual llvm::Expected<bool> resolveSymbol(const std::string &funcName) = 0;
