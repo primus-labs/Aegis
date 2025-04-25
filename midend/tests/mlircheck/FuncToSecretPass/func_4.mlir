@@ -13,4 +13,4 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 
 
 
-//CHECK: func.func @main_graph(%arg0: !secret.secret_vector<8 x f32> {onnx.name = "input_x", onnx.type = "encrypted"}
+//CHECK: func.func @main_graph(%arg0: !secret.secret_vector<8 x f32> {onnx.dims = [8], onnx.name = "input_x", onnx.type = "encrypted"}

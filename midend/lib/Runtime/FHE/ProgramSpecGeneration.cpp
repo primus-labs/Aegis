@@ -78,8 +78,20 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
 
     // deal with inputs
     for (size_t i = 0; i < funcType.getNumInputs(); i++) {
+        // get param dims
+        std::vector<int> dims;
+        mlir::DictionaryAttr argAttrs = funcOp.getArgAttrDict(i);
+        mlir::Attribute dimsAttr = argAttrs.get(DIMS_ATTR_NAME);
+        if (auto arrayAttr = mlir::dyn_cast_or_null<mlir::ArrayAttr>(dimsAttr)) {
+            for (mlir::Attribute dimAttr : arrayAttr) {
+                if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(dimAttr)) {
+                    dims.push_back(intAttr.getInt());
+                }
+            }
+        }
+
         auto ty = funcType.getInputs()[i];
-        auto param = getFuncParamFromType(ty);
+        auto param = getFuncParamFromType(ty, dims);
         if (!param) {
             return param.takeError();
         }
@@ -89,8 +101,19 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
     // deal with outputs
     auto outputsBuilder = funcInfos.asBuilder().initOutputs(funcType.getNumResults());
     for (size_t i = 0; i < funcType.getNumResults(); i++) {
+        std::vector<int> dims;
+        mlir::DictionaryAttr resAttrs = funcOp.getResultAttrDict(i);
+        mlir::Attribute dimsAttr = resAttrs.get(DIMS_ATTR_NAME);
+        if (auto arrayAttr = mlir::dyn_cast_or_null<mlir::ArrayAttr>(dimsAttr)) {
+            for (mlir::Attribute dimAttr : arrayAttr) {
+                if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(dimAttr)) {
+                    dims.push_back(intAttr.getInt());
+                }
+            }
+        }
+
         auto ty = funcType.getResults()[i];
-        auto result = getFuncParamFromType(ty);
+        auto result = getFuncParamFromType(ty, dims);
         if (!result) {
             return result.takeError();
         }
@@ -101,17 +124,20 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
 }
 
 
-llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty) {
+llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty, const std::vector<int> dims) {
     if (mlir::isa<emitc::OpaqueType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
             funcParam.asBuilder().setType(false);
-            funcParam.asBuilder().getShape().initDimensions(0);
         if (mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipher" ||
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipherGrid" || 
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipher" ||
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipherVector" ||
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipherMatrix") {
             funcParam.asBuilder().setType(true);
+            auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
+            for (size_t i = 0; i < dims.size(); ++i) {
+                dimensions.set(i, dims[i]);
+            }
         }
         return std::move(funcParam);
     }
@@ -120,25 +146,26 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
         mlir::isa<fhe::RLWECipherGridType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
         funcParam.asBuilder().setType(true);
-        funcParam.asBuilder().getShape().initDimensions(0);
+        auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
+        for (size_t i = 0; i < dims.size(); ++i) {
+            dimensions.set(i, dims[i]);
+        }
         return std::move(funcParam);
     } else if (mlir::isa<mlir::IntegerType>(ty) || mlir::isa<mlir::FloatType>(ty) ||
                mlir::isa<mlir::IndexType>(ty) ) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
         funcParam.asBuilder().setType(false);
-        funcParam.asBuilder().getShape().initDimensions(0);
+        auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
+        for (size_t i = 0; i < dims.size(); ++i) {
+            dimensions.set(i, dims[i]);
+        }
         return std::move(funcParam);
     } else if (auto tensorTy = mlir::dyn_cast<mlir::RankedTensorType>(ty)) {
-        auto funcParam = getFuncParamFromType(tensorTy.getElementType());
-        if (!funcParam) {
-            return funcParam.takeError();
-        }
-        auto output = std::move(*funcParam);
-        auto shapeBuilder = output.asBuilder().initShape().initDimensions(tensorTy.getRank());
+        std::vector<int> dims;
         for (int64_t i = 0; i < tensorTy.getRank(); i++) {
-            shapeBuilder.set(i, tensorTy.getShape()[i]);
+            dims.push_back(tensorTy.getShape()[i]);
         }
-        return std::move(output);
+        return getFuncParamFromType(tensorTy.getElementType(), dims);
     }
 
     return ErrorMsg("Failed to recognize function param for type : ") << ty;
@@ -146,6 +173,22 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
 
 
 llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp module) {
+    // Get batch size
+    int64_t max_size = 1;
+    module.walk([&max_size](func::FuncOp funcOp) {
+        for (size_t i = 0; i < funcOp.getFunctionType().getNumInputs(); i++) {
+            mlir::DictionaryAttr argAttrs = funcOp.getArgAttrDict(i);
+            mlir::Attribute dimsAttr = argAttrs.get(DIMS_ATTR_NAME);
+            if (auto arrayAttr = mlir::dyn_cast_or_null<mlir::ArrayAttr>(dimsAttr)) {
+                for (mlir::Attribute dimAttr : arrayAttr) {
+                    if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(dimAttr)) {
+                        max_size = std::max(max_size, intAttr.getInt());
+                    }
+                }
+            }
+        }
+    });
+
     // TODO: We must analyze the specific code to generate the most efficient keyinfo,
     // here we simply set the default value.
     auto keyInfos = ProtoMessage<aegisprotocol::KeyInfo>();
@@ -158,7 +201,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     keyInfos.asBuilder().setMultDepth(8);
     keyInfos.asBuilder().setFirstModSize(60);
     keyInfos.asBuilder().setScaleModSize(50);
-    keyInfos.asBuilder().setBatchSize(4096/2); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
+    keyInfos.asBuilder().setBatchSize(max_size); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
 
     // Set galois key indexs
     llvm::SmallVector<int32_t> galosIndex = mlir::aegis::getAllGaloisIndexs(module);
