@@ -28,7 +28,7 @@ namespace mlir {
 namespace aegis {
 
 
-llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::ModuleOp module) {
+llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::ModuleOp module, CompileOptions options) {
     ProtoMessage<aegisprotocol::ProgSpec> progSpes;
 
     // Get all functions infos from the module.
@@ -36,7 +36,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::Mo
     progSpes.asBuilder().setFuncsInfo(funcsInfo.get().asReader());
 
     // Get fhe key infos from the module.
-    auto keyInfo = getKeyInfo(module);
+    auto keyInfo = getKeyInfo(module, options);
     progSpes.asBuilder().setKeyInfo(keyInfo.get().asReader());
 
     // Get statistic infos from the module.
@@ -172,7 +172,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
 }
 
 
-llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp module) {
+llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp module, CompileOptions options) {
     // Get batch size
     int64_t max_size = 1;
     module.walk([&max_size](func::FuncOp funcOp) {
@@ -209,6 +209,11 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     for (size_t i = 0; i < galosIndex.size(); ++i) {
         galoisIndices.set(i, galosIndex[i]);
     }
+
+    // Set fhe scheme
+    std::string scheme = options.scheme == FHE_SCHEME_TYPE::CKKS ? "CKKS" : 
+                                (options.scheme == FHE_SCHEME_TYPE::BGV ? "BGV" : "BFV");
+    keyInfos.asBuilder().setScheme(scheme);
 
     return std::move(keyInfos);
 }

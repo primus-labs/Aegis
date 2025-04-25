@@ -134,7 +134,7 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
 
     // Generate prog_spec.json
     if (options.target == TARGET::CPP || options.target == TARGET::LIBRARY) {
-        auto progSpecOrErr = createProgramSpec(module);
+        auto progSpecOrErr = createProgramSpec(module, options);
         if (!progSpecOrErr) {
             return progSpecOrErr.takeError();
         }

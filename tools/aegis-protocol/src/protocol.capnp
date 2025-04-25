@@ -52,6 +52,7 @@ struct KeyInfo {
   batchSize @6 :UInt32;           # Batch size (number of slots)
   galoisIndices @7 :List(Int32);  # Index list for Galois Key
   enableBootstrapping @8 :Bool;   # Whether to enable bootstrapping
+  scheme  @9  :Text;              # FHE scheme type(ckks,bfv,bgv)
 }
 
 

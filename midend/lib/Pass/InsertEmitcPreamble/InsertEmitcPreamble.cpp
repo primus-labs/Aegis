@@ -23,11 +23,11 @@ CryptoContext<DCRTPoly> clientCC;
 PublicKey<DCRTPoly> clientPubKey;
 extern "C"
 bool init_cryptcontext(const std::string &pubKeyLoc, const std::string &multKeyLoc, const std::string &rotKeyLoc) {
-    CCParams<CryptoContextCKKSRNS> parameters;
-    parameters.SetMultiplicativeDepth({0});
-    parameters.SetFirstModSize({1});
-    parameters.SetScalingModSize({2});
-    parameters.SetBatchSize({3});
+    CCParams<CryptoContext{0}RNS> parameters;
+    parameters.SetMultiplicativeDepth({1});
+    parameters.SetFirstModSize({2});
+    parameters.SetScalingModSize({3});
+    parameters.SetBatchSize({4});
     clientCC = GenCryptoContext(parameters);
     clientCC->ClearEvalMultKeys();
     clientCC->ClearEvalAutomorphismKeys();
@@ -64,9 +64,7 @@ constexpr std::string_view kAegisAdaptorFunc = R"cpp(
 extern "C" 
 std::vector<uint8_t> {0}{1}({2}) {
     {3}
-
     RLWECipher retV = {4}({5});
-
     std::stringstream retss;
     Serial::Serialize(retV, retss, SerType::BINARY);
     std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
@@ -239,13 +237,14 @@ void InsertEmitcPreamblePass::runOnOperation() {
         int scaleModeSize = 50;
         int batchSize = 4096/2;
         ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpec.getKeyInfo();
-        mulDepth = keyInfos.asBuilder().getMultDepth();
-        firstModSize = keyInfos.asBuilder().getFirstModSize();
-        scaleModeSize = keyInfos.asBuilder().getScaleModSize();
-        batchSize = keyInfos.asBuilder().getBatchSize();
+        mulDepth = keyInfos.asReader().getMultDepth();
+        firstModSize = keyInfos.asReader().getFirstModSize();
+        scaleModeSize = keyInfos.asReader().getScaleModSize();
+        batchSize = keyInfos.asReader().getBatchSize();
+        std::string scheme = keyInfos.asReader().getScheme();
         
-        auto loadCryptoResFunc = std::string(llvm::formatv(kInitCtxFunc.data(), std::to_string(mulDepth), std::to_string(firstModSize),
-                                                           std::to_string(scaleModeSize), std::to_string(batchSize)));
+        auto loadCryptoResFunc = std::string(llvm::formatv(kInitCtxFunc.data(), scheme, std::to_string(mulDepth), 
+                                                           std::to_string(firstModSize), std::to_string(scaleModeSize), std::to_string(batchSize)));
         builder.create<emitc::VerbatimOp>(op->getLoc(), loadCryptoResFunc);
 
         // Insert crypt related implementation functions

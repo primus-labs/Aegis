@@ -20,6 +20,13 @@ enum class BACKEND_TYPE {
     GPU,
 };
 
+/// Fhe scheme
+enum class FHE_SCHEME_TYPE {
+    BGV, 
+    BFV, 
+    CKKS
+};
+
 /// Specification of the exit stage of the compilation pipeline
 enum class TARGET {
     /// Dump all build-in mlir operations
@@ -49,12 +56,14 @@ enum class TARGET {
 typedef struct tagCompileOptions {
     BACKEND_TYPE beType;
     TARGET target;
+    FHE_SCHEME_TYPE scheme;
     bool verbose;
     std::string outputDir;
 
     tagCompileOptions() {
         beType = BACKEND_TYPE::CPU;
         target = TARGET::LIBRARY;
+        scheme = FHE_SCHEME_TYPE::CKKS;
         verbose = false;
         outputDir = "/tmp/aegis/";
     }
