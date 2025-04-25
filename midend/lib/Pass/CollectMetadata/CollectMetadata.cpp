@@ -40,6 +40,57 @@ void CollectMetadataPass::collectAllMetadata(func::FuncOp funcOp) {
 }
 
 void CollectMetadataPass::runOnOperation() {
-  auto moduleOp = getOperation();
-  moduleOp.walk([this](func::FuncOp funcOp) { collectAllMetadata(funcOp); });
+    // Collect metadata
+    auto moduleOp = getOperation();
+    moduleOp.walk([this](func::FuncOp funcOp) { collectAllMetadata(funcOp); });
+
+    // Create onnx.dims attribute for parameters & results
+    auto processElements = [](func::FuncOp funcOp, bool isArguments) -> void {
+        MLIRContext *context = funcOp.getContext();
+        const size_t numElements = isArguments ? funcOp.getNumArguments() : funcOp.getNumResults();
+
+        SmallVector<DictionaryAttr> newAttrsList;
+        for (unsigned i = 0; i < numElements; ++i) {
+            // Collect existing attributes
+            DictionaryAttr existingAttrs = isArguments ? funcOp.getArgAttrDict(i) : funcOp.getResultAttrDict(i);
+            SmallVector<NamedAttribute> attrs;
+            if (existingAttrs) {
+                attrs.append(existingAttrs.begin(), existingAttrs.end());
+            }
+
+            Type elementType =
+                isArguments ? funcOp.getFunctionType().getInput(i) : funcOp.getFunctionType().getResult(i);
+
+            // Process shaped types
+            if (auto shapedType = mlir::dyn_cast<ShapedType>(elementType)) {
+                if (shapedType.hasStaticShape()) {
+                    SmallVector<Attribute> dimAttrs;
+                    for (int64_t dim : shapedType.getShape()) {
+                        dimAttrs.push_back(IntegerAttr::get(IntegerType::get(context, 64), dim));
+                    }
+                    attrs.push_back(
+                        NamedAttribute(StringAttr::get(context, DIMS_ATTR_NAME), ArrayAttr::get(context, dimAttrs)));
+                }
+            }
+
+            //Store updated attributes
+            newAttrsList.push_back(DictionaryAttr::get(context, attrs));
+        }
+
+        // Update function attributes
+        if (isArguments) {
+            funcOp.setAllArgAttrs(newAttrsList);
+        } else {
+            funcOp.setAllResultAttrs(newAttrsList);
+        }
+    };
+
+    moduleOp.walk([&](func::FuncOp funcOp) {
+        // Prepare new argument attributes for all parameters
+        MLIRContext* context = &getContext();
+        processElements(funcOp, /*isArguments=*/true);
+        processElements(funcOp, /*isArguments=*/false);
+
+        return mlir::WalkResult::advance();
+    });
 }

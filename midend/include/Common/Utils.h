@@ -17,7 +17,7 @@
 #define PARAM_ATTR_TYPE "onnx.type"
 #define ENCRYPTED "encrypted"
 #define CLEAR "clear"
-
+#define DIMS_ATTR_NAME  "onnx.dims"
 #define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
 #define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
 
