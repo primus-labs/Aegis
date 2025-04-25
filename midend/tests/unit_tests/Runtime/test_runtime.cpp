@@ -10,6 +10,15 @@
 #include "Common/ProgramSpec.h"
 #include "cpu/FHE/include/KeysetGenerator.h"
 #include "cpu/FHE/include/Operate.h"
+#include "cpu/FHE/include/CryptoContextMgr.h"
+#include "cpu/FHE/include/FheKeyset.h"
+
+#include "openfhe.h"
+#include "ciphertext-ser.h"
+#include "cryptocontext-ser.h"
+#include "key/key-ser.h"
+#include "scheme/ckksrns/ckksrns-ser.h"
+using namespace lbcrypto;
 
 using namespace mlir;
 using namespace aegis;
@@ -79,6 +88,12 @@ std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std
     std::vector<mlir::aegis::Value> params;
     params.push_back(value_a);
     params.push_back(value_b);
+
+    // auto cc = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+    // std::cout << "encrypt cipher CryptoContext=" << cc.get() << std::endl;
+    // auto ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
+    // std::cout << "after encrypt, current CryptoContext sizes=" << ccSizes << std::endl;
+
     auto resOrErr = runtime->call(params);
     if (!resOrErr) {
         std::cout << "call FHERuntime::call fail" << std::endl;
@@ -121,6 +136,54 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
     }
     ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpecObj.getKeyInfo();
     aegiscpu::KeysetGenerator::generate(keyInfos);
+
+    // Serial various keys
+    auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+    const std::string pubKeyFileName = "/tmp/aegis/pubkey.txt";
+    std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
+    PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
+    if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
+        std::cerr << "Exception writing public key to " << pubKeyFileName << std::endl;
+        return nullptr;
+    }
+
+    const std::string mulKeyFileName = "/tmp/aegis/mulkey.txt";
+    std::ofstream multKeyFile(mulKeyFileName, std::ios::out | std::ios::binary);
+    if (multKeyFile.is_open()) {
+        if (!cryptoCtx->SerializeEvalMultKey(multKeyFile, SerType::BINARY)) {
+            std::cerr << "Error writing eval mult keys" << std::endl;
+            return nullptr;
+        }
+        multKeyFile.close();
+    }
+    else {
+        std::cerr << "Error serializing EvalMult keys" << std::endl;
+        return nullptr;
+    }
+
+    std::string rotKeyFileName = "/tmp/aegis/rotkey.txt";
+    if (keyInfos.asBuilder().hasGaloisIndices()) {
+        std::ofstream rotationKeyFile(rotKeyFileName, std::ios::out | std::ios::binary);
+        if (rotationKeyFile.is_open()) {
+            if (!cryptoCtx->SerializeEvalAutomorphismKey(rotationKeyFile, SerType::BINARY)) {
+                std::cerr << "Error writing rotation keys" << std::endl;
+                return nullptr;
+            }
+            rotationKeyFile.close();
+        }
+        else {
+            std::cerr << "Error serializing Rotation keys" << std::endl;
+            return nullptr;
+        }
+    } else {
+        rotKeyFileName = ""; //mean not has galois key
+    }
+
+    // call loadCryptoResources func
+    if (!pRuntime->loadCryptoResources(pubKeyFileName, mulKeyFileName, rotKeyFileName)) {
+        std::cout << "Test failure." << std::endl;
+        return nullptr;
+    }
 
     return pRuntime;
 }
@@ -234,22 +297,22 @@ module  {
 
 bool case_2() {
     std::vector<double> m = {1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::vector<double> v = {2.0, 2.0, 5.0, 6.0};
-    std::vector<double> expect_output = {6.0, 14.0, 5.0, 6.0};
+    std::vector<double> v = {2.0, 2.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> expect_output = {6.0, 14.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};      
     if (!mlirUnitTest_2(mlirCase2, m, v, expect_output)) {
         return false;
     }
 
     std::vector<double> m2 = {2.0, 3.0, 0.0, 0.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::vector<double> v2 = {1.0, 0.0, 100.0, 200.0};
-    std::vector<double> expect_output2 = {2.0, 5.0, 100.0, 200.0};
+    std::vector<double> v2 = {1.0, 0.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> expect_output2 = {2.0, 5.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};      
     if (!mlirUnitTest_2(mlirCase2, m2, v2, expect_output2)) {
         return false;
     }
 
     std::vector<double> m3 = {2.0, 3.0, 1.0, 1.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::vector<double> v3 = {1.0, 2.0, 3.0, 4.0};
-    std::vector<double> expect_output3 = {8.0, 14.0, 3.0, 4.0};
+    std::vector<double> v3 = {1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> expect_output3 = {8.0, 14.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};     
     if (!mlirUnitTest_2(mlirCase2, m3, v3, expect_output3)) {
         return false;
     }
@@ -276,13 +339,14 @@ int main() {
     }
 
     {
+        std::string funcName = "MVP"; //"main_graph"
         std::shared_ptr<FHERuntime> pRuntime = std::make_shared<FHERuntime>("/tmp/aegis/prog_spec.json");
         if (!pRuntime->open("/tmp/aegis/libtest.so")) {
             std::cout << "Test failure." << std::endl;
             return -1;
         }
 
-        if (!pRuntime->resolveSymbol("main_graph")) {
+        if (!pRuntime->resolveSymbol(funcName)) {
             std::cout << "Test failure." << std::endl;
             return -1;
         }
@@ -290,11 +354,59 @@ int main() {
         // Generate keygen
         ProgramSpec &progSpecObj = ProgramSpec::getInstance();
         if (!progSpecObj.initialize("/tmp/aegis/prog_spec.json")) {
-             std::cout << "Test failure." << std::endl;
+            std::cout << "Test failure." << std::endl;
             return -1;
         }
         ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpecObj.getKeyInfo();
         aegiscpu::KeysetGenerator::generate(keyInfos);
+
+        // Serial various keys
+        auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+        const std::string pubKeyFileName = "/tmp/aegis/pubkey.txt";
+        std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
+        PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
+        if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
+            std::cerr << "Exception writing public key to " << pubKeyFileName << std::endl;
+            return -1;
+        }
+
+        const std::string mulKeyFileName = "/tmp/aegis/mulkey.txt";
+        std::ofstream multKeyFile(mulKeyFileName, std::ios::out | std::ios::binary);
+        if (multKeyFile.is_open()) {
+            if (!cryptoCtx->SerializeEvalMultKey(multKeyFile, SerType::BINARY)) {
+                std::cerr << "Error writing eval mult keys" << std::endl;
+                return -1;
+            }
+            multKeyFile.close();
+        }
+        else {
+            std::cerr << "Error serializing EvalMult keys" << std::endl;
+            return -1;
+        }
+
+        std::string rotKeyFileName = "/tmp/aegis/rotkey.txt";
+        if (keyInfos.asBuilder().hasGaloisIndices()) {
+            std::ofstream rotationKeyFile(rotKeyFileName, std::ios::out | std::ios::binary);
+            if (rotationKeyFile.is_open()) {
+                if (!cryptoCtx->SerializeEvalAutomorphismKey(rotationKeyFile, SerType::BINARY)) {
+                    std::cerr << "Error writing rotation keys" << std::endl;
+                    return -1;
+                }
+                rotationKeyFile.close();
+            }
+            else {
+                std::cerr << "Error serializing Rotation keys" << std::endl;
+                return -1;
+            }
+        } else {
+            rotKeyFileName = ""; //mean not has galois key
+        }
+
+        // call loadCryptoResources func
+        if (!pRuntime->loadCryptoResources(pubKeyFileName, mulKeyFileName, rotKeyFileName)) {
+            std::cout << "Test failure." << std::endl;
+            return -1;
+        }
 
         // case 1:
         {
@@ -339,10 +451,10 @@ int main() {
         {
             // scene 1:
             std::vector<double> m = {1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            std::vector<double> v = {2.0, 2.0, 5.0, 6.0};
-            std::vector<double> expect_output = {6.0, 14.0, 5.0, 6.0};
+            std::vector<double> v = {2.0, 2.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            std::vector<double> expect_output = {6.0, 14.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> output = encryptRunDecrypt_2(pRuntime, m, v, expect_output.size());
-            for (auto i = 0; i < output.size(); i++) {
+            for (auto i = 0; i < expect_output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
                     return -1;
@@ -351,10 +463,10 @@ int main() {
 
             // scene 2:
             std::vector<double> m2 = {2.0, 3.0, 0.0, 0.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            std::vector<double> v2 = {1.0, 0.0, 100.0, 200.0};
-            std::vector<double> expect_output2 = {2.0, 5.0, 100.0, 200.0};
+            std::vector<double> v2 = {1.0, 0.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            std::vector<double> expect_output2 = {2.0, 5.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, m2, v2, expect_output2.size());
-            for (auto i = 0; i < output2.size(); i++) {
+            for (auto i = 0; i < expect_output2.size(); i++) {
                 if (!approximatelyEqual(output2[i], expect_output2[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
                     return -1;
@@ -363,10 +475,10 @@ int main() {
 
             // scene 3:
             std::vector<double> m3 = {2.0, 3.0, 1.0, 1.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            std::vector<double> v3 = {1.0, 2.0, 3.0, 4.0};
-            std::vector<double> expect_output3 = {8.0, 14.0, 3.0, 4.0};
+            std::vector<double> v3 = {1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            std::vector<double> expect_output3 = {8.0, 14.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> output3 = encryptRunDecrypt_2(pRuntime, m3, v3, expect_output3.size());
-            for (auto i = 0; i < output3.size(); i++) {
+            for (auto i = 0; i < expect_output3.size(); i++) {
                 if (!approximatelyEqual(output3[i], expect_output3[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
                     return -1;
