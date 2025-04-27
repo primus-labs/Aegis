@@ -14,5 +14,5 @@ function(create_executable target_name)
   set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 endfunction()
 
-#target_link_options(test_runtime PRIVATE "-Wl,--verbose")
-create_executable(test_runtime test_runtime.cpp)
+#target_link_options(runtime_test PRIVATE "-Wl,--verbose")
+create_executable(runtime_test test_runtime.cpp)

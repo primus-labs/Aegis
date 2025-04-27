@@ -13,4 +13,4 @@ function(create_executable target_name)
   set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 endfunction()
 
-create_executable(test_compile test_compile.cpp)
+create_executable(compile_test test_compile.cpp)
