@@ -21,6 +21,11 @@
 using namespace mlir;
 using namespace aegis;
 
+// In OpenFHE and other FHE libraries, the implementation of ​​homomorphic rotation​​ differs, 
+// particularly in terms of ​​rotation direction​​ and ​​parameter definitions​​, which require special attention. 
+// In OpenFHE, ​​positive numbers​​ represent a ​​left cyclic shift​​, while ​​negative numbers​​ correspond to a ​​right cyclic shift​​.
+static constexpr bool NegativeRight = true;    //default for OpenFHE
+
 template <typename OpType>
 LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, OpType op) {
     // We care only about ops that return scalars, assuming others are already "SIMD-compatible"
@@ -129,8 +134,18 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                     if (target_slot == -1) {
                         target_slot = i;   
                     }
+
+                    // calculate right shift rotate count.
+                    auto shiftRightCnt = ((target_slot - i + max_size) % max_size);
+                    if (NegativeRight) {
+                        shiftRightCnt = -shiftRightCnt;
+                    }
+                    LLVM_DEBUG(llvm::dbgs() << "target_slot=" << target_slot << ",load index=" << i 
+                                            << ",max sizes=" << max_size << "rotate index=" << shiftRightCnt << "\n");
+                
+                    // new rotate op an replace uses
                     auto rotOp = rewriter.create<fhe::RotateOp>(loadOp.getLoc(), loadOp.getMemref().getType(), 
-                                                                loadOp.getMemref(), (target_slot - i + max_size) % max_size);
+                                                                loadOp.getMemref(), shiftRightCnt);
                     rewriter.replaceUsesWithIf(loadOp, {rotOp}, [&](OpOperand &operand) { 
                         return operand.getOwner() == new_op; 
                     });
@@ -190,8 +205,12 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
             }
         }
 
-        // Create rotation amount (negative index to bring element to position 0)
-        auto rotateAmount = -target_slot % max_size;
+        // Create rotation amount (bring element to position 0)
+        auto rotateAmount = ((-target_slot + max_size) % max_size);
+        if (NegativeRight) {
+            rotateAmount = -rotateAmount;
+        }
+        LLVM_DEBUG(llvm::dbgs() << "target slot=" << target_slot << ", max size=" << max_size << ", (shift right to 0 slot)real rotate value=" << rotateAmount << "\n");
 
          // Apply rotation operation
         auto rotateOp = rewriter.create<fhe::RotateOp>(op.getLoc(), op.getMemref().getType(),
@@ -419,8 +438,8 @@ void BatchingPass::runOnOperation() {
     }
 
     // RotateOp type from LWE to RLWE
-    auto RotOpToRLWEOp = [](IRRewriter &rewriter, MLIRContext *context, fhe::RotateOp op,
-                            TypeConverter typeConverter) -> LogicalResult {
+    auto LWERotOpToRLWERotOp = [](IRRewriter &rewriter, MLIRContext *context, fhe::RotateOp op,
+                                TypeConverter typeConverter) -> LogicalResult {
         rewriter.setInsertionPoint(op);
         auto destTy = typeConverter.convertType(op.getType());
         if (!destTy) {
@@ -440,7 +459,7 @@ void BatchingPass::runOnOperation() {
         // We must translate in order of appearance for this to work, so we walk manually
         if (funcOp.walk([&](Operation *op) {
             if (auto rotOp = llvm::dyn_cast_or_null<fhe::RotateOp>(op)) {
-                if (RotOpToRLWEOp(rewriter, &getContext(), rotOp, type_converter).failed())
+                if (LWERotOpToRLWERotOp(rewriter, &getContext(), rotOp, type_converter).failed())
                     return WalkResult::interrupt();
             }
             return WalkResult(success());
