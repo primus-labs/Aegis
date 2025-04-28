@@ -37,7 +37,7 @@ bool init_cryptcontext(const std::string &pubKeyLoc, const std::string &multKeyL
     parameters.SetMultiplicativeDepth(8);
     parameters.SetFirstModSize(60);
     parameters.SetScalingModSize(50);
-    parameters.SetBatchSize(2048);
+    parameters.SetBatchSize(16);
     clientCC = GenCryptoContext(parameters);
     clientCC->ClearEvalMultKeys();
     clientCC->ClearEvalAutomorphismKeys();
@@ -87,26 +87,28 @@ inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {
     return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));
 }
 RLWECipher MVP(RLWECipher v1, RLWECipher v2) {
-  PlainVector v3 = MakeMultPlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
-  PlainVector v4 = MakeMultPlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-  RLWECipher v5 = Mul(v1, v2);
-  RLWECipher v6 = Rotate(v5, 15);
-  RLWECipher v7 = Add(v5, v6);
-  RLWECipher v8 = MulPlain(v7, v4);
-  RLWECipher v9 = MulPlain(v2, v3);
-  RLWECipher v10 = Add(v9, v8);
-  Copy(v10, v2);
-  RLWECipher v11 = Rotate(v2, 4);
-  RLWECipher v12 = Mul(v1, v11);
-  RLWECipher v13 = Rotate(v2, 4);
+  PlainVector v3 = MakeMultPlain(1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
+  PlainVector v4 = MakeMultPlain(0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+  PlainVector v5 = MakeMultPlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
+  PlainVector v6 = MakeMultPlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+  RLWECipher v7 = Mul(v1, v2);
+  RLWECipher v8 = Rotate(v7, -15);
+  RLWECipher v9 = Add(v7, v8);
+  RLWECipher v10 = MulPlain(v9, v6);
+  RLWECipher v11 = MulPlain(v2, v5);
+  RLWECipher v12 = Add(v11, v10);
+  Copy(v12, v2);
+  RLWECipher v13 = Rotate(v2, -4);
   RLWECipher v14 = Mul(v1, v13);
-  RLWECipher v15 = Rotate(v12, 13);
-  RLWECipher v16 = Rotate(v14, 12);
-  RLWECipher v17 = Add(v15, v16);
-  RLWECipher v18 = Rotate(v17, -1);
-  RLWECipher v19 = MulPlain(v18, v4);
-  RLWECipher v20 = Add(v9, v19);
-  Copy(v20, v2); 
+  RLWECipher v15 = Rotate(v2, -4);
+  RLWECipher v16 = Mul(v1, v15);
+  RLWECipher v17 = Rotate(v14, -13);
+  RLWECipher v18 = Rotate(v16, -12);
+  RLWECipher v19 = Add(v17, v18);
+  RLWECipher v20 = MulPlain(v19, v4);
+  RLWECipher v21 = MulPlain(v2, v3);
+  RLWECipher v22 = Add(v21, v20);
+  Copy(v22, v2);
   return v2;
 }
 

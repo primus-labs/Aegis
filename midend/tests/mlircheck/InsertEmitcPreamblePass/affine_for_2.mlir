@@ -44,7 +44,7 @@ module  {
 //CHECK: emitc.call_opaque "Rotate"
 //CHECK: emitc.call_opaque "Rotate"
 //CHECK: emitc.call_opaque "Add"
-//CHECK: emitc.call_opaque "Rotate"
+//CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Add"
 //CHECK: emitc.call_opaque "Copy"

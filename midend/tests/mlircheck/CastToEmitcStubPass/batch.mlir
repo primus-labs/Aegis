@@ -31,12 +31,7 @@ module  {
 
 
 
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(0,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(1,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(0)">}> : () -> !emitc.opaque<"Plain">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(1)">}> : () -> !emitc.opaque<"Plain">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(4)">}> : () -> !emitc.opaque<"Plain">
-//CHECK: "emitc.constant"() <{value = #emitc.opaque<"MakePlain(5)">}> : () -> !emitc.opaque<"Plain">
+
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"
@@ -57,7 +52,7 @@ module  {
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Rotate"
 //CHECK: emitc.call_opaque "Add"
-//CHECK: emitc.call_opaque "Rotate"
+//CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Add"
 //CHECK: emitc.call_opaque "Copy"

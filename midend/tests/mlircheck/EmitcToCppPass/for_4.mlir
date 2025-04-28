@@ -1,6 +1,6 @@
 // RUN: emitc-translate --mlir-to-cpp < %s | FileCheck %s
 
-module attributes {fhe.GaloisKeyIndex = dense<[15, 4, 13, 12, -1]> : vector<5xi32>} {
+module attributes {fhe.GaloisKeyIndex = dense<[-15, -4, -13, -12]> : vector<4xi32>} {
   emitc.include <"vector">
   emitc.include <"iostream">
   emitc.include "openfhe.h"
@@ -50,27 +50,29 @@ module attributes {fhe.GaloisKeyIndex = dense<[15, 4, 13, 12, -1]> : vector<5xi3
   emitc.verbatim "inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {"
   emitc.verbatim "    return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));"
   emitc.verbatim "}"
-  func.func @MVP(%arg0: !emitc.opaque<"RLWECipher"> {onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: !emitc.opaque<"RLWECipher"> {onnx.name = "input_y", onnx.type = "encrypted"}) -> !emitc.opaque<"RLWECipher"> {
-    %0 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
-    %1 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
-    %2 = emitc.call_opaque "Mul"(%arg0, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %3 = emitc.call_opaque "Rotate"(%2) {args = [0 : index, 15 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %4 = emitc.call_opaque "Add"(%2, %3) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %5 = emitc.call_opaque "MulPlain"(%4, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
-    %6 = emitc.call_opaque "MulPlain"(%arg1, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
-    %7 = emitc.call_opaque "Add"(%6, %5) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    emitc.call_opaque "Copy"(%7, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
-    %8 = emitc.call_opaque "Rotate"(%arg1) {args = [0 : index, 4 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %9 = emitc.call_opaque "Mul"(%arg0, %8) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %10 = emitc.call_opaque "Rotate"(%arg1) {args = [0 : index, 4 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+  func.func @MVP(%arg0: !emitc.opaque<"RLWECipher"> {onnx.dims = [16], onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: !emitc.opaque<"RLWECipher"> {onnx.dims = [4], onnx.name = "input_y", onnx.type = "encrypted"}) -> (!emitc.opaque<"RLWECipher"> {onnx.dims = [4]}) {
+    %0 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
+    %1 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
+    %2 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)">}> : () -> !emitc.opaque<"PlainVector">
+    %3 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
+    %4 = emitc.call_opaque "Mul"(%arg0, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %5 = emitc.call_opaque "Rotate"(%4) {args = [0 : index, -15 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %6 = emitc.call_opaque "Add"(%4, %5) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %7 = emitc.call_opaque "MulPlain"(%6, %3) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
+    %8 = emitc.call_opaque "MulPlain"(%arg1, %2) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
+    %9 = emitc.call_opaque "Add"(%8, %7) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    emitc.call_opaque "Copy"(%9, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
+    %10 = emitc.call_opaque "Rotate"(%arg1) {args = [0 : index, -4 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %11 = emitc.call_opaque "Mul"(%arg0, %10) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %12 = emitc.call_opaque "Rotate"(%9) {args = [0 : index, 13 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %13 = emitc.call_opaque "Rotate"(%11) {args = [0 : index, 12 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %14 = emitc.call_opaque "Add"(%12, %13) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %15 = emitc.call_opaque "Rotate"(%14) {args = [0 : index, -1 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    %16 = emitc.call_opaque "MulPlain"(%15, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
-    %17 = emitc.call_opaque "Add"(%6, %16) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
-    emitc.call_opaque "Copy"(%17, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
+    %12 = emitc.call_opaque "Rotate"(%arg1) {args = [0 : index, -4 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %13 = emitc.call_opaque "Mul"(%arg0, %12) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %14 = emitc.call_opaque "Rotate"(%11) {args = [0 : index, -13 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %15 = emitc.call_opaque "Rotate"(%13) {args = [0 : index, -12 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %16 = emitc.call_opaque "Add"(%14, %15) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    %17 = emitc.call_opaque "MulPlain"(%16, %1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
+    %18 = emitc.call_opaque "MulPlain"(%arg1, %0) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"PlainVector">) -> !emitc.opaque<"RLWECipher">
+    %19 = emitc.call_opaque "Add"(%18, %17) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
+    emitc.call_opaque "Copy"(%19, %arg1) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> ()
     return %arg1 : !emitc.opaque<"RLWECipher">
   }
   emitc.verbatim "\0Aextern \22C\22 \0Astd::vector<uint8_t> aegis_mlir_MVP(const std::vector<uint8_t> &buf1, const std::vector<uint8_t> &buf2) {\0A    \0A    Ciphertext<DCRTPoly> v1;\0A    std::stringstream ss1;\0A    ss1.write(reinterpret_cast<const char *>(buf1.data()), buf1.size());\0A    Serial::Deserialize(v1, ss1, SerType::BINARY);\0A\0A    Ciphertext<DCRTPoly> v2;\0A    std::stringstream ss2;\0A    ss2.write(reinterpret_cast<const char *>(buf2.data()), buf2.size());\0A    Serial::Deserialize(v2, ss2, SerType::BINARY);\0A\0A\0A    RLWECipher retV = MVP(v1, v2);\0A\0A    std::stringstream retss;\0A    Serial::Serialize(retV, retss, SerType::BINARY);\0A    std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());\0A    return retBuf;\0A}\0A"
