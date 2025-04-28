@@ -424,7 +424,15 @@ def FHE_RotateOp: FHE_Op<"rotate", [AllTypesMatch<["cipher", "output"]>]> {
 
 def FHE_RelinearizeOp : FHE_Op<"relinearize", [AllTypesMatch<["input", "output"]>]> {
 
-  let summary = "Relinearization.";
+  let summary = "FHE Relinearization op, compresses ciphertext size, maintains computational efficiency.​​";
+
+  let arguments = (ins FHE_Type:$input);
+
+  let results = (outs FHE_Type:$output);
+}
+
+def FHE_BootstrapOp : FHE_Op<"bootstrap", [AllTypesMatch<["input", "output"]>]> {
+  let summary = "FHE Bootstraping op, resets noise, enables unlimited computations.";
 
   let arguments = (ins FHE_Type:$input);
 
