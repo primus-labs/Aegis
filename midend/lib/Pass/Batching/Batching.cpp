@@ -24,7 +24,7 @@ using namespace aegis;
 // In OpenFHE and other FHE libraries, the implementation of ​​homomorphic rotation​​ differs, 
 // particularly in terms of ​​rotation direction​​ and ​​parameter definitions​​, which require special attention. 
 // In OpenFHE, ​​positive numbers​​ represent a ​​left cyclic shift​​, while ​​negative numbers​​ correspond to a ​​right cyclic shift​​.
-static constexpr bool NegativeRight = true;    //default for OpenFHE
+static constexpr bool NegativeShiftRight = true;    //default for OpenFHE
 
 template <typename OpType>
 LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, OpType op) {
@@ -137,7 +137,7 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
 
                     // calculate right shift rotate count.
                     auto shiftRightCnt = ((target_slot - i + max_size) % max_size);
-                    if (NegativeRight) {
+                    if (NegativeShiftRight) {
                         shiftRightCnt = -shiftRightCnt;
                     }
                     LLVM_DEBUG(llvm::dbgs() << "target_slot=" << target_slot << ",load index=" << i 
@@ -185,12 +185,19 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
 
     if (mlir::isa<fhe::LoadOp>(op)) {
         /**********************************************************************************
+        // incorrent
         %7 = fhe.load(%6, %c0) : (!fhe.lweciphervec<16 x f64>, index) -> !fhe.lwecipher<f64>
-        //fhe.store(%7, %arg1, %c0) : (!fhe.lwecipher<f64>, !fhe.lweciphervec<4 x f64>, index)
         =>
-        %rotated = fhe.rotate(%6, 0) 
-        %mask = arith.constant dense<[1.0, 0.0, ..., 0.0]> : tensor<16xf64>
-        %7 = fhe.mulplain(%rotated, %mask) : !fhe.lweciphervec<16 x f64>
+        It has already been rotated and has the correct target slot, so there is no need to rotate it again.
+        //%rotated = fhe.rotate(%6, 0) 
+        //%mask = arith.constant dense<[1.0, 0.0, ..., 0.0]> : tensor<16xf64>
+        //%7 = fhe.mulplain(%rotated, %mask) : !fhe.lweciphervec<16 x f64>
+        ------------------------------------------------------------------------------------
+        // correct
+        %7 = fhe.load(%6, %c0) : (!fhe.lweciphervec<16 x f64>, index) -> !fhe.lwecipher<f64>
+        =>
+        %mask = arith.constant dense<[1.0, 0.0, ..., 0.0]>
+        %new = fhe.mulplain(%6, %mask);
         ************************************************************************************/
         assert(static_cast<int64_t>(op.getIndices().size()) == 1 && "LoadOp indices size > 1 not support");
         auto idx = getConstantIntValue(op.getIndices()[0]);
@@ -205,9 +212,10 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
             }
         }
 
+        /*
         // Create rotation amount (bring element to position 0)
         auto rotateAmount = ((-target_slot + max_size) % max_size);
-        if (NegativeRight) {
+        if (NegativeShiftRight) {
             rotateAmount = -rotateAmount;
         }
         LLVM_DEBUG(llvm::dbgs() << "target slot=" << target_slot << ", max size=" << max_size << ", (shift right to 0 slot)real rotate value=" << rotateAmount << "\n");
@@ -220,7 +228,7 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
         mlir::Type elementType = rewriter.getI32Type();
         auto arrayType = mlir::VectorType::get({max_size}, elementType);
         SmallVector<int32_t> maskValues(max_size, 0);
-        maskValues[0] = 1;
+        maskValues[target_slot] = 1;
         llvm::ArrayRef<int32_t> valuesRef(maskValues); 
         mlir::DenseElementsAttr denseAttr = mlir::DenseElementsAttr::get(arrayType, valuesRef);
         auto maskOp = rewriter.create<arith::ConstantOp>(op.getLoc(), denseAttr);
@@ -230,6 +238,19 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
         operands.push_back(rotateOp);
         operands.push_back(maskOp);
         rewriter.replaceOpWithNewOp<fhe::LWEMulPlainOp>(op, rotateOp.getType(), operands);
+        */
+
+        // Create selection mask [0..,1[target_slot],...,0]
+        mlir::Type elementType = rewriter.getI32Type();
+        auto arrayType = mlir::VectorType::get({max_size}, elementType);
+        SmallVector<int32_t> maskValues(max_size, 0);
+        maskValues[target_slot] = 1;
+        llvm::ArrayRef<int32_t> valuesRef(maskValues); 
+        mlir::DenseElementsAttr denseAttr = mlir::DenseElementsAttr::get(arrayType, valuesRef);
+        auto maskOp = rewriter.create<arith::ConstantOp>(op.getLoc(), denseAttr);
+
+        // Apply element-wise multiplication to select the first element
+        rewriter.replaceOpWithNewOp<fhe::LWEMulPlainOp>(op, op.getMemref().getType(), ValueRange({op.getMemref(), maskOp}));   
     } else if (mlir::isa<fhe::StoreOp>(op)) {
         /***********************************************************************************
         //%7 = fhe.load(%6, %c0) : (!fhe.lweciphervec<16 x f64>, index) -> !fhe.lwecipher<f64>
