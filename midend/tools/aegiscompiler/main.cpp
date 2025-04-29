@@ -18,6 +18,7 @@
 #include "Pass/FoldArithChain/FoldArithChain.h"
 #include "Pass/Batching/Batching.h"
 #include "Pass/LweToRlwe/LowerLweToRlwe.h"
+#include "Pass/AutoBootstrap/AutoBootstrap.h"
 #include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
 #include "mlir/Dialect/Affine/Passes.h"
@@ -88,6 +89,9 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(std::make_unique<LweToRlwePass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<AutoBootstrapPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerFheToEmitcPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
@@ -154,6 +158,7 @@ int main(int argc, char **argv) {
     PassRegistration<FoldArithChainPass>();
     PassRegistration<BatchingPass>();
     PassRegistration<LweToRlwePass>();
+    PassRegistration<AutoBootstrapPass>();
     PassRegistration<LowerFheToEmitcPass>();
     PassRegistration<LowerCastToEmitcStubPass>();
     PassRegistration<InsertEmitcPreamblePass>();
