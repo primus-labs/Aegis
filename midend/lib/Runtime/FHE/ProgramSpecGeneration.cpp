@@ -198,9 +198,9 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     // coffModChBuilder.set(1, 60);
     // coffModChBuilder.set(2, 60);
     // keyInfos.asBuilder().setScale(40);
-    keyInfos.asBuilder().setMultDepth(8);
-    keyInfos.asBuilder().setFirstModSize(60);
-    keyInfos.asBuilder().setScaleModSize(50);
+    keyInfos.asBuilder().setMultDepth(FHE_MAX_MUL_DEPTH);
+    keyInfos.asBuilder().setFirstModSize(FHE_FIRST_MOD_SIZE);
+    keyInfos.asBuilder().setScaleModSize(FHE_SCALE_MOD_SIZE);
     keyInfos.asBuilder().setBatchSize(max_size); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
 
     // Set galois key indexs
