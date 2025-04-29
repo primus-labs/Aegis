@@ -23,11 +23,17 @@ CryptoContext<DCRTPoly> clientCC;
 PublicKey<DCRTPoly> clientPubKey;
 extern "C"
 bool init_cryptcontext(const std::string &pubKeyLoc, const std::string &multKeyLoc, const std::string &rotKeyLoc) {
-    CCParams<CryptoContext{0}RNS> parameters;
-    parameters.SetMultiplicativeDepth({1});
-    parameters.SetFirstModSize({2});
-    parameters.SetScalingModSize({3});
-    parameters.SetBatchSize({4});
+    std::vector<uint32_t> levelBudget = {{3, 3};
+    unsigned mulDepth = {0};
+    if ({1}) {{
+        SecretKeyDist secretKeyDist = UNIFORM_TERNARY;
+        mulDepth += FHECKKSRNS::GetBootstrapDepth(levelBudget, secretKeyDist);
+    }
+    CCParams<CryptoContext{2}RNS> parameters;
+    parameters.SetMultiplicativeDepth(mulDepth);
+    parameters.SetFirstModSize({3});
+    parameters.SetScalingModSize({4});
+    parameters.SetBatchSize({5});
     clientCC = GenCryptoContext(parameters);
     clientCC->ClearEvalMultKeys();
     clientCC->ClearEvalAutomorphismKeys();
@@ -122,6 +128,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define Mul(a, b) clientCC->EvalMult((a), (b))",
         "#define MulPlain(c, p) MulPlainImpl((c), (p))",
         "#define Rotate(c, idx) clientCC->EvalRotate((c), (idx))",
+        "#define Bootstrap(a) clientCC->EvalBootstrap(a)",
         "#define MakePlain(a)  double(a)",
         "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
         "#define Cast_Plain_To_Index(clr) size_t(clr)",
@@ -232,18 +239,15 @@ void InsertEmitcPreamblePass::runOnOperation() {
 
         // Insert init cryptcontext function
         // We must dynamically generate the corresponding encryption parameters based on the program.
-        int mulDepth = 8;
-        int firstModSize = 60;
-        int scaleModeSize = 50;
-        int batchSize = 4096/2;
         ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpec.getKeyInfo();
-        mulDepth = keyInfos.asReader().getMultDepth();
-        firstModSize = keyInfos.asReader().getFirstModSize();
-        scaleModeSize = keyInfos.asReader().getScaleModSize();
-        batchSize = keyInfos.asReader().getBatchSize();
+        int mulDepth = keyInfos.asReader().getMultDepth();
+        int firstModSize = keyInfos.asReader().getFirstModSize();
+        int scaleModeSize = keyInfos.asReader().getScaleModSize();
+        int batchSize = keyInfos.asReader().getBatchSize();
         std::string scheme = keyInfos.asReader().getScheme();
+        bool enableBootstrap = keyInfos.asReader().getEnableBootstrapping();
         
-        auto loadCryptoResFunc = std::string(llvm::formatv(kInitCtxFunc.data(), scheme, std::to_string(mulDepth), 
+        auto loadCryptoResFunc = std::string(llvm::formatv(kInitCtxFunc.data(), std::to_string(mulDepth), std::to_string(enableBootstrap), scheme, 
                                                            std::to_string(firstModSize), std::to_string(scaleModeSize), std::to_string(batchSize)));
         builder.create<emitc::VerbatimOp>(op->getLoc(), loadCryptoResFunc);
 

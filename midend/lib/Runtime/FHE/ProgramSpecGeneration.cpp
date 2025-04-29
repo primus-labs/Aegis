@@ -189,6 +189,52 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
         }
     });
 
+    // Should we initiate the bootstrap?
+    bool enableBoot = false;
+    {
+        struct ValueCompare {
+            bool operator()(const mlir::Value &a, const mlir::Value &b) const {
+                return a.getAsOpaquePointer() < b.getAsOpaquePointer();
+            }
+        };
+        auto isMulOp = [](Operation *op) -> bool {
+            if (mlir::isa<fhe::LWEMulOp>(op)  || mlir::isa<fhe::LWEMulPlainOp>(op) ||
+                mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+        std::map<Value, unsigned, ValueCompare> valueChainDepth;
+        auto getChainDepth = [&](Value val) -> unsigned {
+            auto it = valueChainDepth.find(val);
+            if (it != valueChainDepth.end()) {
+                return it->second;
+            }
+
+            // Reset depth for non-multiplication inputs
+            return (val.getDefiningOp() && !isMulOp(val.getDefiningOp())) ? 0 : 1;
+        };
+        module.walk([&](Operation *op) {
+            if (isMulOp(op)) {
+                // Calculate current depth as max of operands' depths + 1
+                unsigned maxDepth = 1;
+                for (Value o : op->getOperands()) {
+                    maxDepth = std::max(maxDepth, getChainDepth(o));
+                }
+                unsigned currentDepth = maxDepth + 1;
+                valueChainDepth[op->getResult(0)] = currentDepth;               
+
+                // Trigger bootstrap after 8 consecutive multiplications
+                if (currentDepth >= FHE_MAX_MUL_DEPTH) {
+                    enableBoot = true;
+                    return WalkResult::interrupt();
+                }
+            }
+            return WalkResult::advance();
+        });
+    }
+
     // TODO: We must analyze the specific code to generate the most efficient keyinfo,
     // here we simply set the default value.
     auto keyInfos = ProtoMessage<aegisprotocol::KeyInfo>();
@@ -202,6 +248,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     keyInfos.asBuilder().setFirstModSize(FHE_FIRST_MOD_SIZE);
     keyInfos.asBuilder().setScaleModSize(FHE_SCALE_MOD_SIZE);
     keyInfos.asBuilder().setBatchSize(max_size); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
+    keyInfos.asBuilder().setEnableBootstrapping(enableBoot);
 
     // Set galois key indexs
     llvm::SmallVector<int32_t> galosIndex = mlir::aegis::getAllGaloisIndexs(module);
