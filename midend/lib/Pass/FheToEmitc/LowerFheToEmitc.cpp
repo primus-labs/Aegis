@@ -205,6 +205,45 @@ public:
 };
 
 
+// Transform fhe::BootstrapOp to emitc::CallOpaqueOp.
+class FheBootstrapPattern final : public OpConversionPattern<fhe::BootstrapOp>
+{
+public:
+    using OpConversionPattern<fhe::BootstrapOp>::OpConversionPattern;
+
+    LogicalResult matchAndRewrite(fhe::BootstrapOp op, typename fhe::BootstrapOp::Adaptor adaptor, ConversionPatternRewriter &rewriter) const override
+    {
+        rewriter.setInsertionPoint(op);
+
+        auto destTy = typeConverter->convertType(op.getType());
+        if (!destTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op << ", the op type:" << op.getType() << ".\n");
+            return failure();
+        }
+
+        Value newOperand;
+        auto input = op.getInput();
+        auto inputDestTy = typeConverter->convertType(input.getType());
+        if (!inputDestTy) {
+            LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << input << ", the op type:" << input.getType() << ".\n");
+            return failure();
+        }
+
+        if (input.getType() != inputDestTy) {
+            newOperand = typeConverter->materializeTargetConversion(rewriter, op.getLoc(), inputDestTy, input);
+            assert(newOperand);
+        }
+        else {
+            newOperand = input;
+        }
+        
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Bootstrap", 
+                                    ArrayAttr(), ArrayAttr(), newOperand);
+        return success();
+    }
+};
+
+
 // Transform fhe::CallOp to emitc::CallOpaqueOp.
 class FheCallPattern final : public OpConversionPattern<func::CallOp>
 {
@@ -1012,7 +1051,7 @@ void LowerFheToEmitcPass::runOnOperation()
             FheArithBinaryPattern<fhe::RLWESubOp>, FheArithBinaryPattern<fhe::RLWESubPlainOp>,
             FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, 
             FheArithBinaryPattern<fhe::RLWEMulOp>, FheArithBinaryPattern<fhe::RLWEMulPlainOp>,
-            FheRotatePattern,
+            FheRotatePattern, FheBootstrapPattern,
             FheFuncPattern, FheRetPattern, FheCallPattern,
             MemrefGetGlobalPattern, MemrefGlobalPattern,
             NativeMemrefLoadPattern, FheLoadPattern, FheStorePattern, FheCopyPattern,
