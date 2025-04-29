@@ -54,6 +54,7 @@ set(RT_DEP_LIBS
     AegisFoldArithChain
     AegisBatching
     AegisLowerLweToRlwe
+    AegisAutoBootstrap
     AegisLowerFheToEmitc
     AegisLowerCastToEmitcStub
     AegisInsertEmitcPreamble
