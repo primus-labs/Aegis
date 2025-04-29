@@ -7,6 +7,7 @@
 #include "Dialect/FHE/FHEOps.h"
 #include "Dialect/FHE/FHETypes.h"
 #include "Pass/AutoBootstrap/AutoBootstrap.h"
+#include "Common/Utils.h"
 
 #define DEBUG_TYPE "auto-bootstrap"
 
@@ -35,15 +36,19 @@ void AutoBootstrapPass::runOnOperation() {
 
 void AutoBootstrapPass::processMulOp(Operation *mulOp) {
     Value result = mulOp->getResult(0);
-    Value lhs = mulOp->getOperand(0);
-    Value rhs = mulOp->getOperand(1);
 
     // Calculate current depth as max of operands' depths + 1
-    unsigned currentDepth = std::max(getChainDepth(lhs), getChainDepth(rhs)) + 1;
+    unsigned maxDepth = 1;
+    for (Value o : mulOp->getOperands()) {
+        maxDepth = std::max(maxDepth, getChainDepth(o));
+    }
+    unsigned currentDepth = maxDepth + 1;
     valueChainDepth[result] = currentDepth;
+    LLVM_DEBUG(llvm::dbgs() << "current mul op:" << *mulOp << ", depth:" << currentDepth << "\n");
+    
 
     // Trigger bootstrap after 8 consecutive multiplications
-    if (currentDepth >= 8) {
+    if (currentDepth >= FHE_MAX_MUL_DEPTH) {
         recordInsertionPoint(mulOp, result);
         resetChainDepth(result);
     }
@@ -65,17 +70,19 @@ void AutoBootstrapPass::insertBootstrapOp(Operation *insertAfter, Value val) {
 
     // Create bootstrap operation
     auto bootOp = builder.create<fhe::BootstrapOp>(insertAfter->getLoc(), val.getType(), val);
+    Value bootResult = bootOp->getResult(0);
 
-    // Update all subsequent uses across basic blocks
-    for (OpOperand &use : llvm::make_early_inc_range(val.getUses())) {
-        if (Operation *user = use.getOwner()) {
-            // Preserve order within basic block
-            if (user->isBeforeInBlock(bootOp)) {
-                continue;
-            }
-            user->setOperand(use.getOperandNumber(), bootOp->getResult(0));
+    // Conditional replacement using dominance check
+    val.replaceUsesWithIf(bootResult, [&](OpOperand &use) {
+        Operation *user = use.getOwner();
+        
+        // Only replace uses that appear AFTER the bootstrap op
+        // in the same block and preserve original dominance
+        if (user->getBlock() != bootOp->getBlock()) {
+            return false;
         }
-    }
+        return bootOp->isBeforeInBlock(user);
+    });
 }
 
 bool AutoBootstrapPass::isMulOp(Operation *op) {

@@ -21,6 +21,10 @@
 #define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
 #define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
 
+#define FHE_MAX_MUL_DEPTH   8
+#define FHE_FIRST_MOD_SIZE  60
+#define FHE_SCALE_MOD_SIZE  50
+
 namespace mlir {
 namespace aegis {
 
