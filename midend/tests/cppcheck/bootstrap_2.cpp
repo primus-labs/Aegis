@@ -26,6 +26,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define Mul(a, b) clientCC->EvalMult((a), (b))
 #define MulPlain(c, p) MulPlainImpl((c), (p))
 #define Rotate(c, idx) clientCC->EvalRotate((c), (idx))
+#define Bootstrap(a) clientCC->EvalBootstrap(a)
 #define MakePlain(a)  double(a)
 #define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}
 #define Cast_Plain_To_Index(clr) size_t(clr)
@@ -35,8 +36,14 @@ CryptoContext<DCRTPoly> clientCC;
 PublicKey<DCRTPoly> clientPubKey;
 extern "C"
 bool init_cryptcontext(const std::string &pubKeyLoc, const std::string &multKeyLoc, const std::string &rotKeyLoc) {
+    std::vector<uint32_t> levelBudget = {3, 3};
+    unsigned mulDepth = 8;
+    if (1) {
+        SecretKeyDist secretKeyDist = UNIFORM_TERNARY;
+        mulDepth += FHECKKSRNS::GetBootstrapDepth(levelBudget, secretKeyDist);
+    }
     CCParams<CryptoContextCKKSRNS> parameters;
-    parameters.SetMultiplicativeDepth(8);
+    parameters.SetMultiplicativeDepth(mulDepth);
     parameters.SetFirstModSize(60);
     parameters.SetScalingModSize(50);
     parameters.SetBatchSize(16);
@@ -88,30 +95,19 @@ inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {
 inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {
     return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));
 }
-RLWECipher MVP(RLWECipher v1, RLWECipher v2) {
-  PlainVector v3 = MakeMultPlain(1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
-  PlainVector v4 = MakeMultPlain(0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-  PlainVector v5 = MakeMultPlain(0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1);
-  PlainVector v6 = MakeMultPlain(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-  RLWECipher v7 = Mul(v1, v2);
-  RLWECipher v8 = Rotate(v7, -15);
-  RLWECipher v9 = Add(v7, v8);
-  RLWECipher v10 = MulPlain(v9, v6);
-  RLWECipher v11 = MulPlain(v2, v5);
-  RLWECipher v12 = Add(v11, v10);
-  Copy(v12, v2);
-  RLWECipher v13 = Rotate(v2, -4);
-  RLWECipher v14 = Mul(v1, v13);
-  RLWECipher v15 = Rotate(v2, -4);
-  RLWECipher v16 = Mul(v1, v15);
-  RLWECipher v17 = Rotate(v14, -13);
-  RLWECipher v18 = Rotate(v16, -12);
-  RLWECipher v19 = Add(v17, v18);
-  RLWECipher v20 = MulPlain(v19, v4);
-  RLWECipher v21 = MulPlain(v2, v3);
-  RLWECipher v22 = Add(v21, v20);
-  Copy(v22, v2);
-  return v2;
+RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
+  RLWECipher v3 = Mul(v1, v2);
+  RLWECipher v4 = Mul(v3, v1);
+  RLWECipher v5 = Mul(v3, v4);
+  RLWECipher v6 = Mul(v4, v5);
+  RLWECipher v7 = Mul(v5, v6);
+  RLWECipher v8 = Mul(v6, v7);
+  RLWECipher v9 = Mul(v7, v8);
+  RLWECipher v10 = Bootstrap(v9);
+  RLWECipher v11 = Mul(v8, v10);
+  RLWECipher v12 = Bootstrap(v11);
+  RLWECipher v13 = Mul(v10, v12);
+  return v13;
 }
 
 
@@ -128,9 +124,7 @@ std::vector<uint8_t> aegis_mlir_MVP(const std::vector<uint8_t> &buf1, const std:
     ss2.write(reinterpret_cast<const char *>(buf2.data()), buf2.size());
     Serial::Deserialize(v2, ss2, SerType::BINARY);
 
-
-    RLWECipher retV = MVP(v1, v2);
-
+    RLWECipher retV = main_graph(v1, v2);
     std::stringstream retss;
     Serial::Serialize(retV, retss, SerType::BINARY);
     std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
