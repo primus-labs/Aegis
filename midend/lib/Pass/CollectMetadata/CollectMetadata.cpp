@@ -71,6 +71,12 @@ void CollectMetadataPass::runOnOperation() {
                     attrs.push_back(
                         NamedAttribute(StringAttr::get(context, DIMS_ATTR_NAME), ArrayAttr::get(context, dimAttrs)));
                 }
+            } else {
+                // Handle non-shaped types (scalars) by defaulting to dim=1
+                SmallVector<Attribute> dimAttrs;
+                dimAttrs.push_back(IntegerAttr::get(IntegerType::get(context, 64), 1));
+                attrs.push_back(
+                        NamedAttribute(StringAttr::get(context, DIMS_ATTR_NAME), ArrayAttr::get(context, dimAttrs)));
             }
 
             //Store updated attributes
