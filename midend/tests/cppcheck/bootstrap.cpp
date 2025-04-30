@@ -36,7 +36,7 @@ CryptoContext<DCRTPoly> clientCC;
 PublicKey<DCRTPoly> clientPubKey;
 extern "C"
 bool init_cryptcontext(const std::string &pubKeyLoc, const std::string &multKeyLoc, const std::string &rotKeyLoc) {
-    std::vector<uint32_t> levelBudget = {3, 3};
+    std::vector<uint32_t> levelBudget = {3, 1};
     unsigned mulDepth = 8;
     if (0) {
         SecretKeyDist secretKeyDist = UNIFORM_TERNARY;

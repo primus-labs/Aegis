@@ -9,7 +9,7 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
 
     std::call_once(initFlag, [&]() {
         // Get Multiplicative Depth value
-        std::vector<uint32_t> levelBudget = {3, 3};
+        std::vector<uint32_t> levelBudget = {3, 1};
         unsigned mulDepth = keyInfo.asReader().getMultDepth();
         if (keyInfo.asReader().getEnableBootstrapping()) {
             SecretKeyDist secretKeyDist = UNIFORM_TERNARY;
