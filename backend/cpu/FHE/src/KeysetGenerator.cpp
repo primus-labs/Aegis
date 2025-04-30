@@ -29,13 +29,23 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
         cryptoContext->Enable(KEYSWITCH);
         cryptoContext->Enable(LEVELEDSHE);
 
+        // Precomputations for bootstrapping
+         if (keyInfo.asReader().getEnableBootstrapping()) {
+            cryptoContext->Enable(ADVANCEDSHE);
+            cryptoContext->Enable(FHE);
+
+            // Precomputations for bootstrapping
+            std::vector<uint32_t> bsgsDim = {0, 0};
+            cryptoContext->EvalBootstrapSetup(levelBudget, bsgsDim, keyInfo.asReader().getBatchSize());
+         }
+
         // Generate keypairs
         KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
 
-        // Gen Relinearization Key
+        // Generate Relinearization Key
         cryptoContext->EvalMultKeyGen(keyPair.secretKey);
 
-        // Gen Rotate Key
+        // Generate Rotate Key
         std::vector<int> galoisIdx;
         for (auto ind : keyInfo.asReader().getGaloisIndices()) {
             galoisIdx.push_back(ind);
@@ -44,16 +54,8 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
             cryptoContext->EvalRotateKeyGen(keyPair.secretKey, galoisIdx);
         }
 
-        // Gen Bootstrapping Key
+        // Generate Bootstrapping Key
         if (keyInfo.asReader().getEnableBootstrapping()) {
-            cryptoContext->Enable(ADVANCEDSHE);
-            cryptoContext->Enable(FHE);
-
-            // Precomputations for bootstrapping
-            std::vector<uint32_t> bsgsDim = {0, 0};
-            cryptoContext->EvalBootstrapSetup(levelBudget, bsgsDim, keyInfo.asReader().getBatchSize());
-
-            // Generate bootstrapping keys.
             cryptoContext->EvalBootstrapKeyGen(keyPair.secretKey, keyInfo.asReader().getBatchSize());
         }
 
