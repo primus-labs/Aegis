@@ -49,6 +49,7 @@ void AutoBootstrapPass::processMulOp(Operation *mulOp) {
 
     // Trigger bootstrap after 8 consecutive multiplications
     if (currentDepth >= FHE_MAX_MUL_DEPTH) {
+        enableFheBoostrapFlag = true;
         recordInsertionPoint(mulOp, result);
         resetChainDepth(result);
     }
