@@ -11,6 +11,7 @@ print("FHEKeyInfo:\n", FHEKeyInfo.__dict__)
 fheKeyInfo = FHEKeyInfo()
 # set the fields according to program_spec.json, such as:
 fheKeyInfo.multDepth = 1
+fheKeyInfo.firstModSize = 60
 fheKeyInfo.scaleModSize = 50
 fheKeyInfo.batchSize = 8
 fheKeyInfo.galoisIndices = [1, -2]

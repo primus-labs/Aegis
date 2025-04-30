@@ -5,6 +5,7 @@ print("Simulate Client 1")
 # make keyInfo (load from program_spec.json)
 fheKeyInfo = FHEKeyInfo()
 fheKeyInfo.multDepth = 1
+fheKeyInfo.firstModSize = 60
 fheKeyInfo.scaleModSize = 50
 fheKeyInfo.batchSize = 8
 fheKeyInfo.galoisIndices = [1, -2]

@@ -31,19 +31,23 @@ struct KeyInfo {
     std::vector<uint32_t> coffModCh;
     uint32_t scale;
     uint32_t multDepth;
+    uint32_t firstModSize;
     uint32_t scaleModSize;
     uint32_t batchSize;
     std::vector<int32_t> galoisIndices;
     bool enableBootstrapping;
+    std::string scheme;
 };
 
 static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol::KeyInfo> &protoKeyInfo) {
     protoKeyInfo.asBuilder().setPolyModDegree(keyInfo.polyModDegree);
     protoKeyInfo.asBuilder().setScale(keyInfo.scale);
     protoKeyInfo.asBuilder().setMultDepth(keyInfo.multDepth);
+    protoKeyInfo.asBuilder().setFirstModSize(keyInfo.firstModSize);
     protoKeyInfo.asBuilder().setScaleModSize(keyInfo.scaleModSize);
     protoKeyInfo.asBuilder().setBatchSize(keyInfo.batchSize);
     protoKeyInfo.asBuilder().setEnableBootstrapping(keyInfo.enableBootstrapping);
+    protoKeyInfo.asBuilder().setScheme(keyInfo.scheme);
 
     auto coff = keyInfo.coffModCh;
     auto coffModCh = protoKeyInfo.asBuilder().initCoffModCh(coff.size());
@@ -233,6 +237,7 @@ class PyFHERuntime {
     }
     vector<Value> run(const vector<Value> &inputs, const CompileResult &compileResult) {
         // TODO:
+        std::cout << "XXX run" << std::endl;
         return inputs;
     }
 
@@ -261,10 +266,12 @@ PYBIND11_MODULE(primus_aegis, m) {
         .def_readwrite("coffModCh", &KeyInfo::coffModCh, "coff modulus chain.")
         .def_readwrite("scale", &KeyInfo::scale, "scale factor.")
         .def_readwrite("multDepth", &KeyInfo::multDepth, "multiplication depth")
+        .def_readwrite("firstModSize", &KeyInfo::firstModSize, "first modulus size")
         .def_readwrite("scaleModSize", &KeyInfo::scaleModSize, "scale modulus size")
         .def_readwrite("batchSize", &KeyInfo::batchSize, "batch size (number of slots)")
         .def_readwrite("galoisIndices", &KeyInfo::galoisIndices, "index list for Galois Key")
-        .def_readwrite("enableBootstrapping", &KeyInfo::enableBootstrapping, "whether to enable bootstrapping");
+        .def_readwrite("enableBootstrapping", &KeyInfo::enableBootstrapping, "whether to enable bootstrapping")
+        .def_readwrite("scheme", &KeyInfo::scheme, "FHE scheme type(ckks,bfv,bgv)");
 
     py::class_<FHEPrivateKey, std::shared_ptr<FHEPrivateKey>>(m_fhe, "PrivateKey")
         .def(py::init<>())

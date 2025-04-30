@@ -63,10 +63,12 @@ classDiagram
     +coffModCh : list~uint32~     // Coff modulus chain.
     +scale : uint32               // Scale factor.
     +multDepth : uint32           // Multiplication depth
+    +firstModSize : uint32        // First modulus size
     +scaleModSize : uint32        // Scale modulus size
     +batchSize : uint32           // Batch size, number of slots
     +galoisIndices : list~int32~  // Index list for Galois Key
     +enableBootstrapping : bool   // Whether to enable bootstrapping
+    +scheme : string              // FHE scheme type(ckks,bfv,bgv)
   }
 ```
 
