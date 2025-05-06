@@ -20,6 +20,7 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         }
         ProtoMessage<aegisprotocol::ProgSpec> protoProgSpec = progSpec.getProgSpec();
         std::vector<ProtoMessage<aegisprotocol::Function>> vectFuncs = progSpec.getFuncInfo();
+        assert(vectFuncs.size() == 1 && "Only one public function can be generated.");
 
         // Prepare parameters
         int idx = 0;
@@ -50,8 +51,13 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         }
         args.clear();
 
-        // TODO: we must kown the result value dims.
-        Value res(Tensor<uint8_t>(result, std::vector<size_t>{0}));
+        // Get the result value dims.
+        auto outputShape = vectFuncs[0].asReader().getOutputs()[0].getShape();
+        std::vector<size_t> dims;
+        for (auto dim : outputShape.getDimensions()) {
+            dims.push_back(dim);
+        }
+        Value res(Tensor<uint8_t>(result, dims));
         return std::vector<Value>{res};
     }
     catch (const std::exception& e) {
