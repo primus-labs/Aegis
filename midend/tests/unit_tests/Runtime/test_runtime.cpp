@@ -139,6 +139,12 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
 
     // Serial various keys
     auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+    const std::string ccFileName= "/tmp/aegis/cryptocontext.txt";
+    if (!Serial::SerializeToFile(ccFileName, cryptoCtx, SerType::BINARY)) {
+        std::cerr << "Error writing serialization of the crypto context to cryptocontext.txt" << std::endl;
+        return nullptr;
+    }
+
     const std::string pubKeyFileName = "/tmp/aegis/pubkey.txt";
     std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
     PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
@@ -162,7 +168,11 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
     }
 
     std::string rotKeyFileName = "/tmp/aegis/rotkey.txt";
-    if (keyInfos.asBuilder().hasGaloisIndices()) {
+    std::vector<int> galoisIdx;
+    for (auto ind : keyInfos.asReader().getGaloisIndices()) {
+        galoisIdx.push_back(ind);
+    }
+    if (galoisIdx.size() > 0) {
         std::ofstream rotationKeyFile(rotKeyFileName, std::ios::out | std::ios::binary);
         if (rotationKeyFile.is_open()) {
             if (!cryptoCtx->SerializeEvalAutomorphismKey(rotationKeyFile, SerType::BINARY)) {
@@ -180,7 +190,7 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
     }
 
     // call loadCryptoResources func
-    if (!pRuntime->loadCryptoResources(pubKeyFileName, mulKeyFileName, rotKeyFileName)) {
+    if (!pRuntime->loadCryptoResources(ccFileName, pubKeyFileName, mulKeyFileName, rotKeyFileName)) {
         std::cout << "Test failure." << std::endl;
         return nullptr;
     }
@@ -408,6 +418,12 @@ int main() {
 
         // Serial various keys
         auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+        const std::string ccFileName= "/tmp/aegis/cryptocontext.txt";
+        if (!Serial::SerializeToFile(ccFileName, cryptoCtx, SerType::BINARY)) {
+            std::cerr << "Error writing serialization of the crypto context to cryptocontext.txt" << std::endl;
+            return -1;
+        }
+
         const std::string pubKeyFileName = "/tmp/aegis/pubkey.txt";
         std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
         PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
@@ -431,7 +447,11 @@ int main() {
         }
 
         std::string rotKeyFileName = "/tmp/aegis/rotkey.txt";
-        if (keyInfos.asBuilder().hasGaloisIndices()) {
+        std::vector<int> galoisIdx;
+        for (auto ind : keyInfos.asReader().getGaloisIndices()) {
+            galoisIdx.push_back(ind);
+        }
+        if (galoisIdx.size() > 0) {
             std::ofstream rotationKeyFile(rotKeyFileName, std::ios::out | std::ios::binary);
             if (rotationKeyFile.is_open()) {
                 if (!cryptoCtx->SerializeEvalAutomorphismKey(rotationKeyFile, SerType::BINARY)) {
@@ -449,7 +469,7 @@ int main() {
         }
 
         // call loadCryptoResources func
-        if (!pRuntime->loadCryptoResources(pubKeyFileName, mulKeyFileName, rotKeyFileName)) {
+        if (!pRuntime->loadCryptoResources(ccFileName, pubKeyFileName, mulKeyFileName, rotKeyFileName)) {
             std::cout << "Test failure." << std::endl;
             return -1;
         }
