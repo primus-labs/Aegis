@@ -223,26 +223,46 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
 llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::ModuleOp module) {
     unsigned int mulCnt = 0;
     unsigned int rotateCnt = 0;
+    unsigned int bootstrapCnt = 0;
     unsigned int cmpCnt = 0;
     unsigned int selectCnt = 0;
+    // module.walk([&](mlir::func::FuncOp funcOp) {
+    //     funcOp.walk([&](Operation *op) {
+    //     if (mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
+    //         mulCnt++;
+    //     } else if (mlir::isa<fhe::RotateOp>(op)) {
+    //         rotateCnt++;
+    //     } else if (mlir::isa<fhe::BootstrapOp>(op)) {
+    //         bootstrapCnt++;
+    //     } else if (mlir::isa<fhe::CmpOp>(op)) {
+    //         cmpCnt++;
+    //     } else if (mlir::isa<fhe::SelectOp>(op)) {
+    //         selectCnt++;
+    //     }
+    //     });
+    // });
+    
     module.walk([&](mlir::func::FuncOp funcOp) {
         funcOp.walk([&](Operation *op) {
-        if (mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
-            mulCnt++;
-        } else if (mlir::isa<fhe::RotateOp>(op)) {
-            rotateCnt++;
-        } else if (mlir::isa<fhe::CmpOp>(op)) {
-            cmpCnt++;
-        } else if (mlir::isa<fhe::SelectOp>(op)) {
-            selectCnt++;
-        }
+            if (mlir::isa<emitc::CallOpaqueOp>(op)) {
+                if (auto callOp = mlir::dyn_cast_or_null<emitc::CallOpaqueOp>(op)) {
+                    StringRef calleeName = callOp.getCallee();
+                    if (calleeName == "Mul" || calleeName == "MulPlain") {
+                        mulCnt++;
+                    } else if (calleeName == "RotateOp") {
+                        rotateCnt++;
+                    } else if (calleeName == "Bootstrap") {
+                        bootstrapCnt++;
+                    } 
+                }
+            }
         });
     });
-
+    
     auto statsInfo = ProtoMessage<aegisprotocol::StatsInfo>();
     statsInfo.asBuilder().setMulCount(mulCnt);
     statsInfo.asBuilder().setRotCount(rotateCnt);
-    statsInfo.asBuilder().setBsCount(0);
+    statsInfo.asBuilder().setBsCount(bootstrapCnt);
     statsInfo.asBuilder().setCmpCount(cmpCnt);
     statsInfo.asBuilder().setSelCount(selectCnt);
     statsInfo.asBuilder().setLevel(0);
