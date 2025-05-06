@@ -12,6 +12,6 @@ module {
     // CHECK-NOT: arith.mulf
     // CHECK-NOT: secret.mul_plain
     // CHECK-NOT: fhe.lwemul_plain
-    // CHECK: (%arg0: !fhe.rlwecipher<1 x f32> {onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: f32 {onnx.name = "input_y", onnx.type = "clear"}) -> !fhe.rlwecipher<1 x f32>
+    // CHECK: (%arg0: !fhe.rlwecipher<1 x f32> {onnx.dims = [1], onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: f32 {onnx.dims = [1], onnx.name = "input_y", onnx.type = "clear"}) -> (!fhe.rlwecipher<1 x f32> {onnx.dims = [1]})
     // CHECK: fhe.rlwemul_plain
 }

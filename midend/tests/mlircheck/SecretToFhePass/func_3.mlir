@@ -9,7 +9,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 
 
 // CHECK-LABEL: func.func @test_func
-// CHECK: (%[[ARG0:[a-zA-Z0-9_]+]]: f32 {onnx.name = "input_x", onnx.type = "clear"}, %[[ARG1:[a-zA-Z0-9_]+]]: !fhe.lwecipher<f32> {onnx.name = "input_y", onnx.type = "encrypted"}) -> !fhe.lwecipher<f32>
+// CHECK: (%[[ARG0:[a-zA-Z0-9_]+]]: f32 {onnx.dims = [1], onnx.name = "input_x", onnx.type = "clear"}, %[[ARG1:[a-zA-Z0-9_]+]]: !fhe.lwecipher<f32> {onnx.dims = [1], onnx.name = "input_y", onnx.type = "encrypted"}) -> (!fhe.lwecipher<f32> {onnx.dims = [1]})
 
 
 

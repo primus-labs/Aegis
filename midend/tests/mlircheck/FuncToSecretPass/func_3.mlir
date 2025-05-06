@@ -16,5 +16,5 @@ module {
 
 
 // CHECK-LABEL: func.func @main_graph
-// CHECK: (%arg0: f32 {onnx.name = "input_x", onnx.type = "clear"}, %arg1: !secret.secret<f32> {onnx.name = "input_y", onnx.type = "encrypted"}) -> !secret.secret<f32>
+// CHECK: (%arg0: f32 {onnx.dims = [1], onnx.name = "input_x", onnx.type = "clear"}, %arg1: !secret.secret<f32> {onnx.dims = [1], onnx.name = "input_y", onnx.type = "encrypted"}) -> (!secret.secret<f32> {onnx.dims = [1]})
 // CHECK: secret.add_plain

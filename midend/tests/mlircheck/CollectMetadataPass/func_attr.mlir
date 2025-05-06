@@ -28,4 +28,4 @@ module {
 
 
 // CHECK-LABEL: func.func @main_graph
-// CHECK: (%arg0: f32, %arg1: f32) -> f32
+// CHECK: (%arg0: f32 {onnx.dims = [1], onnx.name = "input_x", onnx.type = "encrypted"}, %arg1: f32 {onnx.dims = [1], onnx.name = "input_y", onnx.type = "encrypted"}) -> (f32 {onnx.dims = [1]})
