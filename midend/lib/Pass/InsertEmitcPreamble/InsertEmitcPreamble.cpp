@@ -18,57 +18,82 @@ using namespace mlir;
 using namespace aegis;
 
 
-constexpr std::string_view kInitCtxFunc = R"cpp(
-CryptoContext<DCRTPoly> clientCC;
-PublicKey<DCRTPoly> clientPubKey;
+// clang-format off
+constexpr std::string_view kLoadCryptoResFunc = R"cpp(
+static std::string ccFileName, pubKeyFileName, mulKeyFileName, rotKeyFileName;
 extern "C"
-bool init_cryptcontext(const std::string &pubKeyLoc, const std::string &multKeyLoc, const std::string &rotKeyLoc) {
-    std::vector<uint32_t> levelBudget = {{3, 1};
-    unsigned mulDepth = {0};
-    if ({1}) {{
-        SecretKeyDist secretKeyDist = UNIFORM_TERNARY;
-        mulDepth += FHECKKSRNS::GetBootstrapDepth(levelBudget, secretKeyDist);
-    }
-    CCParams<CryptoContext{2}RNS> parameters;
-    parameters.SetMultiplicativeDepth(mulDepth);
-    parameters.SetFirstModSize({3});
-    parameters.SetScalingModSize({4});
-    parameters.SetBatchSize({5});
-    clientCC = GenCryptoContext(parameters);
-    clientCC->ClearEvalMultKeys();
-    clientCC->ClearEvalAutomorphismKeys();
-    if (!Serial::DeserializeFromFile(pubKeyLoc, clientPubKey, SerType::BINARY)) {{
-        std::cerr << "Cannot read serialized data from: " << pubKeyLoc << std::endl;
-        return false;
-    }
-    std::ifstream multKeyIStream(multKeyLoc, std::ios::in | std::ios::binary);
-    if (!multKeyIStream.is_open()) {{
-        std::cerr << "Cannot read serialization from " << multKeyLoc << std::endl;
-        return false;
-    }
-    if (!clientCC->DeserializeEvalMultKey(multKeyIStream, SerType::BINARY)) {{
-        std::cerr << "Could not deserialize eval mult key file" << std::endl;
-        return false;
-    }
-    if (!rotKeyLoc.empty()) {{
-        std::ifstream rotKeyIStream(rotKeyLoc, std::ios::in | std::ios::binary);
-        if (!rotKeyIStream.is_open()) {{
-            std::cerr << "Cannot read serialization from " << rotKeyLoc << std::endl;
-            return false;
-        }
-        if (!clientCC->DeserializeEvalAutomorphismKey(rotKeyIStream, SerType::BINARY)) {{
-            std::cerr << "Could not deserialize eval rot key file" << std::endl;
-            return false;
-        }
-    }
+bool loadCryptoResources(const std::string &ccLoc,  const std::string &pubKeyLoc, 
+                         const std::string &multKeyLoc, const std::string &rotKeyLoc) {
+    ccFileName = ccLoc;
+    pubKeyFileName = pubKeyLoc;
+    mulKeyFileName = multKeyLoc;
+    rotKeyFileName = rotKeyLoc;
     return true;
 }
 )cpp";
+// clang-format on
 
+// clang-format off
+constexpr std::string_view kInitCtxFunc = R"cpp(
+static CryptoContext<DCRTPoly> clientCC;
+static PublicKey<DCRTPoly> clientPubKey;
+void initCryptContext() {{
+    int ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
+    if (ccSizes > 0) {{
+        std::vector<uint32_t> levelBudget = {{3, 1};
+        unsigned mulDepth = {0};
+        if ({1}) {{
+            SecretKeyDist secretKeyDist = UNIFORM_TERNARY;
+            mulDepth += FHECKKSRNS::GetBootstrapDepth(levelBudget, secretKeyDist);
+        }
+        CCParams<CryptoContext{2}RNS> parameters;
+        parameters.SetMultiplicativeDepth(mulDepth);
+        parameters.SetFirstModSize({3});
+        parameters.SetScalingModSize({4});
+        parameters.SetBatchSize({5});
+        clientCC = GenCryptoContext(parameters);
+    } else {{
+        clientCC->ClearEvalMultKeys();
+        clientCC->ClearEvalAutomorphismKeys();
+        lbcrypto::CryptoContextFactory<lbcrypto::DCRTPoly>::ReleaseAllContexts();
+        if (!Serial::DeserializeFromFile(ccFileName, clientCC, SerType::BINARY)) {{
+            std::cerr << "Cannot read serialized data from: " << ccFileName << std::endl;
+            std::exit(1);
+        }
+        if (!Serial::DeserializeFromFile(pubKeyFileName, clientPubKey, SerType::BINARY)) {{
+            std::cerr << "Cannot read serialized data from: " << pubKeyFileName << std::endl;
+            std::exit(1);
+        }
+        std::ifstream multKeyIStream(mulKeyFileName, std::ios::in | std::ios::binary);
+        if (!multKeyIStream.is_open()) {{
+            std::cerr << "Cannot read serialization from " << mulKeyFileName << std::endl;
+            std::exit(1);
+        }
+        if (!clientCC->DeserializeEvalMultKey(multKeyIStream, SerType::BINARY)) {{
+            std::cerr << "Could not deserialize eval mult key file" << std::endl;
+            std::exit(1);
+        }      
+        if (!rotKeyFileName.empty()) {{
+            std::ifstream rotKeyIStream(rotKeyFileName, std::ios::in | std::ios::binary);
+            if (!rotKeyIStream.is_open()) {{
+                std::cerr << "Cannot read serialization from " << rotKeyFileName << std::endl;
+                std::exit(1);
+            }
+            if (!clientCC->DeserializeEvalAutomorphismKey(rotKeyIStream, SerType::BINARY)) {{
+                std::cerr << "Could not deserialize eval rot key file" << std::endl;
+                std::exit(1);
+            }
+        }
+    }
+}
+)cpp";
+// clang-format on
 
+// clang-format off
 constexpr std::string_view kAegisAdaptorFunc = R"cpp(
 extern "C" 
 std::vector<uint8_t> {0}{1}({2}) {
+    initCryptContext();
     {3}
     RLWECipher retV = {4}({5});
     std::stringstream retss;
@@ -77,13 +102,16 @@ std::vector<uint8_t> {0}{1}({2}) {
     return retBuf;
 }
 )cpp";
+// clang-format on
 
+// clang-format off
 constexpr std::string_view kDeserisBufCode = R"cpp(
     Ciphertext<DCRTPoly> v{0};
     std::stringstream ss{1};
     ss{2}.write(reinterpret_cast<const char *>(buf{3}.data()), buf{4}.size());
     Serial::Deserialize(v{5}, ss{6}, SerType::BINARY);
 )cpp";
+// clang-format on
 
 
 void InsertEmitcPreamblePass::getDependentDialects(mlir::DialectRegistry &registry) const {
@@ -237,6 +265,9 @@ void InsertEmitcPreamblePass::runOnOperation() {
             builder.create<emitc::VerbatimOp>(op->getLoc(), mac);
         }
 
+        // Insert loadCryptoResources function
+        builder.create<emitc::VerbatimOp>(op->getLoc(), kLoadCryptoResFunc);
+
         // Insert init cryptcontext function
         // We must dynamically generate the corresponding encryption parameters based on the program.
         ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpec.getKeyInfo();
@@ -267,7 +298,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
     });
 
     // // Traverse all functions in the module and 
-    // // Insert a call to the init_cryptcontext function at the beginning of target function.
+    // // Insert a call to the initCryptContext function at the beginning of target function.
     // module.walk([&](func::FuncOp funcOp) {
 
     //     // Get the entry block of the function
@@ -277,7 +308,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
     //     OpBuilder builder(&entryBlock, entryBlock.begin());
         
     //     // Create emitc.VerbatimOp (call init) operation
-    //     builder.create<emitc::VerbatimOp>(funcOp->getLoc(), "init_cryptcontext();");
+    //     builder.create<emitc::VerbatimOp>(funcOp->getLoc(), "initCryptContext();");
 
     //     return mlir::WalkResult::interrupt();
     // });
