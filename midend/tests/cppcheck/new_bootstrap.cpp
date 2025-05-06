@@ -32,10 +32,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define Cast_Plain_To_Index(clr) size_t(clr)
 #define Native_Load(v, idx) v[idx]
 
-static CryptoContext<DCRTPoly> clientCC;
-static PublicKey<DCRTPoly> clientPubKey;
 static std::string ccFileName, pubKeyFileName, mulKeyFileName, rotKeyFileName;
-
 extern "C"
 bool loadCryptoResources(const std::string &ccLoc,  const std::string &pubKeyLoc, 
                          const std::string &multKeyLoc, const std::string &rotKeyLoc) {
@@ -47,11 +44,11 @@ bool loadCryptoResources(const std::string &ccLoc,  const std::string &pubKeyLoc
 }
 
 
+static CryptoContext<DCRTPoly> clientCC;
+static PublicKey<DCRTPoly> clientPubKey;
 void initCryptContext() {
     int ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
-    std::cout << "before call GenCryptoContext, crypto context obj counts:" << ccSizes << std::endl;
     if (ccSizes > 0) {
-        // use exist crypto context obj
         std::vector<uint32_t> levelBudget = {3, 1};
         unsigned mulDepth = 8;
         if (1) {
@@ -64,8 +61,6 @@ void initCryptContext() {
         parameters.SetScalingModSize(50);
         parameters.SetBatchSize(1);
         clientCC = GenCryptoContext(parameters);
-        ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
-        std::cout << "after call GenCryptoContext, crypto context obj counts:" << ccSizes << std::endl;
     } else {
         clientCC->ClearEvalMultKeys();
         clientCC->ClearEvalAutomorphismKeys();
@@ -74,12 +69,10 @@ void initCryptContext() {
             std::cerr << "Cannot read serialized data from: " << ccFileName << std::endl;
             std::exit(1);
         }
-
         if (!Serial::DeserializeFromFile(pubKeyFileName, clientPubKey, SerType::BINARY)) {
             std::cerr << "Cannot read serialized data from: " << pubKeyFileName << std::endl;
             std::exit(1);
         }
-
         std::ifstream multKeyIStream(mulKeyFileName, std::ios::in | std::ios::binary);
         if (!multKeyIStream.is_open()) {
             std::cerr << "Cannot read serialization from " << mulKeyFileName << std::endl;
@@ -88,8 +81,7 @@ void initCryptContext() {
         if (!clientCC->DeserializeEvalMultKey(multKeyIStream, SerType::BINARY)) {
             std::cerr << "Could not deserialize eval mult key file" << std::endl;
             std::exit(1);
-        }
-
+        }      
         if (!rotKeyFileName.empty()) {
             std::ifstream rotKeyIStream(rotKeyFileName, std::ios::in | std::ios::binary);
             if (!rotKeyIStream.is_open()) {
@@ -123,29 +115,23 @@ inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {
     return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));
 }
 RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
-    try {
-        RLWECipher v3 = Mul(v1, v2);
-        RLWECipher v4 = Mul(v3, v1);
-        RLWECipher v5 = Mul(v3, v4);
-        RLWECipher v6 = Mul(v4, v5);
-        RLWECipher v7 = Mul(v5, v6);
-        RLWECipher v8 = Mul(v6, v7);
-        RLWECipher v9 = Mul(v7, v8);
-
-        RLWECipher v10 = Bootstrap(v9);
-        RLWECipher v11 = Mul(v8, v10);
-        RLWECipher v12 = Bootstrap(v11);
-        RLWECipher v13 = Mul(v10, v12);
-        return v13;
-    } catch (const std::exception &e) {
-        std::cerr << "Catch:" << e.what() << std::endl;
-        exit(1);
-    }
+  RLWECipher v3 = Mul(v1, v2);
+  RLWECipher v4 = Mul(v3, v1);
+  RLWECipher v5 = Mul(v3, v4);
+  RLWECipher v6 = Mul(v4, v5);
+  RLWECipher v7 = Mul(v5, v6);
+  RLWECipher v8 = Mul(v6, v7);
+  RLWECipher v9 = Mul(v7, v8);
+  RLWECipher v10 = Bootstrap(v9);
+  RLWECipher v11 = Mul(v8, v10);
+  RLWECipher v12 = Bootstrap(v11);
+  RLWECipher v13 = Mul(v10, v12);
+  return v13;
 }
 
 
 extern "C" 
-std::vector<uint8_t> aegis_mlir_MVP(const std::vector<uint8_t> &buf1, const std::vector<uint8_t> &buf2) {
+std::vector<uint8_t> aegis_mlir_main_graph(const std::vector<uint8_t> &buf1, const std::vector<uint8_t> &buf2) {
     initCryptContext();
 
     Ciphertext<DCRTPoly> v1;
