@@ -1,14 +1,15 @@
-
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
+#include "Common/ProgramSpec.h"
 #include "Common/Protocol.h"
 #include "Common/Value.h"
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEDataProcessor.h"
 #include "Runtime/FHE/FHERuntime.h"
+#include "cpu/FHE/include/CryptoContextMgr.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <capnp/serialize.h>
@@ -20,12 +21,21 @@ using namespace mlir::aegis;
 #include "Operate.h"
 using namespace aegiscpu;
 
+// NOTE!!! MUST INCLUDE THE FOLLOWING HEADERS
+// header files needed for serialization
+#include "ciphertext-ser.h"
+#include "cryptocontext-ser.h"
+#include "key/key-ser.h"
+#include "scheme/ckksrns/ckksrns-ser.h"
+using namespace lbcrypto;
+
 #include <iostream>
 #include <sstream>
 using namespace std;
 
 #define DEBUG_PRINT 1
 
+/// @brief old
 struct KeyInfo {
     uint32_t polyModDegree;
     std::vector<uint32_t> coffModCh;
@@ -39,6 +49,7 @@ struct KeyInfo {
     std::string scheme;
 };
 
+/// @brief old
 static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol::KeyInfo> &protoKeyInfo) {
     protoKeyInfo.asBuilder().setPolyModDegree(keyInfo.polyModDegree);
     protoKeyInfo.asBuilder().setScale(keyInfo.scale);
@@ -61,8 +72,8 @@ static void makeProtoKeyInfo(const KeyInfo &keyInfo, ProtoMessage<aegisprotocol:
     }
 }
 
-static void generate_keyset(FheKeyset &self, const KeyInfo &keyInfo) {
-    // TODO: Should we need call once here?
+/// @brief old
+static void generate_keyset_old(FheKeyset &self, const KeyInfo &keyInfo) {
     static std::once_flag initFlag;
     std::call_once(initFlag, [&]() {
         ProtoMessage<aegisprotocol::KeyInfo> protoKeyInfo;
@@ -73,6 +84,23 @@ static void generate_keyset(FheKeyset &self, const KeyInfo &keyInfo) {
     });
 }
 
+/// @brief
+static void generate_keyset(FheKeyset &self, const std::string &prog_spec_file) {
+    ProgramSpec &progSpecObj = ProgramSpec::getInstance();
+    if (!progSpecObj.initialize(prog_spec_file)) {
+        throw std::runtime_error("Cannot initialize ProgramSpec");
+    }
+
+    static std::once_flag initFlag;
+    std::call_once(initFlag, [&]() {
+        ProtoMessage<aegisprotocol::KeyInfo> keyInfo = progSpecObj.getKeyInfo();
+
+        // initialize
+        KeysetGenerator::generate(keyInfo);
+    });
+}
+
+/// @brief
 class Utils {
   public:
     /**
@@ -215,30 +243,72 @@ class PyFHEDataProcessor {
     }
 };
 
+/// @brief
+class PyCompiler {
+  public:
+    CompileResult compile(const std::string &mlir_content, const CompileOptions &compileOptions) {
+        auto compile_context = CompileContext::createContext();
+        CompilerEngine engine(compile_context);
+        engine.setCompileOptions(compileOptions);
+        auto result = engine.compile(mlir_content);
+        if (!result) {
+            auto s = llvm::toString(result.takeError());
+            throw std::runtime_error(s);
+        }
+
+        return *result;
+    }
+};
+
+/// @brief
 class PyFHERuntime {
   public:
-    CompileResult compile(const std::string &mlir_file, const CompileOptions &compileOption) {
-        // TODO:
-        auto cr = CompileResult();
-        cr.outputDirPath = "test.todo.outputDirPath";
-        cr.cppFileName = "test.todo.cppFileName";
-        cr.binFileName = "test.todo.binFileName";
-        cr.progSpecFileName = "test.todo.progSpecFileName";
-        return cr;
-    }
-
-    bool open(const std::string &sharedLibPath) {
-        // TODO:
-        return true;
-    }
-    bool load(const std::string &sharedLibPath, const std::string &funcName) {
-        // TODO:
-        return true;
-    }
     vector<Value> run(const vector<Value> &inputs, const CompileResult &compileResult) {
-        // TODO:
-        std::cout << "XXX run" << std::endl;
-        return inputs;
+        auto progSpecFileName = compileResult.outputDirPath + "/" + compileResult.progSpecFileName;
+        auto sharedLibPath = compileResult.outputDirPath + "/" + compileResult.binFileName;
+
+        ProgramSpec &progSpecObj = ProgramSpec::getInstance();
+        if (!progSpecObj.initialize(progSpecFileName)) {
+            throw std::runtime_error("Cannot initialize ProgramSpec");
+        }
+
+        FHERuntime rt(progSpecFileName);
+
+        {
+            auto result = rt.open(sharedLibPath);
+            if (!result) {
+                auto s = llvm::toString(result.takeError());
+                throw std::runtime_error(s);
+            }
+        }
+
+        {
+            auto protoFunctions = progSpecObj.getFuncInfo();
+
+            std::string funcName = "";
+            for (auto func : protoFunctions) {
+                funcName = func.asReader().getName();
+                break;
+            }
+            if (funcName.empty()) {
+                throw std::runtime_error("Cannot get function name");
+            }
+            std::cout << "funcName: " << funcName << std::endl;
+
+            auto result = rt.resolveSymbol(funcName);
+            if (!result) {
+                auto s = llvm::toString(result.takeError());
+                throw std::runtime_error(s);
+            }
+        }
+
+        auto result = rt.call(inputs);
+        if (!result) {
+            auto s = llvm::toString(result.takeError());
+            throw std::runtime_error(s);
+        }
+
+        return *result;
     }
 
     Value run(const Value &input, const CompileResult &compileResult) {
@@ -251,11 +321,58 @@ class PyFHERuntime {
 PYBIND11_MODULE(primus_aegis, m) {
     m.doc() = "Aegis";
 
+    //
+    //
     // Type
     py::class_<Value>(m, "Value")
         .def_static("from_bytes", [](const py::bytes &b) { return Utils::PyBytes2Value(b); })
         .def("to_bytes", [](Value &self) { return Utils::Value2PyBytes(self); });
 
+    //
+    //
+    // Compiler
+    py::module m_compiler = m.def_submodule("compiler");
+
+    // Compiler Engine
+    py::enum_<BACKEND_TYPE>(m_compiler, "BACKEND_TYPE")
+        .value("CPU", BACKEND_TYPE::CPU)
+        .value("GPU", BACKEND_TYPE::GPU)
+        .export_values();
+    py::enum_<TARGET>(m_compiler, "COMPILE_TARGET")
+        .value("MLIR", TARGET::MLIR)
+        .value("LOWER_MLIR", TARGET::LOWER_MLIR)
+        .value("SECRET", TARGET::SECRET)
+        .value("FHE", TARGET::FHE)
+        .value("EMITC", TARGET::EMITC)
+        .value("CPP", TARGET::CPP)
+        .value("LIBRARY", TARGET::LIBRARY)
+        .export_values();
+    py::enum_<FHE_SCHEME_TYPE>(m_compiler, "FHE_SCHEME_TYPE")
+        .value("BGV", FHE_SCHEME_TYPE::BGV)
+        .value("BFV", FHE_SCHEME_TYPE::BFV)
+        .value("CKKS", FHE_SCHEME_TYPE::CKKS)
+        .export_values();
+
+    py::class_<CompileOptions>(m_compiler, "CompileOption")
+        .def(py::init<>())
+        .def_readwrite("backendType", &CompileOptions::beType)
+        .def_readwrite("compileTarget", &CompileOptions::target)
+        .def_readwrite("scheme", &CompileOptions::scheme)
+        .def_readwrite("verbose", &CompileOptions::verbose)
+        .def_readwrite("outputDir", &CompileOptions::outputDir);
+    py::class_<CompileResult>(m_compiler, "CompileResult")
+        .def(py::init<>())
+        .def_readwrite("outputDirPath", &CompileResult::outputDirPath)
+        .def_readwrite("cppFileName", &CompileResult::cppFileName)
+        .def_readwrite("binFileName", &CompileResult::binFileName)
+        .def_readwrite("progSpecFileName", &CompileResult::progSpecFileName);
+
+    py::class_<PyCompiler>(m_compiler, "Compiler")
+        .def(py::init<>())
+        .def("compile", &PyCompiler::compile, py::arg("mlir_content"), py::arg("compile_options"));
+
+    //
+    //
     // FHE
     py::module m_fhe = m.def_submodule("fhe");
 
@@ -284,51 +401,31 @@ PYBIND11_MODULE(primus_aegis, m) {
 
     py::class_<FheKeyset>(m_fhe, "Keyset")
         .def_static("getInstance", &FheKeyset::getInstance, py::return_value_policy::reference)
-        .def("generate", &generate_keyset, py::arg("key_info"))
+        .def("generate", &generate_keyset, py::arg("prog_spec_file"))
         .def("from_bytes", [](FheKeyset &self, py::bytes b) { self.loads(b); })
         .def(
             "to_bytes", [](FheKeyset &self, bool c) { return py::bytes(self.dumps(c)); }, py::arg("contain_sk") = true)
         .def("getPrivateKey", &FheKeyset::getPriKey, py::return_value_policy::automatic)
         .def("getPublicKey", &FheKeyset::getPubKey, py::return_value_policy::automatic);
 
+    //
+    //
+    // DataProcessor
+    py::module m_dp = m.def_submodule("dataprocessor");
+
     // FHE DataProcessor
-    py::class_<PyFHEDataProcessor>(m_fhe, "DataProcessor")
+    py::class_<PyFHEDataProcessor>(m_dp, "FHEDataProcessor")
         .def_static("privateInput", &PyFHEDataProcessor::privateInput)
         .def_static("processOutput", &PyFHEDataProcessor::processOutput);
 
+    //
+    //
     // Runtime
     py::module m_rt = m.def_submodule("runtime");
-
-    // Compiler Engine
-    py::enum_<BACKEND_TYPE>(m_rt, "BACKEND_TYPE")
-        .value("CPU", BACKEND_TYPE::CPU)
-        .value("GPU", BACKEND_TYPE::GPU)
-        .export_values();
-    py::enum_<TARGET>(m_rt, "COMPILE_TARGET")
-        .value("SECRET", TARGET::SECRET)
-        .value("FHE", TARGET::FHE)
-        .value("EMITC", TARGET::EMITC)
-        .value("CPP", TARGET::CPP)
-        .value("LIBRARY", TARGET::LIBRARY)
-        .export_values();
-
-    py::class_<CompileOptions>(m_rt, "CompileOption")
-        .def(py::init<>())
-        .def_readwrite("backendType", &CompileOptions::beType)
-        .def_readwrite("compileTarget", &CompileOptions::target);
-    py::class_<CompileResult>(m_rt, "CompileResult")
-        .def(py::init<>())
-        .def_readwrite("outputDirPath", &CompileResult::outputDirPath)
-        .def_readwrite("cppFileName", &CompileResult::cppFileName)
-        .def_readwrite("binFileName", &CompileResult::binFileName)
-        .def_readwrite("progSpecFileName", &CompileResult::progSpecFileName);
 
     // FHE Runtime
     py::class_<PyFHERuntime>(m_rt, "FHERuntime")
         .def(py::init<>())
-        .def("compile", &PyFHERuntime::compile, py::arg("mlir_file"), py::arg("compile_options"))
-        .def("open", &PyFHERuntime::open, py::arg("shared_library_path"))
-        .def("load", &PyFHERuntime::load, py::arg("shared_library_path"), py::arg("function_name"))
         .def("run", py::overload_cast<const Value &, const CompileResult &>(&PyFHERuntime::run), py::arg("input"),
              py::arg("compile_result"))
         .def("run", py::overload_cast<const vector<Value> &, const CompileResult &>(&PyFHERuntime::run),
