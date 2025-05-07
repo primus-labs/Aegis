@@ -191,6 +191,91 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
 
         rewriter.replaceOpWithNewOp<fhe::CopyOp>(op, sourceVal, targetVal);
         return success();
+    } else if (mlir::isa<fhe::CmpOp>(op)) {
+        auto cmpOp = llvm::cast<fhe::CmpOp>(op);
+        auto destTy = typeConverter.convertType(cmpOp.getType());
+        if (!destTy) {
+            return failure();
+        }
+
+        auto lhsOperand = cmpOp.getLhs();
+        auto lhsDestTy = typeConverter.convertType(lhsOperand.getType());
+        if (!lhsDestTy) {
+            return failure();
+        }
+        Value newLhsOperand;
+        if (lhsOperand.getType() != lhsDestTy) {
+            newLhsOperand = typeConverter.materializeTargetConversion(rewriter, cmpOp.getLoc(), lhsDestTy, lhsOperand);
+            assert(newLhsOperand);
+        } else {
+            newLhsOperand = lhsOperand;
+        }
+
+        auto rhsOperand = cmpOp.getLhs();
+        auto rhsDestTy = typeConverter.convertType(rhsOperand.getType());
+        if (!rhsDestTy) {
+            return failure();
+        }
+        Value newRhsOperand;
+        if (rhsOperand.getType() != rhsDestTy) {
+            newRhsOperand = typeConverter.materializeTargetConversion(rewriter, cmpOp.getLoc(), rhsDestTy, rhsOperand);
+            assert(newRhsOperand);
+        } else {
+            newRhsOperand = rhsOperand;
+        }
+
+        arith::CmpFPredicate predicate = cmpOp.getPredicate();
+        rewriter.replaceOpWithNewOp<fhe::CmpOp>(op, TypeRange(destTy), predicate, newLhsOperand, newRhsOperand);
+        return success();
+    } else if (mlir::isa<fhe::SelectOp>(op)) {
+        auto selectOp = llvm::cast<fhe::SelectOp>(op);
+
+        auto destTy = typeConverter.convertType(selectOp.getType());
+        if (!destTy) {
+            return failure();
+        }
+
+        auto condOperand = selectOp.getCondition();
+        auto condDestTy = typeConverter.convertType(condOperand.getType());
+        if (!condDestTy) {
+            return failure();
+        }
+        Value newCondOperand;
+        if (condOperand.getType() != condDestTy) {
+            newCondOperand = typeConverter.materializeTargetConversion(rewriter, op.getLoc(), condDestTy, condOperand);
+            assert(newCondOperand);
+        } else {
+            newCondOperand = condOperand;
+        }
+
+        auto trueValOperand = selectOp.getTrueValue();
+        auto trueDestTy = typeConverter.convertType(trueValOperand.getType());
+        if (!trueDestTy) {
+            return failure();
+        }
+        Value newTrueValOperand;
+        if (trueValOperand.getType() != trueDestTy) {
+            newTrueValOperand = typeConverter.materializeTargetConversion(rewriter, op.getLoc(), trueDestTy, trueValOperand);
+            assert(newTrueValOperand);
+        } else {
+            newTrueValOperand = trueValOperand;
+        }
+
+        auto falseValOperand = selectOp.getFalseValue();
+        auto falseDestTy = typeConverter.convertType(falseValOperand.getType());
+        if (!falseDestTy) {
+            return failure();
+        }
+        Value newFalseValOperand;
+        if (falseValOperand.getType() != falseDestTy) {
+            newFalseValOperand = typeConverter.materializeTargetConversion(rewriter, op.getLoc(), falseDestTy, falseValOperand);
+            assert(newFalseValOperand);
+        } else {
+            newFalseValOperand = falseValOperand;
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::SelectOp>(op, destTy, newCondOperand, newTrueValOperand, newFalseValOperand);
+        return success();
     }
 
     return success(); 
@@ -325,7 +410,17 @@ void LweToRlwePass::runOnOperation() {
                     if (ConvertOpLWETypeToRLWEType<fhe::CopyOp>(rewriter, &getContext(), copyOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
+                // cmp/select operation
+                } else if (fhe::CmpOp cmpOp = llvm::dyn_cast_or_null<fhe::CmpOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::CmpOp>(rewriter, &getContext(), cmpOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (fhe::SelectOp selOp = llvm::dyn_cast_or_null<fhe::SelectOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::SelectOp>(rewriter, &getContext(), selOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
                 }
+
                 return WalkResult(success());
              }).wasInterrupted()) {
             signalPassFailure();
