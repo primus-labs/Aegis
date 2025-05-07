@@ -308,22 +308,6 @@ def FHE_CastOp: FHE_Op<"cast", [Pure]> {
   let hasFolder = 1;
 }
 
-def FHE_VectorLoadOp: FHE_Op<"vector_load", []> {
-  let summary = "load a vector/slice from a matrix";
-
-  let arguments = (ins AnyType:$memref, AnyType:$indices);
-
-  let results = (outs AnyType:$result);
-}
-
-def FHE_VectorLoadExOp: FHE_Op<"vector_load_ex", []> {
-  let summary = "Same as FHE_VectorLoadOp, but replace Value Type indices with Attr Type";
-
-  let arguments = (ins AnyType:$memref, AnyAttr:$indices);
-  
-  let results = (outs AnyType:$result);
-}
-
 def FHE_LUTForAddOp: FHE_Op<"lut_half", []> {
   let summary = "LUT Operation for AddOp in Min Value";
 
