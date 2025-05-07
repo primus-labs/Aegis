@@ -1,4 +1,4 @@
-from primus_aegis.compiler import COMPILE_TARGET, CompileOption, CompileResult, Compiler as FHECompiler
+from primus_aegis.compiler import CompileOption, CompileResult, Compiler as FHECompiler
 
 class Compiler:
     _fhe_compiler: FHECompiler
