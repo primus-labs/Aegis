@@ -1,20 +1,20 @@
-from .compiler import Compiler
-from .runtime import Runtime
-from .keyset_manager import KeysetManager
+from .compiler import FHECompiler
+from .runtime import FHERuntime
+from .keyset_manager import FHEKeysetManager
 from primus_aegis.compiler import CompileOption, CompileResult
 from primus_aegis import Value
 from typing import List
 
-class Server:
-    _compiler: Compiler
-    _runtime: Runtime
-    _keyset_manager: KeysetManager
+class FHEServer:
+    _compiler: FHECompiler
+    _runtime: FHERuntime
+    _keyset_manager: FHEKeysetManager
     _are_keys_loaded: bool
 
     def __init__(self):
-        self._compiler = Compiler()
-        self._runtime = Runtime()
-        self._keyset_manager = KeysetManager()
+        self._compiler = FHECompiler()
+        self._runtime = FHERuntime()
+        self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
 
     def _require_keys_loaded(self):

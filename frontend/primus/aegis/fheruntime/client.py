@@ -1,16 +1,16 @@
-from .data_processor import DataProcessor
-from .keyset_manager import KeysetManager
+from .data_processor import FHEDataProcessor
+from .keyset_manager import FHEKeysetManager
 from primus_aegis import Value
 import numpy as np
 
-class Client:
-    _data_processor: DataProcessor
-    _keyset_manager: KeysetManager
+class FHEClient:
+    _data_processor: FHEDataProcessor
+    _keyset_manager: FHEKeysetManager
     _are_keys_loaded: bool
 
     def __init__(self):
-        self._data_processor = DataProcessor()
-        self._keyset_manager = KeysetManager()
+        self._data_processor = FHEDataProcessor()
+        self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
 
     def _require_keys_loaded(self):

@@ -1,7 +1,7 @@
 from primus_aegis.fhe import KeyInfo, Keyset
 import json
 
-class KeysetManager:
+class FHEKeysetManager:
     _keyset: Keyset
 
     def __init__(self):
