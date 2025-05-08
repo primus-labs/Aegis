@@ -59,7 +59,7 @@ tool_dirs = [config.abc_tools_dir, config.llvm_tools_dir, config.test_scripts_di
 tools = [
     'aegiscompiler',
     'emitc-translate',
-    'test_single_bin_file.sh'
+    'test_cpp_to_bin.sh'
 ]
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
