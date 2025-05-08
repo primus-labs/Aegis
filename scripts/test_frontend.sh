@@ -6,7 +6,9 @@ export MLIR_TRANSLATE_PATH=${SCRIPT_DIR}/../third_party/llvm-project/build/bin
 SO_DIR=${SCRIPT_DIR}/../build/lib/Binding
 FRONTEND_DIR=${SCRIPT_DIR}/../frontend
 
-cp -r ${FRONTEND_DIR}/* ${SO_DIR}
+rm -rf ${SO_DIR}/data
+cp -rf ${FRONTEND_DIR}/* ${SO_DIR}/
+
 
 cd ${SO_DIR}
 

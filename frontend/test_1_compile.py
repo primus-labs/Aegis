@@ -34,7 +34,6 @@ def compile_cpp_to_library(compileResult):
     for lib in libs:
         cmd += ["-l" + lib]
 
-    print(cmd)
     result = subprocess.run(cmd, capture_output=True, text=True)
     if not os.path.exists(f"{compileResult.outputDirPath}/{compileResult.binFileName}"):
         print("stdout:\n", result.stdout)
@@ -56,10 +55,6 @@ def test_compile() -> CompileResult:
     # print(mlir_file)
     compile_result = server.compile('data/test.mlir', compile_option)
     compile_cpp_to_library(compile_result)
-    print('outputDir', compile_result.outputDirPath)
-    print('cppFileName', compile_result.cppFileName)
-    print('binFileName', compile_result.binFileName)
-    print('progSpecFileName', compile_result.progSpecFileName)
     return compile_result
 
 def dump_compile_result(compile_result, file):
