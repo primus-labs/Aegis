@@ -34,4 +34,4 @@ class FHEServer:
 
     def deserialize_run_serialize(self, private_data: bytes | List[bytes], compile_result: CompileResult) -> bytes | List[bytes]:
         self._require_keys_loaded()
-        return self._runtime.run(private_data, compile_result)
+        return self._runtime.deserialize_run_serialize(private_data, compile_result)

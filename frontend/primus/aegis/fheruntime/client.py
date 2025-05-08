@@ -31,6 +31,7 @@ class FHEClient:
 
     def load_all_keys(self, key_file: str):
         self._keyset_manager.load_keys(key_file)
+        self._are_keys_loaded = True
 
     def encrypt(self, plain_input: np.ndarray) -> Value:
         self._require_keys_loaded()
