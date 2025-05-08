@@ -1,4 +1,4 @@
-// RUN: test_single_bin_file.sh  %s | FileCheck %s
+// RUN: test_cpp_to_bin.sh  %s | FileCheck %s
 
 #include <vector>
 #include "openfhe.h"
