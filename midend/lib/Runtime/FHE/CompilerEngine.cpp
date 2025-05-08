@@ -167,8 +167,9 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
     std::string fullBinFileName;
     res.binFileName = "libaegisshared" + SHARED_LIB_EXT;
     fullBinFileName = res.outputDirPath + '/' + res.binFileName;
-    if (!emitSharedLib(fullCppFileName, fullBinFileName)) {
-        return ErrorMsg("Failed to compile cpp to share library.");
+    auto emitShareRes = emitSharedLib(fullCppFileName, fullBinFileName);
+    if (!emitShareRes) {
+        return ErrorMsg(llvm::toString(emitShareRes.takeError()));
     }
 
     return res;
@@ -225,9 +226,13 @@ llvm::Expected<bool> CompilerEngine::emitSharedLib(const std::string &fullSrcCod
     }
 
     // Combine compiler command.
-    // eg: g++ func.cpp --shared -o func.so
-    std::string compileCmd = std::string(llvm::formatv("{0} {1} {2} {3}", 
-                                *GppPath, fullSrcCodeFileName, LINKER_SHARED_OPT, fullSharedFileName));;
+    // eg: g++ func.cpp -Iopenfhe_install_path --shared -o func.so 
+    const std::string fheIncPath = " -I/usr/local/include/openfhe"
+                                   " -I/usr/local/include/openfhe/core"
+                                   " -I/usr/local/include/openfhe/pke"
+                                   " -I/usr/local/include/openfhe/binfhe";
+    std::string compileCmd = std::string(llvm::formatv("{0} {1} {2} {3} {4}", *GppPath, 
+                                fullSrcCodeFileName, fheIncPath, LINKER_SHARED_OPT, fullSharedFileName));
 
     // Lambda signature: Takes StringRef command, returns llvm::Expected<bool>
     auto execCompileCmd = [](StringRef compileCmd) -> llvm::Expected<bool>  {
