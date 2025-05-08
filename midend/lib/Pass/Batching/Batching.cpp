@@ -184,6 +184,7 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
     int target_slot = -1;
 
     if (mlir::isa<fhe::LoadOp>(op)) {
+        auto loadOp = llvm::cast<fhe::LoadOp>(op);
         /**********************************************************************************
         // incorrent
         %7 = fhe.load(%6, %c0) : (!fhe.lweciphervec<16 x f64>, index) -> !fhe.lwecipher<f64>
@@ -249,8 +250,34 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
         mlir::DenseElementsAttr denseAttr = mlir::DenseElementsAttr::get(arrayType, valuesRef);
         auto maskOp = rewriter.create<arith::ConstantOp>(op.getLoc(), denseAttr);
 
-        // Apply element-wise multiplication to select the first element
-        rewriter.replaceOpWithNewOp<fhe::LWEMulPlainOp>(op, op.getMemref().getType(), ValueRange({op.getMemref(), maskOp}));   
+        // If the result of a load operation is uniquely used by a return, 
+        // then rotate the elements based on target_slot to move the target element to the first position. 
+        // Then insert a cast operation to convert !fhe.lweciphervec<N x f64> to !fhe.lweciphervec<f64> and return it.
+        auto isOnlyReturnUse = [](auto result) -> bool {
+            if (!result.hasOneUse()) {
+                return false;
+            }
+            auto user = *result.user_begin();
+            if (isa<func::ReturnOp>(user)) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+        
+        if (!isOnlyReturnUse(loadOp.getResult())) {
+            // Apply element-wise multiplication to select the first element
+            rewriter.replaceOpWithNewOp<fhe::LWEMulPlainOp>(op, op.getMemref().getType(), ValueRange({op.getMemref(), maskOp}));
+        } else { 
+            // create multiplication op
+            auto mulOp = rewriter.create<fhe::LWEMulPlainOp>(op.getLoc(), op.getMemref().getType(), ValueRange({op.getMemref(), maskOp}));
+            
+            // rotate the elements based on target_slot to move the target element to the first position.
+            auto rotOp = rewriter.create<fhe::RotateOp>(mulOp.getLoc(), mulOp.getType(), mulOp, target_slot);
+
+            // use cast to convert !fhe.lweciphervec<N x f64> to !fhe.lweciphervec<f64>
+            rewriter.replaceOpWithNewOp<fhe::CastOp>(op, loadOp.getType(), rotOp);
+        }
     } else if (mlir::isa<fhe::StoreOp>(op)) {
         /***********************************************************************************
         //%7 = fhe.load(%6, %c0) : (!fhe.lweciphervec<16 x f64>, index) -> !fhe.lwecipher<f64>

@@ -19,6 +19,9 @@ void InsertRelinearizePass::getDependentDialects(mlir::DialectRegistry &registry
     registry.insert<fhe::FHEDialect>();
 }
 
+// In OpenFHE, relinearization is automatically performed by default after every multiplication operation(EvalMult), 
+// eg:Ciphertext c3 = EvalMult(c1, c2), the Relinearize is auto-applied,
+// eliminating the need for manual insertion of redundant relinearization steps.
 void InsertRelinearizePass::runOnOperation() {
     //TODO
 }
