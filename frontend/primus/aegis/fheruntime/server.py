@@ -25,6 +25,16 @@ class FHEServer:
         self._keyset_manager.load_keys(key_file)
         self._are_keys_loaded = True
 
+    def convert_onnx_to_mlir(self, onnx_file: str) -> str:
+        import os
+        import subprocess
+        cmd = ['onnx-mlir', '--EmitMLIR', onnx_file]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        mlir_file = onnx_file + '.mlir'
+        if not os.path.exists(mlir_file):
+            raise RuntimeError('convert onnx to mlir error')
+        return mlir_file
+
     def compile(self, mlir_file: str, compile_option: CompileOption) -> CompileResult:
         return self._compiler.compile(mlir_file, compile_option)
 
