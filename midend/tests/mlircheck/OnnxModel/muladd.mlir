@@ -1,3 +1,5 @@
+// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --batching --canonicalize --cse --lwe-to-rlwe --canonicalize --cse --fhe-to-emitc --canonicalize --cse --cast-to-emitc-stub --canonicalize --cse --cast-to-emitc-stub --insert-emitc-preamble --canonicalize --cse  < %s | emitc-translate --mlir-to-cpp | FileCheck %s
+
 
 // convert muladd_model.onnx to muladd.mlir using onnx-mlir
 // #map = affine_map<(d0) -> (d0)>
@@ -44,6 +46,79 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 }
 
 
+
+// CHECK: extern float constant_0[1] = {2.000000000e+00f};
+// CHECK: RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
+// CHECK:   PlainVector v3 = MakeMultPlain(1,1,1,1,1,1,1,0);
+// CHECK:   PlainVector v4 = MakeMultPlain(0,0,0,0,0,0,0,1);
+// CHECK:   PlainVector v5 = MakeMultPlain(1,1,1,1,1,1,0,1);
+// CHECK:   PlainVector v6 = MakeMultPlain(0,0,0,0,0,0,1,0);
+// CHECK:   PlainVector v7 = MakeMultPlain(1,1,1,1,1,0,1,1);
+// CHECK:   PlainVector v8 = MakeMultPlain(0,0,0,0,0,1,0,0);
+// CHECK:   PlainVector v9 = MakeMultPlain(1,1,1,1,0,1,1,1);
+// CHECK:   PlainVector v10 = MakeMultPlain(0,0,0,0,1,0,0,0);
+// CHECK:   PlainVector v11 = MakeMultPlain(1,1,1,0,1,1,1,1);
+// CHECK:   PlainVector v12 = MakeMultPlain(0,0,0,1,0,0,0,0);
+// CHECK:   PlainVector v13 = MakeMultPlain(1,1,0,1,1,1,1,1);
+// CHECK:   PlainVector v14 = MakeMultPlain(0,0,1,0,0,0,0,0);
+// CHECK:   PlainVector v15 = MakeMultPlain(1,0,1,1,1,1,1,1);
+// CHECK:   PlainVector v16 = MakeMultPlain(0,1,0,0,0,0,0,0);
+// CHECK:   PlainVector v17 = MakeMultPlain(0,1,1,1,1,1,1,1);
+// CHECK:   PlainVector v18 = MakeMultPlain(1,0,0,0,0,0,0,0);
+// CHECK:   PlainVector v19 = Cast_Stub(constant_0);
+// CHECK:   Plain v20 = Native_Load(v19);
+// CHECK:   RLWECipher v21 = MulPlain(v2, v20);
+// CHECK:   std::vector<LWECipher> v22 = Alloc();
+// CHECK:   RLWECipher v23 = Add(v1, v21);
+// CHECK:   RLWECipher v24 = MulPlain(v23, v18);
+// CHECK:   RLWECipher v25 = Cast_Stub(v22);
+// CHECK:   RLWECipher v26 = MulPlain(v25, v17);
+// CHECK:   RLWECipher v27 = Add(v26, v24);
+// CHECK:   Copy(v27, v25);
+// CHECK:   RLWECipher v28 = Rotate(v21, -1);
+// CHECK:   RLWECipher v29 = Add(v1, v28);
+// CHECK:   RLWECipher v30 = MulPlain(v29, v16);
+// CHECK:   RLWECipher v31 = MulPlain(v25, v15);
+// CHECK:   RLWECipher v32 = Add(v31, v30);
+// CHECK:   Copy(v32, v25);
+// CHECK:   RLWECipher v33 = Rotate(v21, -2);
+// CHECK:   RLWECipher v34 = Add(v1, v33);
+// CHECK:   RLWECipher v35 = MulPlain(v34, v14);
+// CHECK:   RLWECipher v36 = MulPlain(v25, v13);
+// CHECK:   RLWECipher v37 = Add(v36, v35);
+// CHECK:   Copy(v37, v25);
+// CHECK:   RLWECipher v38 = Rotate(v21, -3);
+// CHECK:   RLWECipher v39 = Add(v1, v38);
+// CHECK:   RLWECipher v40 = MulPlain(v39, v12);
+// CHECK:   RLWECipher v41 = MulPlain(v25, v11);
+// CHECK:   RLWECipher v42 = Add(v41, v40);
+// CHECK:   Copy(v42, v25);
+// CHECK:   RLWECipher v43 = Rotate(v21, -4);
+// CHECK:   RLWECipher v44 = Add(v1, v43);
+// CHECK:   RLWECipher v45 = MulPlain(v44, v10);
+// CHECK:   RLWECipher v46 = MulPlain(v25, v9);
+// CHECK:   RLWECipher v47 = Add(v46, v45);
+// CHECK:   Copy(v47, v25);
+// CHECK:   RLWECipher v48 = Rotate(v21, -5);
+// CHECK:   RLWECipher v49 = Add(v1, v48);
+// CHECK:   RLWECipher v50 = MulPlain(v49, v8);
+// CHECK:   RLWECipher v51 = MulPlain(v25, v7);
+// CHECK:   RLWECipher v52 = Add(v51, v50);
+// CHECK:   Copy(v52, v25);
+// CHECK:   RLWECipher v53 = Rotate(v21, -6);
+// CHECK:   RLWECipher v54 = Add(v1, v53);
+// CHECK:   RLWECipher v55 = MulPlain(v54, v6);
+// CHECK:   RLWECipher v56 = MulPlain(v25, v5);
+// CHECK:   RLWECipher v57 = Add(v56, v55);
+// CHECK:   Copy(v57, v25);
+// CHECK:   RLWECipher v58 = Rotate(v21, -7);
+// CHECK:   RLWECipher v59 = Add(v1, v58);
+// CHECK:   RLWECipher v60 = MulPlain(v59, v4);
+// CHECK:   RLWECipher v61 = MulPlain(v25, v3);
+// CHECK:   RLWECipher v62 = Add(v61, v60);
+// CHECK:   Copy(v62, v25);
+// CHECK:   return v25;
+// CHECK: }
 
 
 
