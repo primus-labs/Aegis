@@ -34,7 +34,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 // CHECK: emitc.constant
 // CHECK: emitc.get_global
 // CHECK: emitc.call_opaque "Load"
-// CHECK: emitc.call_opaque "Native_Load"
+// CHECK: emitc.call_opaque "Native_Load_Self"
 // CHECK: emitc.call_opaque "MulPlain"
 // CHECK: emitc.call_opaque "Alloc"
 // CHECK: emitc.call_opaque "Add"
