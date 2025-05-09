@@ -1,4 +1,4 @@
-from primus.aegis.fheruntime import FHEClient as Client, FHEServer as Server, CompileOption, CompileResult, COMPILE_TARGET 
+from primus.aegis.fheruntime import FHEClient as Client, FHEServer as Server, FHEInferenceSession as InferenceSession, CompileOption, CompileResult, COMPILE_TARGET 
 import numpy as np
 
 def compile_cpp_to_library(compileResult):
@@ -22,8 +22,8 @@ def compile_cpp_to_library(compileResult):
         f"{openfhe_dir}/third-party/cereal/include",
     ]
     lib_dirs = [
-        f"/usr/local/lib",
-        f"{openfhe_dir}/build/lib",
+        #f"/usr/local/lib",
+        #f"{openfhe_dir}/build/lib",
     ]
     libs = ["OPENFHEcore", "OPENFHEpke", "pthread"]
     cmd = ["g++", "-shared", "-fPIC", "-std=c++17", "-O2", "-o", compileResult.binFileName, compileResult.cppFileName]
@@ -34,6 +34,7 @@ def compile_cpp_to_library(compileResult):
     for lib in libs:
         cmd += ["-l" + lib]
 
+    print(cmd)
     result = subprocess.run(cmd, capture_output=True, text=True)
     if not os.path.exists(f"{compileResult.outputDirPath}/{compileResult.binFileName}"):
         print("stdout:\n", result.stdout)
@@ -46,15 +47,23 @@ def compile_cpp_to_library(compileResult):
     print("compileResult.progSpecFileName:", compileResult.progSpecFileName)
 
 def test_compile() -> CompileResult:
-    server = Server()
     compile_option = CompileOption()
-    compile_option.compileTarget = COMPILE_TARGET.CPP
+    compile_option.compileTarget = COMPILE_TARGET.LIBRARY
     compile_option.outputDir = "./"
 
-    # mlir_file = server.convert_onnx_to_mlir('data/add.onnx')
-    # print(mlir_file)
-    compile_result = server.compile('data/test.mlir', compile_option)
-    compile_cpp_to_library(compile_result)
+    if True:
+        server = Server()
+        # mlir_file = server.convert_onnx_to_mlir('data/add.onnx')
+        # print(mlir_file)
+        compile_result = server.compile('data/euclidean_distance.mlir', compile_option)
+    else:
+        inference_session = InferenceSession('data/add.onnx')
+        compile_result = inference_session.get_compile_result()
+    # compile_cpp_to_library(compile_result)
+    print("compileResult.outputDirPath:", compile_result.outputDirPath)
+    print("compileResult.cppFileName:", compile_result.cppFileName)
+    print("compileResult.binFileName:", compile_result.binFileName)
+    print("compileResult.progSpecFileName:", compile_result.progSpecFileName)
     return compile_result
 
 def dump_compile_result(compile_result, file):

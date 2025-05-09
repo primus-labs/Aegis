@@ -9,8 +9,8 @@ if __name__ == '__main__':
     client = Client()
     client.load_all_keys('data/all_keys.bin')
 
-    private_data_1 = np.array([20.2])
-    private_data_2 = np.array([30.3])
+    private_data_1 = np.array([10, 20, 30, 40])
+    private_data_2 = np.array([14, 23, 33, 44])
 
     ser_1 = client.encrypt_serialize(private_data_1)
     ser_2 = client.encrypt_serialize(private_data_2)

@@ -1,4 +1,4 @@
-from primus.aegis.fheruntime import FHEClient as Client, FHEServer as Server, CompileOption, CompileResult, COMPILE_TARGET 
+from primus.aegis.fheruntime import FHEClient as Client, FHEServer as Server, FHEInferenceSession as InferenceSession, CompileOption, CompileResult, COMPILE_TARGET 
 from typing import List
 
 def load_data(file) -> bytes:
@@ -25,12 +25,17 @@ def load_compile_result(file) -> CompileResult:
     return compile_result
 
 if __name__ == '__main__':
-    server = Server()
-    server.load_pub_keys('data/pub_keys.bin')
     private_data_1 = load_data('data/private_data_1.bin')
     private_data_2 = load_data('data/private_data_2.bin')
-
     compile_result = load_compile_result('data/compile_result.json')
-    output = server.deserialize_run_serialize([private_data_1, private_data_2], compile_result)
+
+    if False:
+        server = Server()
+        server.load_pub_keys('data/pub_keys.bin')
+        output = server.deserialize_run_serialize([private_data_1, private_data_2], compile_result)
+    else:
+        inference_session = InferenceSession()
+        inference_session.get_server().load_pub_keys('data/pub_keys.bin')
+        output = inference_session.deserialize_run_serialize([private_data_1, private_data_2], compile_result)
 
     save_data(output[0], 'data/output.bin')
