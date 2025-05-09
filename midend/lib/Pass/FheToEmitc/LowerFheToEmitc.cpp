@@ -513,7 +513,13 @@ class MemrefGetGlobalPattern final : public OpConversionPattern<memref::GetGloba
         //     return rewriter.notifyMatchFailure(op.getLoc(), "cannot convert result type");
         // }
 
-        auto resTy = emitc::ArrayType::get(getContext(), op.getType().getShape(), op.getType().getElementType());
+        emitc::ArrayType resTy;
+        if (!op.getType().getShape().size()) {
+            resTy = emitc::ArrayType::get(getContext(), 1, op.getType().getElementType());
+        }
+        else {
+            resTy = emitc::ArrayType::get(getContext(), op.getType().getShape(), op.getType().getElementType());
+        }
         rewriter.replaceOpWithNewOp<emitc::GetGlobalOp>(op, resTy, adaptor.getNameAttr());
 
         return success();
@@ -543,7 +549,13 @@ class MemrefGlobalPattern final : public OpConversionPattern<memref::GlobalOp> {
         // if (!resTy) {
         //     return rewriter.notifyMatchFailure(op.getLoc(), "cannot convert global op result type");
         // }
-        auto resTy = emitc::ArrayType::get(getContext(), op.getType().getShape(), op.getType().getElementType());
+        emitc::ArrayType resTy;
+        if (!op.getType().getShape().size()) {
+            resTy = emitc::ArrayType::get(getContext(), 1, op.getType().getElementType());
+        }
+        else {
+            resTy = emitc::ArrayType::get(getContext(), op.getType().getShape(), op.getType().getElementType());
+        }
 
         SymbolTable::Visibility visibility = SymbolTable::getSymbolVisibility(op);
         if (visibility != SymbolTable::Visibility::Public && visibility != SymbolTable::Visibility::Private) {
@@ -556,13 +568,37 @@ class MemrefGlobalPattern final : public OpConversionPattern<memref::GlobalOp> {
         bool staticSpecifier = visibility == SymbolTable::Visibility::Private;
         bool externSpecifier = !staticSpecifier;
 
-        Attribute initialValue = adaptor.getInitialValueAttr();
-        if (isa_and_present<UnitAttr>(initialValue)) {
-            initialValue = {};
-        }
+        if (!op.getType().getShape().size()) {
+            // Get the original initial value (scalar tensor<f64>)
+            Attribute oldInitialValue = adaptor.getInitialValueAttr();
 
-        rewriter.replaceOpWithNewOp<emitc::GlobalOp>(op, adaptor.getSymName(), resTy, initialValue, externSpecifier,
-                                                     staticSpecifier, adaptor.getConstant());
+            // Create a tensor type with shape [1] = tensor<1xf64>
+            if (auto denseAttr = mlir::dyn_cast<DenseFPElementsAttr>(oldInitialValue)) {
+                auto tensorType = mlir::cast<TensorType>(denseAttr.getType());
+                auto elementType = tensorType.getElementType();
+                auto tensor1DType = RankedTensorType::get({1}, elementType);
+
+                // Wrap scalar into array
+                SmallVector<Attribute> values;
+                double scalarValue = denseAttr.getSplatValue<APFloat>().convertToFloat();
+                values.push_back(FloatAttr::get(elementType, scalarValue));
+
+                // Replace the emit GlobalOp operation
+                auto d1InitialValue = DenseElementsAttr::get(tensor1DType, values);
+                rewriter.replaceOpWithNewOp<emitc::GlobalOp>(op, adaptor.getSymName(), resTy, d1InitialValue, externSpecifier,
+                                                             staticSpecifier, adaptor.getConstant());   
+            } else {
+                return failure();
+            }      
+        } else {
+            Attribute initialValue = adaptor.getInitialValueAttr();
+            if (isa_and_present<UnitAttr>(initialValue)) {
+                initialValue = {};
+            }
+
+            rewriter.replaceOpWithNewOp<emitc::GlobalOp>(op, adaptor.getSymName(), resTy, initialValue, externSpecifier,
+                                                         staticSpecifier, adaptor.getConstant());
+        }
         return success();
     }
 };
