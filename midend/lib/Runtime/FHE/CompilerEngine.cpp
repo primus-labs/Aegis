@@ -33,7 +33,7 @@ const std::string COMPILER = "g++";
         " -dylib -undefined dynamic_lookup -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem -o ";
     const std::string SHARED_LIB_EXT = ".dylib";
 #else // Linux
-    const std::string LINKER_SHARED_OPT = " --shared -fPIC -o ";
+    const std::string LINKER_SHARED_OPT = " -O2 -shared -fPIC -o ";
     const std::string SHARED_LIB_EXT = ".so";
 #endif
 
@@ -226,13 +226,21 @@ llvm::Expected<bool> CompilerEngine::emitSharedLib(const std::string &fullSrcCod
     }
 
     // Combine compiler command.
-    // eg: g++ func.cpp -Iopenfhe_install_path --shared -fPIC -o func.so 
-    const std::string fheIncPath = " -I/usr/local/include/openfhe"
-                                   " -I/usr/local/include/openfhe/core"
-                                   " -I/usr/local/include/openfhe/pke"
-                                   " -I/usr/local/include/openfhe/binfhe";
-    std::string compileCmd = std::string(llvm::formatv("{0} {1} {2} {3} {4}", *GppPath, 
-                                fullSrcCodeFileName, fheIncPath, LINKER_SHARED_OPT, fullSharedFileName));
+    // eg: g++ func.cpp -Iopenfhe_install_path -shared -fPIC -o func.so
+    auto assembleOpenfheCompilerCmd = [&](const std::string gccPath, 
+                                          const std::string fullSrcFileName, 
+                                          const std::string fullSharedFileName) -> std::string {
+        const std::string fheIncPath = " -I/usr/local/include/openfhe"
+                                       " -I/usr/local/include/openfhe/core"
+                                       " -I/usr/local/include/openfhe/pke"
+                                       " -I/usr/local/include/openfhe/binfhe";
+        const std::string fheLinkLib = " -lOPENFHEcore -lOPENFHEpke ";
+        return std::string(llvm::formatv("{0} {1} {2} {3} {4} {5}",  
+                           gccPath, fullSrcFileName, fheIncPath, 
+                           LINKER_SHARED_OPT, fullSharedFileName, fheLinkLib));
+            
+    };
+    std::string compileCmd = assembleOpenfheCompilerCmd(*GppPath, fullSrcCodeFileName, fullSharedFileName);
 
     // Lambda signature: Takes StringRef command, returns llvm::Expected<bool>
     auto execCompileCmd = [](StringRef compileCmd) -> llvm::Expected<bool>  {
