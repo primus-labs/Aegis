@@ -96,6 +96,9 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerCastToEmitcStubPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<LowerCastToEmitcStubPass>()); // LowerCastToEmitcStubPass must run more times.
     manager.addPass(std::make_unique<InsertEmitcPreamblePass>());
 }
 
