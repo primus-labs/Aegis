@@ -33,7 +33,7 @@ const std::string COMPILER = "g++";
         " -dylib -undefined dynamic_lookup -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem -o ";
     const std::string SHARED_LIB_EXT = ".dylib";
 #else // Linux
-    const std::string LINKER_SHARED_OPT = " --shared -o ";
+    const std::string LINKER_SHARED_OPT = " --shared -fPIC -o ";
     const std::string SHARED_LIB_EXT = ".so";
 #endif
 
@@ -226,7 +226,7 @@ llvm::Expected<bool> CompilerEngine::emitSharedLib(const std::string &fullSrcCod
     }
 
     // Combine compiler command.
-    // eg: g++ func.cpp -Iopenfhe_install_path --shared -o func.so 
+    // eg: g++ func.cpp -Iopenfhe_install_path --shared -fPIC -o func.so 
     const std::string fheIncPath = " -I/usr/local/include/openfhe"
                                    " -I/usr/local/include/openfhe/core"
                                    " -I/usr/local/include/openfhe/pke"
