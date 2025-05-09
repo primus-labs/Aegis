@@ -70,6 +70,11 @@ public:
             rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
                                                              ArrayAttr(), ArrayAttr(), operand);
             return success();
+        } else if (op->getAttrOfType<IntegerAttr>("from_params") &&
+                   op->getAttrOfType<IntegerAttr>("to_params")) {
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
+                                        ArrayAttr(), ArrayAttr(), operand);
+            return success();
         } else {
             auto optimizeCastChain = [&](CastOp op, PatternRewriter &rewriter) -> LogicalResult {
                 // Check if CastOp operand type is not RLWE opaque type, and dest type is RLWE opaque type,
