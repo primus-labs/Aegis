@@ -737,7 +737,11 @@ class NativeMemrefLoadPattern final : public OpConversionPattern<memref::LoadOp>
         SmallVector<Value, 8> operands;
         operands.push_back(newOperand);
         operands.append(indices.begin(), indices.end());
-        auto newOp = rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Native_Load", operands);
+        if (indices.size() > 0) {
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Native_Load", operands);
+        } else {
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Native_Load_Self", operands);
+        }
 
         return success();
     }
