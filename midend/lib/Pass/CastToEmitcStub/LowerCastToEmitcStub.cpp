@@ -67,7 +67,7 @@ public:
                 return failure(); 
             }
         } else if (auto getGlobalOp = mlir::dyn_cast_or_null<emitc::GetGlobalOp>(operand.getDefiningOp())) {
-            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Stub", 
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "ConstantArray_to_PlainVector", 
                                                              ArrayAttr(), ArrayAttr(), operand);
             return success();
         } else if (op->getAttrOfType<IntegerAttr>("from_params") &&
