@@ -161,6 +161,9 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
         "#define Cast_Plain_To_Index(clr) size_t(clr)",
         "#define Native_Load(v, idx) v[idx]",
+        "#define Native_Load_Self(v) v[0]",
+        "#define Cast_Stub(a) a",
+        "#define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary))",
     };
 
     SmallVector<StringRef> verbatimFuncs = {
