@@ -24,7 +24,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))
 #define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector<double>{__VA_ARGS__})
 #define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]
-#define Native_Load(v, idx) v[idx]
+#define LoadPlainWithIndex(v, idx) v[idx]
 CryptoContext<DCRTPoly> cryptoCtx;
 void init_cryptcontext() {
    CCParams<CryptoContextCKKSRNS> parameters;

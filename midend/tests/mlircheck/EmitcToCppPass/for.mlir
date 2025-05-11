@@ -36,17 +36,17 @@ module {
     %5 = emitc.call_opaque "Cast_Plain_To_Index"(%2) : (!emitc.opaque<"Plain">) -> index
     %6 = emitc.call_opaque "Cast_Plain_To_Index"(%1) : (!emitc.opaque<"Plain">) -> index
     %7 = emitc.call_opaque "Cast_Plain_To_Index"(%0) : (!emitc.opaque<"Plain">) -> index
-    %8 = emitc.call_opaque "Native_Load"(%arg0, %7) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
+    %8 = emitc.call_opaque "LoadPlainWithIndex"(%arg0, %7) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
     %9 = emitc.call_opaque "MulPlain"(%arg1, %8) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
-    %10 = emitc.call_opaque "Native_Load"(%arg0, %6) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
+    %10 = emitc.call_opaque "LoadPlainWithIndex"(%arg0, %6) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
     %11 = emitc.call_opaque "MulPlain"(%arg1, %10) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
     %12 = emitc.call_opaque "Rotate"(%11) {args = [0 : index, 3 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %13 = emitc.call_opaque "Add"(%9, %12) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %14 = emitc.call_opaque "Load"(%13, %7) : (!emitc.opaque<"RLWECipher">, index) -> !emitc.opaque<"RLWECipher">
     %15 = emitc.call_opaque "Store"(%arg1, %14, %7) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">, index) -> !emitc.opaque<"RLWECipher">
-    %16 = emitc.call_opaque "Native_Load"(%arg0, %5) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
+    %16 = emitc.call_opaque "LoadPlainWithIndex"(%arg0, %5) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
     %17 = emitc.call_opaque "MulPlain"(%arg1, %16) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
-    %18 = emitc.call_opaque "Native_Load"(%arg0, %4) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
+    %18 = emitc.call_opaque "LoadPlainWithIndex"(%arg0, %4) : (!emitc.opaque<"PlainVector">, index) -> !emitc.opaque<"Plain">
     %19 = emitc.call_opaque "MulPlain"(%arg1, %18) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
     %20 = emitc.call_opaque "Rotate"(%17) {args = [0 : index, 1 : si32]} : (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
     %21 = emitc.call_opaque "Add"(%20, %19) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
@@ -66,15 +66,15 @@ module {
 // CHECK: size_t v8 = Cast_Plain_To_Index(v5);
 // CHECK: size_t v9 = Cast_Plain_To_Index(v4);
 // CHECK: size_t v10 = Cast_Plain_To_Index(v3);
-// CHECK: Plain v11 = Native_Load(v1, v10);
+// CHECK: Plain v11 = LoadPlainWithIndex(v1, v10);
 // CHECK: RLWECipher v12 = MulPlain(v2, v11);
-// CHECK: Plain v13 = Native_Load(v1, v9);
+// CHECK: Plain v13 = LoadPlainWithIndex(v1, v9);
 // CHECK: RLWECipher v14 = MulPlain(v2, v13);
 // CHECK: RLWECipher v15 = Rotate(v14, 3);
 // CHECK: RLWECipher v16 = Add(v12, v15);
-// CHECK: Plain v19 = Native_Load(v1, v8);
+// CHECK: Plain v19 = LoadPlainWithIndex(v1, v8);
 // CHECK: RLWECipher v20 = MulPlain(v2, v19);
-// CHECK: Plain v21 = Native_Load(v1, v7);
+// CHECK: Plain v21 = LoadPlainWithIndex(v1, v7);
 // CHECK: RLWECipher v22 = MulPlain(v2, v21);
 // CHECK: RLWECipher v23 = Rotate(v20, 1);
 // CHECK: RLWECipher v24 = Add(v23, v22);

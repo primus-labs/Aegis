@@ -28,7 +28,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define MakeMultPlain(...) std::vector<double>{__VA_ARGS__} 
 //#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]
 #define Cast_Plain_To_Index(pl) size_t(pl)
-#define Native_Load(v, idx) v[idx]
+#define LoadPlainWithIndex(v, idx) v[idx]
 
 CryptoContext<DCRTPoly> cryptoCtx;
 void init_cryptcontext() {
@@ -55,15 +55,15 @@ RLWECipher MVP(PlainVector v1, RLWECipher v2) {
   size_t v8 = Cast_Plain_To_Index(v5);
   size_t v9 = Cast_Plain_To_Index(v4);
   size_t v10 = Cast_Plain_To_Index(v3);
-  Plain v11 = Native_Load(v1, v10);
+  Plain v11 = LoadPlainWithIndex(v1, v10);
   RLWECipher v12 = MulPlain(v2, v11);
-  Plain v13 = Native_Load(v1, v9);
+  Plain v13 = LoadPlainWithIndex(v1, v9);
   RLWECipher v14 = MulPlain(v2, v13);
   RLWECipher v15 = Rotate(v14, 3);
   RLWECipher v16 = Add(v12, v15);
-  Plain v19 = Native_Load(v1, v8);
+  Plain v19 = LoadPlainWithIndex(v1, v8);
   RLWECipher v20 = MulPlain(v2, v19);
-  Plain v21 = Native_Load(v1, v7);
+  Plain v21 = LoadPlainWithIndex(v1, v7);
   RLWECipher v22 = MulPlain(v2, v21);
   RLWECipher v23 = Rotate(v20, 1);
   RLWECipher v24 = Add(v23, v22);

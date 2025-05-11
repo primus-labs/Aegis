@@ -22,7 +22,7 @@ module attributes {fhe.GaloisKeyIndex = dense<[-1, -2, -3, -4, -5, -6, -7]> : ve
     %15 = "emitc.constant"() <{value = #emitc.opaque<"MakeMultPlain(1,0,0,0,0,0,0,0)">}> : () -> !emitc.opaque<"PlainVector">
     %16 = emitc.get_global @constant_0 : !emitc.array<1xf32>
     %17 = emitc.call_opaque "Cast_Stub"(%16) : (!emitc.array<1xf32>) -> !emitc.opaque<"PlainVector">
-    %18 = emitc.call_opaque "Native_Load"(%17) : (!emitc.opaque<"PlainVector">) -> !emitc.opaque<"Plain">
+    %18 = emitc.call_opaque "LoadPlainWithIndex"(%17) : (!emitc.opaque<"PlainVector">) -> !emitc.opaque<"Plain">
     %19 = emitc.call_opaque "MulPlain"(%arg1, %18) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
     %20 = emitc.call_opaque "Alloc"() : () -> !emitc.opaque<"std::vector<LWECipher>">
     %21 = emitc.call_opaque "Add"(%arg0, %19) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
@@ -99,7 +99,7 @@ module attributes {fhe.GaloisKeyIndex = dense<[-1, -2, -3, -4, -5, -6, -7]> : ve
 // CHECK:   PlainVector v17 = MakeMultPlain(0,1,1,1,1,1,1,1);
 // CHECK:   PlainVector v18 = MakeMultPlain(1,0,0,0,0,0,0,0);
 // CHECK:   PlainVector v19 = Cast_Stub(constant_0);
-// CHECK:   Plain v20 = Native_Load(v19);
+// CHECK:   Plain v20 = LoadPlainWithIndex(v19);
 // CHECK:   RLWECipher v21 = MulPlain(v2, v20);
 // CHECK:   std::vector<LWECipher> v22 = Alloc();
 // CHECK:   RLWECipher v23 = Add(v1, v21);

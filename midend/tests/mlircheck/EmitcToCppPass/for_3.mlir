@@ -25,7 +25,7 @@ module {
   emitc.verbatim "#define Rotate(c, idx) cryptoCtx->EvalRotate((c), (idx))"
   emitc.verbatim "#define MakePlain(...)  cryptoCtx->MakeCKKSPackedPlaintext(std::vector<double>{__VA_ARGS__})"
   emitc.verbatim "#define Cast_Plain_To_Index(pt) pt->GetRealPackedValue()[0]"
-  emitc.verbatim "#define Native_Load(v, idx) v[idx]"
+  emitc.verbatim "#define LoadPlainWithIndex(v, idx) v[idx]"
   emitc.verbatim "CryptoContext<DCRTPoly> cryptoCtx;"
   emitc.verbatim "void init_cryptcontext() {"
   emitc.verbatim "   CCParams<CryptoContextCKKSRNS> parameters;"

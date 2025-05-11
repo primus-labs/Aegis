@@ -35,9 +35,9 @@ module  {
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"
 //CHECK: emitc.call_opaque "Cast_Plain_To_Index"
-//CHECK: emitc.call_opaque "Native_Load"
+//CHECK: emitc.call_opaque "LoadPlainWithIndex"
 //CHECK: emitc.call_opaque "MulPlain"
-//CHECK: emitc.call_opaque "Native_Load"
+//CHECK: emitc.call_opaque "LoadPlainWithIndex"
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Rotate"
 //CHECK: emitc.call_opaque "Add"
@@ -45,9 +45,9 @@ module  {
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Add"(
 //CHECK: emitc.call_opaque "Copy"
-//CHECK: emitc.call_opaque "Native_Load"
+//CHECK: emitc.call_opaque "LoadPlainWithIndex"
 //CHECK: emitc.call_opaque "MulPlain"(
-//CHECK: emitc.call_opaque "Native_Load"
+//CHECK: emitc.call_opaque "LoadPlainWithIndex"
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Rotate"
 //CHECK: emitc.call_opaque "Add"

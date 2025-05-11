@@ -30,7 +30,7 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define MakePlain(a)  double(a)
 #define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}
 #define Cast_Plain_To_Index(clr) size_t(clr)
-#define Native_Load(v, idx) v[idx]
+#define LoadPlainWithIndex(v, idx) v[idx]
 
 static CryptoContext<DCRTPoly> clientCC;
 static PublicKey<DCRTPoly> clientPubKey;
