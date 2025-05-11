@@ -160,8 +160,8 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define MakePlain(a)  double(a)",
         "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
         "#define Cast_Plain_To_Index(clr) size_t(clr)",
-        "#define Native_Load(v, idx) v[idx]",
-        "#define Native_Load_Self(v) v[0]",
+        "#define LoadPlainWithIndex(v, idx) v[idx]",
+        "#define LoadPlainWithoutIndex(v) v[0]",
         "#define Cast_Stub(a) a",
         "#define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary))",
     };

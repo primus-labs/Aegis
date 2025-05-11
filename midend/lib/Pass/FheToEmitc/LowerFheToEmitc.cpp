@@ -738,9 +738,9 @@ class NativeMemrefLoadPattern final : public OpConversionPattern<memref::LoadOp>
         operands.push_back(newOperand);
         operands.append(indices.begin(), indices.end());
         if (indices.size() > 0) {
-            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Native_Load", operands);
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "LoadPlainWithIndex", operands);
         } else {
-            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Native_Load_Self", operands);
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "LoadPlainWithoutIndex", operands);
         }
 
         return success();
