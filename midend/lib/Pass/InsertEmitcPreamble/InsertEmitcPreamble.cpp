@@ -159,11 +159,12 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define Bootstrap(a) clientCC->EvalBootstrap(a)",
         "#define MakePlain(a)  double(a)",
         "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
-        "#define Cast_Plain_To_Index(clr) size_t(clr)",
+        "#define Alloc() RLWECipher()",
         "#define LoadPlainWithIndex(v, idx) v[idx]",
         "#define LoadPlainWithoutIndex(v) v[0]",
-        "#define Cast_Stub(a) a",
         "#define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary))",
+        "#define Cast_Plain_To_Index(clr) size_t(clr)",
+        "#define Cast_Stub(a) a",
     };
 
     SmallVector<StringRef> verbatimFuncs = {
