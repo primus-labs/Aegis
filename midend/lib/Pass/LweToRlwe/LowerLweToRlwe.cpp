@@ -276,6 +276,44 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
 
         rewriter.replaceOpWithNewOp<fhe::SelectOp>(op, destTy, newCondOperand, newTrueValOperand, newFalseValOperand);
         return success();
+    } else if (mlir::isa<fhe::AllocOp>(op)) {
+        auto allocOp = llvm::cast<fhe::AllocOp>(op);
+
+        auto destTy = typeConverter.convertType(allocOp.getType());
+        if (!destTy) {
+            return failure();
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destTy);
+        return success();
+    } else if (mlir::isa<fhe::AllocaOp>(op)) {
+        auto allocaOp = llvm::cast<fhe::AllocaOp>(op);
+
+        auto destType = typeConverter.convertType(allocaOp.getType());
+        if (!destType) {
+            return failure();
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::AllocaOp>(op, destType);
+        return success();
+    } else if (mlir::isa<fhe::DeallocOp>(op)) {
+        auto deallocOp = llvm::cast<fhe::DeallocOp>(op);
+
+        Value newOperand;
+        auto oldOperand = deallocOp.getOperand();
+        auto opDestTy = typeConverter.convertType(oldOperand.getType());
+        if (!opDestTy) {
+            return failure();
+        }
+
+        if (oldOperand.getType() != opDestTy) {
+            newOperand = typeConverter.materializeTargetConversion(rewriter, deallocOp.getLoc(), opDestTy, oldOperand);
+            assert(newOperand);
+        } else {
+            newOperand = oldOperand;
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::DeallocOp>(op, newOperand);
     }
 
     return success(); 
@@ -417,6 +455,19 @@ void LweToRlwePass::runOnOperation() {
                     }
                 } else if (fhe::SelectOp selOp = llvm::dyn_cast_or_null<fhe::SelectOp>(op)) {
                     if (ConvertOpLWETypeToRLWEType<fhe::SelectOp>(rewriter, &getContext(), selOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                // alloc/dealloc/alloca
+                } else if (fhe::AllocOp allocOp = llvm::dyn_cast_or_null<fhe::AllocOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::AllocOp>(rewriter, &getContext(), allocOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (fhe::AllocaOp allocaOp = llvm::dyn_cast_or_null<fhe::AllocaOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::AllocaOp>(rewriter, &getContext(), allocaOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (fhe::DeallocOp deallocOp = llvm::dyn_cast_or_null<fhe::DeallocOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::DeallocOp>(rewriter, &getContext(), deallocOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
                 }
