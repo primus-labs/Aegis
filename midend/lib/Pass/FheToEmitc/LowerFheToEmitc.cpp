@@ -623,7 +623,7 @@ class FheConstantPattern final : public OpConversionPattern<arith::ConstantOp> {
         }
 
         // Get arith::ConstOp interger value.
-        bool bMutiPlain = false;
+        bool isAryType = false;
         std::string strVal;
         auto valueAttr = op.getValue();
         if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(valueAttr)) {
@@ -634,8 +634,9 @@ class FheConstantPattern final : public OpConversionPattern<arith::ConstantOp> {
             strVal = std::to_string(dVal);
         }
         if (auto denseAttr = mlir::dyn_cast<mlir::DenseElementsAttr>(valueAttr)) {
-            auto processValues = [&strVal, &bMutiPlain](auto vals) {
-                bMutiPlain = (vals.size() > 1);
+            isAryType = true;
+
+            auto processValues = [&strVal](auto vals) {
                 for (size_t i = 0; i < vals.size(); ++i) {
                     strVal += std::to_string(vals[i]);
                     if (i != vals.size() - 1) {
@@ -660,7 +661,7 @@ class FheConstantPattern final : public OpConversionPattern<arith::ConstantOp> {
 
         // Combine emitc::OpaqueAttr using the value.
         emitc::OpaqueAttr emitcAttrVal;
-        if (bMutiPlain) {
+        if (isAryType) {
             emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakeMultPlain(" + strVal + ")"));
         } else {
             emitcAttrVal = emitc::OpaqueAttr::get(getContext(), ("MakePlain(" + strVal + ")"));
