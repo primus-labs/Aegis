@@ -903,7 +903,13 @@ class FheAllocPattern final : public OpConversionPattern<fhe::AllocOp> {
             return failure();
         }
 
-        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Alloc", ValueRange{});
+        auto alignment = op.getAlignment();
+        mlir::ArrayAttr args = rewriter.getArrayAttr({
+            rewriter.getI64IntegerAttr(alignment.value())
+        });
+
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Alloc", ValueRange{},
+                                                         args, ArrayAttr{});
         return success();
     }
 };

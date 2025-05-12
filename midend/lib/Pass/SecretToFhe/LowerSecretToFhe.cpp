@@ -527,7 +527,12 @@ class SecretAllocPattern final : public OpConversionPattern<secret::AllocOp> {
             return failure();
         }
 
-        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destType);
+        IntegerAttr alignmentAttr;
+        auto alignment = op.getAlignment();
+        if (alignment.has_value())
+            alignmentAttr = rewriter.getI64IntegerAttr(alignment.value());
+
+        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destType, alignmentAttr);
 
         LLVM_DEBUG(llvm::dbgs() << "run SecretAllocPattern success.\n");
         return success();

@@ -38,6 +38,7 @@ def FHE_AllocOp : FHE_Op<"alloc", []> {
       ```
   }];
 
+  let arguments = (ins  ConfinedAttr<OptionalAttr<I64Attr>, [IntMinValue<0>]>:$alignment);
   let results = (outs FHE_Type:$output);
 }
 

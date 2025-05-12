@@ -359,8 +359,13 @@ public:
             LLVM_DEBUG(llvm::dbgs() << "convert type " << op.getType() << " failure.\n");
             return failure();
         }
-        
-        rewriter.replaceOpWithNewOp<secret::AllocOp>(op, destType);
+
+        IntegerAttr alignmentAttr;
+        auto alignment = op.getAlignment();
+        if (alignment.has_value())
+            alignmentAttr = rewriter.getI64IntegerAttr(alignment.value());
+    
+        rewriter.replaceOpWithNewOp<secret::AllocOp>(op, destType, alignmentAttr);
 
         LLVM_DEBUG(llvm::dbgs() << "run MemrefAllocPattern success.\n");
         return success();

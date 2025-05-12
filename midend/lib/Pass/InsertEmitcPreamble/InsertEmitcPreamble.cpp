@@ -52,6 +52,10 @@ void initCryptContext() {{
         parameters.SetScalingModSize({4});
         parameters.SetBatchSize({5});
         clientCC = GenCryptoContext(parameters);
+        if (!Serial::DeserializeFromFile(pubKeyFileName, clientPubKey, SerType::BINARY)) {{
+            std::cerr << "Cannot read serialized data from: " << pubKeyFileName << std::endl;
+            std::exit(1);
+        }
     } else {{
         clientCC->ClearEvalMultKeys();
         clientCC->ClearEvalAutomorphismKeys();
@@ -159,7 +163,6 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define Bootstrap(a) clientCC->EvalBootstrap(a)",
         "#define MakePlain(a)  double(a)",
         "#define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}",
-        "#define Alloc() RLWECipher()",
         "#define LoadPlainWithIndex(v, idx) v[idx]",
         "#define LoadPlainWithoutIndex(v) v[0]",
         "#define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary))",
@@ -185,6 +188,14 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "}",
         "inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {",
         "    return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));",
+        "}",
+        "RLWECipher Alloc(size_t size) {",
+        "    std::vector<double> constVec(size, 0.0);",
+        "    Plaintext plaintext = clientCC->MakeCKKSPackedPlaintext(constVec);",
+        "    return clientCC->Encrypt(clientPubKey, plaintext);",
+        "}",
+        "inline RLWECipher Alloc() {",
+        "    return Alloc(16);",
         "}",
     };
 

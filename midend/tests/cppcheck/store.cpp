@@ -28,7 +28,6 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define Bootstrap(a) clientCC->EvalBootstrap(a)
 #define MakePlain(a)  double(a)
 #define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}
-#define Alloc() RLWECipher()    //added
 #define Cast_Plain_To_Index(clr) size_t(clr)
 #define LoadPlainWithIndex(v, idx) v[idx]
 #define LoadPlainWithoutIndex(v) v[0]
@@ -67,6 +66,12 @@ void initCryptContext() {
         parameters.SetScalingModSize(50);
         parameters.SetBatchSize(1);
         clientCC = GenCryptoContext(parameters);
+
+        if (!Serial::DeserializeFromFile(pubKeyFileName, clientPubKey, SerType::BINARY)) {
+            std::cerr << "Cannot read serialized data from: " << pubKeyFileName << std::endl;
+            std::exit(1);
+        }
+
         ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
         std::cout << "after call GenCryptoContext, crypto context obj counts:" << ccSizes << std::endl;
     } else {
@@ -124,6 +129,14 @@ inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {
 }
 inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {
     return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));
+}
+RLWECipher Alloc(size_t size) {
+    std::vector<double> constVec(size, 0.0);
+    Plaintext plaintext = clientCC->MakeCKKSPackedPlaintext(constVec);
+    return clientCC->Encrypt(clientPubKey, plaintext);
+}
+inline RLWECipher Alloc() {
+    return Alloc(16);
 }
 
 

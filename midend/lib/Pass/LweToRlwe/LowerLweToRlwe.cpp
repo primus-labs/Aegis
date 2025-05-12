@@ -284,7 +284,12 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
             return failure();
         }
 
-        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destTy);
+        IntegerAttr alignmentAttr;
+        auto alignment = allocOp.getAlignment();
+        if (alignment.has_value())
+            alignmentAttr = rewriter.getI64IntegerAttr(alignment.value());
+
+        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destTy, alignmentAttr);
         return success();
     } else if (mlir::isa<fhe::AllocaOp>(op)) {
         auto allocaOp = llvm::cast<fhe::AllocaOp>(op);

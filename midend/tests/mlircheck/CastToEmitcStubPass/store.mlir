@@ -14,7 +14,7 @@ module {
 }
 
 
-// CHECK: emitc.call_opaque "Alloc"() : () -> !emitc.opaque<"RLWECipher">
+// CHECK: emitc.call_opaque "Alloc"()
 // CHECK: emitc.call_opaque "Add"
 // CHECK: emitc.call_opaque "MulPlain"
 // CHECK: emitc.call_opaque "MulPlain"

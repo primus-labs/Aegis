@@ -936,6 +936,7 @@ def Secret_AllocOp : Secret_Op<"alloc", []> {
         ```
     }];
 
+    let arguments = (ins  ConfinedAttr<OptionalAttr<I64Attr>, [IntMinValue<0>]>:$alignment);
     let results = (outs AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output);
 }
 
