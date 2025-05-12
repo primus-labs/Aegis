@@ -12,6 +12,9 @@ if __name__ == '__main__':
     private_data_1 = np.array([10, 20, 30, 40])
     private_data_2 = np.array([14, 23, 33, 44])
 
+    private_data_1 = np.array([10])
+    private_data_2 = np.array([14])
+
     ser_1 = client.encrypt_serialize(private_data_1)
     ser_2 = client.encrypt_serialize(private_data_2)
 

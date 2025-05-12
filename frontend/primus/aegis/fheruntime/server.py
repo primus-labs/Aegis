@@ -31,8 +31,12 @@ class FHEServer:
         cmd = ['onnx-mlir', '--EmitMLIR', onnx_file]
         result = subprocess.run(cmd, capture_output=True, text=True)
         mlir_file = onnx_file + '.mlir'
-        if not os.path.exists(mlir_file):
-            raise RuntimeError('convert onnx to mlir error')
+        if len(result.stderr) > 0:
+            raise RuntimeError('convert onnx to mlir error: ' + result.stderr)
+        cmd = ['sed','-i', '/krnl/d', mlir_file]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if len(result.stderr) > 0:
+            raise RuntimeError(result.stderr)
         return mlir_file
 
     def compile(self, mlir_file: str, compile_option: CompileOption) -> CompileResult:
