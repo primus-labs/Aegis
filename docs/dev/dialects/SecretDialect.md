@@ -100,6 +100,13 @@ Example:
 %0 = secret.alloc() : (!Secete.SecretVector<i32>) 
 ```
 
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>alignment</code></td><td>::mlir::IntegerAttr</td><td>64-bit signless integer attribute whose minimum value is 0</td></tr>
+</table>
+
 #### Results:
 
 | Result | Description |
