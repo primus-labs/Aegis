@@ -96,7 +96,7 @@ std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std
 
     auto resOrErr = runtime->call(params);
     if (!resOrErr) {
-        std::cout << "call FHERuntime::call fail" << std::endl;
+        std::cout << "call FHERuntime::call fail," << llvm::toString(resOrErr.takeError()) << std::endl;
         exit(-1);
     }
     std::vector<mlir::aegis::Value> res = *resOrErr;
@@ -113,12 +113,12 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
     engine.setCompileOptions(compileOpts);
     auto compile_res = engine.compile(mlirStr);
     if (!compile_res) {
-        std::cout << "compile fail" << std::endl;
+        std::cout << "compile fail:" << llvm::toString(compile_res.takeError()) << std::endl;
         return nullptr;
     }
 
     std::shared_ptr<FHERuntime> pRuntime = std::make_shared<FHERuntime>((*compile_res).progSpecFileName);
-    if (!pRuntime->open((*compile_res).binFileName)) {
+    if (!pRuntime->open((*compile_res).outputDirPath + (*compile_res).binFileName)) {
         std::cout << "call open fail" << std::endl;
         return nullptr;
     }
@@ -372,6 +372,36 @@ bool case_3() {
 }
 
 
+/**********************************
+***********    case 4    **********
+***********************************/
+constexpr std::string_view mlirCase4 = R"mlir(
+module {
+  func.func @main_graph(%arg0: memref<1xf32> , %arg1: memref<1xf32> ) -> (memref<1xf32> ) {
+    %c0 = arith.constant 0 : index
+    %alloc = memref.alloc() {alignment = 16 : i64} : memref<1xf32>
+    %0 = affine.load %arg0[%c0] : memref<1xf32>
+    %1 = affine.load %arg1[%c0] : memref<1xf32>
+    %2 = arith.addf %0, %1 : f32
+    affine.store %2, %alloc[%c0] : memref<1xf32>
+    return %alloc : memref<1xf32>
+  }
+}
+)mlir";
+
+
+bool case_4() {
+    std::vector<double> a1 = {10.0};
+    std::vector<double> b1 = {14.0};
+    std::vector<double> expect_output = {24.0};      
+    if (!mlirUnitTest_2(mlirCase4, a1, b1, expect_output)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 //----------------------------------------------------------------
 int main() {
     {
@@ -390,12 +420,17 @@ int main() {
             return -1;
         }
 
+        if (!case_4()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
         std::cout << "Test pass" << std::endl;
         return 0;
     }
 
     {
-        std::string funcName = "MVP"; //"main_graph"
+        std::string funcName = "main_graph";
         std::shared_ptr<FHERuntime> pRuntime = std::make_shared<FHERuntime>("/tmp/aegis/prog_spec.json");
         if (!pRuntime->open("/tmp/aegis/libtest.so")) {
             std::cout << "Test failure." << std::endl;
@@ -571,6 +606,20 @@ int main() {
             std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, m2, v2, expect_output2.size());
             for (auto i = 0; i < expect_output2.size(); i++) {
                 if (!approximatelyEqual(output2[i], expect_output2[i], 1e-6, 1e-6)) {
+                    std::cout << "Test fail" << std::endl;
+                    return -1;
+                }
+            }
+        }
+
+        // case 4:
+        {
+            std::vector<double> a1 = {10.0};
+            std::vector<double> b1 = {14.0};
+            std::vector<double> expect_output = {24.0};      
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, b1, expect_output.size());
+            for (auto i = 0; i < expect_output.size(); i++) {
+                if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
                     return -1;
                 }
