@@ -117,6 +117,24 @@ constexpr std::string_view kDeserisBufCode = R"cpp(
 )cpp";
 // clang-format on
 
+// clang-format off
+constexpr std::string_view kAllocFunc = R"cpp(
+RLWECipher Alloc(size_t size) {
+    if (size > {0})
+        size = {0};
+    std::vector<double> constVec(size, 0.0);
+    Plaintext plaintext = clientCC->MakeCKKSPackedPlaintext(constVec);
+    return clientCC->Encrypt(clientPubKey, plaintext);
+}
+inline RLWECipher Alloc() {
+    if ({0} >= 16)
+        return Alloc(16);
+    else
+        return Alloc({0});
+}
+)cpp";
+// clang-format on
+
 
 void InsertEmitcPreamblePass::getDependentDialects(mlir::DialectRegistry &registry) const {
     registry.insert<emitc::EmitCDialect>();
@@ -188,14 +206,6 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "}",
         "inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {",
         "    return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));",
-        "}",
-        "RLWECipher Alloc(size_t size) {",
-        "    std::vector<double> constVec(size, 0.0);",
-        "    Plaintext plaintext = clientCC->MakeCKKSPackedPlaintext(constVec);",
-        "    return clientCC->Encrypt(clientPubKey, plaintext);",
-        "}",
-        "inline RLWECipher Alloc() {",
-        "    return Alloc(16);",
         "}",
     };
 
@@ -301,6 +311,10 @@ void InsertEmitcPreamblePass::runOnOperation() {
         for (auto &stmt : verbatimFuncs) {
             builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
         }
+
+        // Insert alloc implementation functions
+        auto allocFunc = std::string(llvm::formatv(kAllocFunc.data(), batchSize));
+        builder.create<emitc::VerbatimOp>(op->getLoc(), allocFunc);
 
         // Insert aegis_mlir_xxx implementation functions at the end of the block
         builder.setInsertionPointToEnd(moduleBlock);
