@@ -46,13 +46,13 @@ cmake -G Ninja \
         -DLLVM_ENABLE_ASSERTIONS=ON \
         -DMLIR_DIR=${MLIR_DIR} \
         ..
-make -j8
+ninja -j8
 
 
 echo "****************************************************"
 echo "**************      build OpenFHE      *************"
 echo "****************************************************"
-cd ../../openfhe-development
+cd ../../openfhe
 mkdir -p build
 cd build
 cmake ..
