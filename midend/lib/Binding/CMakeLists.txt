@@ -9,6 +9,12 @@ FetchContent_Declare(
     GIT_TAG v2.11.1
 )
 FetchContent_MakeAvailable(pybind11)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+FetchContent_MakeAvailable(nlohmann_json)
 
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 include_directories(${Python_INCLUDE_DIRS})
@@ -22,7 +28,7 @@ ELSE()
   add_library(primus_aegis SHARED primus_aegis.cpp)
   set_target_properties(primus_aegis PROPERTIES PREFIX "")
 ENDIF()
-target_link_libraries(${target_name} PRIVATE pybind11::headers)
+target_link_libraries(${target_name} PRIVATE pybind11::headers nlohmann_json::nlohmann_json)
 
 target_link_libraries(${target_name}
   PRIVATE

@@ -19,11 +19,9 @@ from primus_aegis.compiler import CompileResult
 # NOTE: The compileResult is the return value of Compiler.compile(), ref test_1_compile.py
 # Should make sure the files are existed
 if True:
-    compileResult = CompileResult()
-    compileResult.outputDirPath = "./"
-    compileResult.cppFileName = "output.cpp"
-    compileResult.binFileName = "libtest.so"
-    compileResult.progSpecFileName = "prog_spec.json"
+    with open("compileResult.json", "r", encoding="utf-8") as f:
+        compileResult = CompileResult.from_json(f.read())
+        print("compileResult:", compileResult.to_json(2))
 
 
 # load the input values
