@@ -12,22 +12,26 @@
 #include "Dialect/FHE/FHEDialect.h"
 #include "Dialect/FHE/FHEOps.h"
 #include "Dialect/FHE/FHETypes.h"
+#include "Dialect/Secret/SecretDialect.h"
+#include "Dialect/Secret/SecretOps.h"
+#include "Dialect/Secret/SecretTypes.h"
 #include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
 
 #define DEBUG_TYPE "cast-to-emitc-stub"
 
 using namespace mlir;
 using namespace aegis;
-using namespace fhe;
+using namespace aegis::fhe;
+using namespace aegis::secret;
 
 
-bool isOpaqueRLWE(Type type) {
+static bool isOpaqueRLWE(Type type) {
     return mlir::isa<emitc::OpaqueType>(type) && 
                 (mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipher" ||
                  mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipherGrid");
 }
 
-int32_t getElementSizes(Type type) {
+static int32_t getElementSizes(Type type) {
     if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(type)) {
         return operandTy.getSize();
     } else if (auto operandTy = mlir::dyn_cast_or_null<fhe::RLWECipherType>(type)) {
@@ -53,10 +57,25 @@ public:
             // Exist OpaqueAttr ?
             if (auto opaqueAttr = mlir::dyn_cast<emitc::OpaqueAttr>(valueAttr)) {
                 StringRef valueStr = opaqueAttr.getValue();
-                if (valueStr.starts_with("MakePlain") && mlir::isa<mlir::IndexType>(destTy)) {
-                    rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Plain_To_Index", 
-                                    ArrayAttr(), ArrayAttr(), operand);
-                    return success();
+                if (valueStr.starts_with("MakePlain")) {
+                    // plain to index
+                    if (mlir::isa<mlir::IndexType>(destTy)) {
+                        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Plain_To_Index", 
+                                        ArrayAttr(), ArrayAttr(), operand);
+                        return success();
+                    // plain to cipher
+                    } else if (mlir::isa<emitc::OpaqueType>(destTy) && mlir::cast<emitc::OpaqueType>(destTy).getValue() == "RLWECipher") {
+                        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Plain_To_Cipher", 
+                                        ArrayAttr(), ArrayAttr(), operand);
+                        return success();
+                    } else {
+                        llvm::errs() << "The conversion of plaintext to the type(" << destTy << ")has not been processed yet." << "\n";
+                        return failure();
+                    }
+                } else if (mlir::isa<mlir::FloatType>(destTy) || mlir::isa<mlir::IntegerType>(destTy)) {
+                    // maybe from plain to cipher, eg:select x, 1, 0, At this point, 
+                    // we cannot replace it and should simply return.
+                    return success(); 
                 } else {
                     llvm::errs() << "Cast_Plain_To_Index requires 'MakePlain' prefix and IndexType, but got "
                                  << valueStr  << " and destTy " << destTy << "\n";
@@ -76,10 +95,11 @@ public:
                                         ArrayAttr(), ArrayAttr(), operand);
             return success();
         } else {
-            auto optimizeCastChain = [&](CastOp op, PatternRewriter &rewriter) -> LogicalResult {
+            auto optimizeCastChain = [&](fhe::CastOp op, PatternRewriter &rewriter) -> LogicalResult {
                 // Check if CastOp operand type is not RLWE opaque type, and dest type is RLWE opaque type,
                 // if this condition is not met, return directly. (bottom-up search)
                 /*********************************************************************
+                // case 1
                 // original operation chain:
                 %1 = fhe.cast(%0) : !opaque -> !rlwe<4>  
                 %2 = fhe.cast(%1) : !rlwe<4> -> !lwe<4>
@@ -91,6 +111,19 @@ public:
                 %5 = fhe.cast(%arg1) {from_params = 4 : i64, to_params = 16 : i64} : 
                                 (!emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">
                 **********************************************************************/
+                /*********************************************************************
+                // case 2(arith.select %cmp, %one, %zero)
+                // original operation chain:
+                %6 = fhe.cast(%4) : (!emitc.opaque<"Plain">) -> f64
+                %12 = "secret.cast"(%6) : (f64) -> !secret.secret<f64>
+                %14 = fhe.cast(%12) : (!secret.secret<f64>) -> !fhe.lwe<f64>
+                %16 = fhe.cast(%14) : (!fhe.lwe<f64>) -> !fhe.rlwe<1 x f64>
+                %18 = fhe.cast(%16) : (!fhe.rlwe<1 x f64>) -> !emitc.opaque<"RLWECipher">
+
+                // After optimization:
+                %5 = fhe.cast(%arg1) {from_params = 4 : i64, to_params = 16 : i64} : 
+                                (!emitc.opaque<"Plain">) -> !emitc.opaque<"RLWECipher">
+                **********************************************************************/
                 // TODO: need ResizeOp replace the fhe.cast Op?
                 auto root = op.getOperand();
                 if (!(!isOpaqueRLWE(root.getType()) && isOpaqueRLWE(op.getType()))) {
@@ -98,13 +131,33 @@ public:
                 }
 
                 // Collect intermediate cast chains
-                SmallVector<fhe::CastOp> castChain;
-                while (auto prevCast = root.getDefiningOp<CastOp>()) {
-                    if (!prevCast->hasOneUse()) {
+                // SmallVector<fhe::CastOp> castChain;
+                // while (auto prevCast = root.getDefiningOp<fhe::CastOp>()) {
+                //     if (!prevCast->hasOneUse()) {
+                //         break;
+                //     }
+                //     castChain.push_back(prevCast);
+                //     root = prevCast.getOperand();
+                // }
+                SmallVector<mlir::Operation*> castChain;
+                while (true) {
+                    mlir::Operation* currentOp = root.getDefiningOp();
+
+                    if (auto fheCast = dyn_cast<fhe::CastOp>(currentOp)) {
+                        if (!fheCast->hasOneUse()) {
+                            break;
+                        }
+                        castChain.push_back(fheCast);
+                        root = fheCast.getOperand();
+                    } else if (auto secretCast = dyn_cast<secret::CastOp>(currentOp)) {
+                        if (!secretCast->hasOneUse()) {
+                            break;
+                        }
+                        castChain.push_back(secretCast);
+                        root = secretCast.getOperand();
+                    } else {
                         break;
                     }
-                    castChain.push_back(prevCast);
-                    root = prevCast.getOperand();
                 }
 
                 // Verify the validity of the transformation chain
@@ -112,14 +165,17 @@ public:
                     return failure();
                 }
 
-                int64_t toDim = getElementSizes(castChain.front().getType());
-                int64_t fromDim = getElementSizes(castChain.back().getType());
+                auto firstCastOp = mlir::dyn_cast<fhe::CastOp>(castChain.front());
+                auto lastCastOp  = mlir::dyn_cast<fhe::CastOp>(castChain.back());
+                assert(firstCastOp && lastCastOp);
+                int64_t toDim = getElementSizes(firstCastOp.getType());
+                int64_t fromDim = getElementSizes(lastCastOp.getType());
                 // llvm::outs() << "toDim type:" << castChain.front().getType() << "\n";
                 // llvm::outs() << "fromDim type:" << castChain.back().getType() << "\n";
                 assert(fromDim>0 && toDim>0);
 
                 // Create a new cast operation and replace
-                //auto newCast = rewriter.create<CastOp>(op.getLoc(), op.getType(), operand);
+                //auto newCast = rewriter.create<fhe::CastOp>(op.getLoc(), op.getType(), operand);
                 OperationState state(op.getLoc(), fhe::CastOp::getOperationName());
                 state.addOperands(root);
                 state.addTypes(op.getType());
@@ -129,15 +185,15 @@ public:
                 auto toAttr = rewriter.getI64IntegerAttr(toDim);
                 state.addAttribute("from_params", fromAttr);
                 state.addAttribute("to_params", toAttr);
-                auto newCast = mlir::cast<CastOp>(rewriter.create(state));
+                auto newCast = mlir::cast<fhe::CastOp>(rewriter.create(state));
                 // auto fromDim = newCast->getAttrOfType<IntegerAttr>("from_params").getInt();
                 // auto toDim = newCast->getAttrOfType<IntegerAttr>("to_params").getInt();
 
                 rewriter.replaceOp(op, newCast);
                 
                 // Clean up old cast ops
-                for (fhe::CastOp cast : castChain) {
-                    rewriter.eraseOp(cast);
+                for (auto *castOp : castChain) {
+                    rewriter.eraseOp(castOp);
                 }
 
                 return success();
