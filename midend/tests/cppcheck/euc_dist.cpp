@@ -1,3 +1,4 @@
+// RUN: test_cpp_to_bin.sh  %s | FileCheck %s
 
 #include <vector>
 #include <iostream>
@@ -220,3 +221,6 @@ std::vector<uint8_t> aegis_mlir_MVP(const std::vector<uint8_t> &buf1, const std:
     std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
     return retBuf;
 }
+
+
+//CHECK: Pass
