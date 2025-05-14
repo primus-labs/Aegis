@@ -3,18 +3,9 @@ Development/Server Side
 """
 
 from primus_aegis.compiler import COMPILE_TARGET, CompileOption, Compiler
+from test_cases import testMlirContent
 
-# calculation: a * b
-mlirContent = """
-module {
-    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
-                          %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
-        %5 = arith.mulf %arg0, %arg1 :  f32
-        return %5 : f32
-    }
-}
-"""
-
+mlirContent = testMlirContent
 compileOption = CompileOption()
 compileOption.compileTarget = COMPILE_TARGET.CPP
 compileOption.outputDir = "./"

@@ -16,11 +16,11 @@ with open("all_keys.bin", "rb") as f:
 import numpy as np
 from primus_aegis import Value
 from primus_aegis.dataprocessor import FHEDataProcessor
+from test_cases import testOutputs
 
 with open("resultData0.bin", "rb") as f:
     resultData0 = Value.from_bytes(f.read())
     print("type of resultData0:", type(resultData0))
     outputData = FHEDataProcessor.processOutput(resultData0)
     print("len of outputData:", len(outputData))
-    expectValue = [1.23 * 4.5678]  # see test_3_input.py
-    print("outputData:", outputData, "expectValue:", expectValue)
+    print("outputData:", outputData, "expectValue:", testOutputs[0]["value"])
