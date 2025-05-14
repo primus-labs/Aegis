@@ -332,7 +332,54 @@ class PyFHERuntime {
                 throw std::runtime_error(s);
             }
         }
+        {
+            // Serial various keys
+            auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
 
+            const std::string ccFileName = compileResult.outputDirPath + "/__cryptocontext.bin";
+            if (!Serial::SerializeToFile(ccFileName, cryptoCtx, SerType::BINARY)) {
+                throw std::runtime_error("Error writing serialization of the crypto context");
+            }
+
+            const std::string pubKeyFileName = compileResult.outputDirPath + "/__pubkey.bin";
+            std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
+            PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
+            if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
+                throw std::runtime_error("Error writing public keys");
+            }
+
+            const std::string mulKeyFileName = compileResult.outputDirPath + "/__mulkey.bin";
+            std::ofstream multKeyFile(mulKeyFileName, std::ios::out | std::ios::binary);
+            if (multKeyFile.is_open()) {
+                if (!cryptoCtx->SerializeEvalMultKey(multKeyFile, SerType::BINARY)) {
+                    throw std::runtime_error("Error writing eval mult keys");
+                }
+                multKeyFile.close();
+            } else {
+                throw std::runtime_error("Error serializing EvalMult keys");
+            }
+
+            std::string rotKeyFileName = "";
+            auto keyInfo = progSpecObj.getKeyInfo();
+            if (keyInfo.asBuilder().hasGaloisIndices()) {
+                rotKeyFileName = compileResult.outputDirPath + "/__rotkey.bin";
+                std::ofstream rotationKeyFile(rotKeyFileName, std::ios::out | std::ios::binary);
+                if (rotationKeyFile.is_open()) {
+                    if (!cryptoCtx->SerializeEvalAutomorphismKey(rotationKeyFile, SerType::BINARY)) {
+                        throw std::runtime_error("Error writing rotation keys");
+                    }
+                    rotationKeyFile.close();
+                } else {
+                    throw std::runtime_error("Error serializing Rotation keys");
+                }
+            }
+
+            auto result = rt.loadCryptoResources(ccFileName, pubKeyFileName, mulKeyFileName, rotKeyFileName);
+            if (!result) {
+                auto s = llvm::toString(result.takeError());
+                throw std::runtime_error(s);
+            }
+        }
         auto result = rt.call(inputs);
         if (!result) {
             auto s = llvm::toString(result.takeError());
