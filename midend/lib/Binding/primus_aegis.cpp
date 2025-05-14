@@ -33,7 +33,38 @@ using namespace lbcrypto;
 #include <sstream>
 using namespace std;
 
+#include <nlohmann/json.hpp>
+
 #define DEBUG_PRINT 1
+
+namespace mlir::aegis {
+void to_json(nlohmann::json &j, const CompileOptions &x) {
+    j = nlohmann::json{{"backendType", x.beType},
+                       {"compileTarget", x.target},
+                       {"scheme", x.scheme},
+                       {"verbose", x.verbose},
+                       {"outputDir", x.outputDir}};
+}
+void from_json(const nlohmann::json &j, CompileOptions &x) {
+    j.at("backendType").get_to(x.beType);
+    j.at("compileTarget").get_to(x.target);
+    j.at("scheme").get_to(x.scheme);
+    j.at("verbose").get_to(x.verbose);
+    j.at("outputDir").get_to(x.outputDir);
+}
+void to_json(nlohmann::json &j, const CompileResult &x) {
+    j = nlohmann::json{{"outputDirPath", x.outputDirPath},
+                       {"cppFileName", x.cppFileName},
+                       {"binFileName", x.binFileName},
+                       {"progSpecFileName", x.progSpecFileName}};
+}
+void from_json(const nlohmann::json &j, CompileResult &x) {
+    j.at("outputDirPath").get_to(x.outputDirPath);
+    j.at("cppFileName").get_to(x.cppFileName);
+    j.at("binFileName").get_to(x.binFileName);
+    j.at("progSpecFileName").get_to(x.progSpecFileName);
+}
+} // namespace mlir::aegis
 
 /// @brief old
 struct KeyInfo {
@@ -359,13 +390,21 @@ PYBIND11_MODULE(primus_aegis, m) {
         .def_readwrite("compileTarget", &CompileOptions::target)
         .def_readwrite("scheme", &CompileOptions::scheme)
         .def_readwrite("verbose", &CompileOptions::verbose)
-        .def_readwrite("outputDir", &CompileOptions::outputDir);
+        .def_readwrite("outputDir", &CompileOptions::outputDir)
+        .def(
+            "to_json", [](const CompileOptions &x, const int indent = -1) { return nlohmann::json(x).dump(indent); },
+            py::arg("indent") = -1)
+        .def_static("from_json", [](const std::string &s) { return nlohmann::json::parse(s).get<CompileOptions>(); });
     py::class_<CompileResult>(m_compiler, "CompileResult")
         .def(py::init<>())
         .def_readwrite("outputDirPath", &CompileResult::outputDirPath)
         .def_readwrite("cppFileName", &CompileResult::cppFileName)
         .def_readwrite("binFileName", &CompileResult::binFileName)
-        .def_readwrite("progSpecFileName", &CompileResult::progSpecFileName);
+        .def_readwrite("progSpecFileName", &CompileResult::progSpecFileName)
+        .def(
+            "to_json", [](const CompileResult &x, const int indent = -1) { return nlohmann::json(x).dump(indent); },
+            py::arg("indent") = -1)
+        .def_static("from_json", [](const std::string &s) { return nlohmann::json::parse(s).get<CompileResult>(); });
 
     py::class_<PyCompiler>(m_compiler, "Compiler")
         .def(py::init<>())

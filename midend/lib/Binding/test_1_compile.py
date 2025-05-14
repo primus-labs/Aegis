@@ -18,16 +18,13 @@ module {
 compileOption = CompileOption()
 compileOption.compileTarget = COMPILE_TARGET.CPP
 compileOption.outputDir = "./"
-print("compileOption.backendType:", compileOption.backendType)
-print("compileOption.compileTarget:", compileOption.compileTarget)
+print("compileOption:", compileOption.to_json(1))
 
 compileResult = Compiler().compile(mlirContent, compileOption)
 if compileOption.compileTarget == COMPILE_TARGET.LIBRARY:
-    print("compileResult.outputDirPath:", compileResult.outputDirPath)
-    print("compileResult.cppFileName:", compileResult.cppFileName)
-    print("compileResult.binFileName:", compileResult.binFileName)
-    print("compileResult.progSpecFileName:", compileResult.progSpecFileName)
-
+    print("compileResult:", compileResult.to_json())
+    with open("compileResult.json", "w", encoding="utf-8") as f:
+        f.write(compileResult.to_json())
 
 # THE IS NOT NECCESSARY, if you have installed the openfhe, so
 # you can set compileOption.compileTarget = COMPILE_TARGET.LIBRARY to skip this
@@ -72,7 +69,6 @@ if compileOption.compileTarget == COMPILE_TARGET.CPP:
         print("stderr:\n", result.stderr)
         exit(2)
 
-    print("compileResult.outputDirPath:", compileResult.outputDirPath)
-    print("compileResult.cppFileName:", compileResult.cppFileName)
-    print("compileResult.binFileName:", compileResult.binFileName)
-    print("compileResult.progSpecFileName:", compileResult.progSpecFileName)
+    print("compileResult:", compileResult.to_json(2))
+    with open("compileResult.json", "w", encoding="utf-8") as f:
+        f.write(compileResult.to_json())
