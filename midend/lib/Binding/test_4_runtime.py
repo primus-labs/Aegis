@@ -26,18 +26,20 @@ if True:
 
 # load the input values
 from primus_aegis import Value
+from test_cases import testInputsLength
 
-with open("privateInput_a.bin", "rb") as f:
-    privateInput_a = Value.from_bytes(f.read())
-with open("privateInput_b.bin", "rb") as f:
-    privateInput_b = Value.from_bytes(f.read())
+privateInputs = []
+for i in range(testInputsLength):
+    with open(f"privateInput_{i}.bin", "rb") as f:
+        privateInput_i = Value.from_bytes(f.read())
+        privateInputs.append(privateInput_i)
 
 
 # do calculation
 from primus_aegis.runtime import FHERuntime
 
 fheRuntime = FHERuntime()
-resultDatas = fheRuntime.run([privateInput_a, privateInput_b], compileResult)
+resultDatas = fheRuntime.run(privateInputs, compileResult)
 if len(resultDatas) > 0:
     with open("resultData0.bin", "wb") as f:
         f.write(resultDatas[0].to_bytes())
