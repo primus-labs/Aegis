@@ -67,6 +67,7 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                         auto i = idx.value();
                         if (target_slot == -1) {
                             target_slot = i;
+                            break;
                         }
                     }
                 }
@@ -150,9 +151,10 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                         return operand.getOwner() == new_op; 
                     });
                 } else {
-                    emitWarning(new_op.getLoc(),
-                                "While attempting to batch, encountered an unexpected non-batchable defining operation for the secret operand.");
-                    return failure();
+                    mlir::emitWarning(new_op.getLoc())
+                            << "While attempting to batch, encountered an unexpected non-batchable defining operation, batching is aborted.";
+                    rewriter.eraseOp(new_op);
+                    return success();
                 }
             } else {
                 // non-secret input, which we can always transform as needed, no action needed now
