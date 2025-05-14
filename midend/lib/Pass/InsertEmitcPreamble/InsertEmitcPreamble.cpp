@@ -185,6 +185,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define LoadPlainWithoutIndex(v) v[0]",
         "#define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary))",
         "#define Cast_Plain_To_Index(clr) size_t(clr)",
+        "#define Cast_Plain_To_Cipher(clr) clientCC->Encrypt(clientPubKey, clientCC->MakeCKKSPackedPlaintext(std::vector<double>(clr)))",
         "#define Cast_Stub(a) a",
     };
 
