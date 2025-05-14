@@ -30,10 +30,13 @@ using PublicKeyT = PublicKey<DCRTPoly>;
 #define MakePlain(a)  double(a)
 #define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}
 #define Cast_Plain_To_Index(clr) size_t(clr)
+#define Cast_Plain_To_Cipher(clr) clientCC->Encrypt(clientPubKey, clientCC->MakeCKKSPackedPlaintext(std::vector<double>(clr)))
 #define LoadPlainWithIndex(v, idx) v[idx]
 #define LoadPlainWithoutIndex(v) v[0]
 #define Cast_Stub(a) a        
 #define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary)) 
+#define Cmp_ue(a, b) a       //refine and add
+#define Select(cond, a, b) a //refine and add
 
 static CryptoContext<DCRTPoly> clientCC;
 static PublicKey<DCRTPoly> clientPubKey;
@@ -67,12 +70,6 @@ void initCryptContext() {
         parameters.SetScalingModSize(50);
         parameters.SetBatchSize(1);
         clientCC = GenCryptoContext(parameters);
-
-        if (!Serial::DeserializeFromFile(pubKeyFileName, clientPubKey, SerType::BINARY)) {
-            std::cerr << "Cannot read serialized data from: " << pubKeyFileName << std::endl;
-            std::exit(1);
-        }
-
         ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
         std::cout << "after call GenCryptoContext, crypto context obj counts:" << ccSizes << std::endl;
     } else {
@@ -131,27 +128,39 @@ inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {
 inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {
     return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));
 }
-RLWECipher Alloc(size_t size) {
-    std::vector<double> constVec(size, 0.0);
-    Plaintext plaintext = clientCC->MakeCKKSPackedPlaintext(constVec);
-    return clientCC->Encrypt(clientPubKey, plaintext);
-}
-inline RLWECipher Alloc() {
-    return Alloc(16);
-}
 
 
-RLWECipher main_graph(RLWECipher v1, RLWECipher v2) {
-  PlainVector v3 = MakeMultPlain(0);
-  PlainVector v4 = MakeMultPlain(1);
-  RLWECipher v5 = Alloc();
-  RLWECipher v6 = Add(v1, v2);
-  RLWECipher v7 = MulPlain(v6, v4);
-  RLWECipher v8 = MulPlain(v5, v3);
-  RLWECipher v9 = Add(v8, v7);
-  Copy(v9, v5);
-  return v5;
+RLWECipher hamming_distance(RLWECipher v1, RLWECipher v2) {
+  PlainVector v3 = MakeMultPlain(0,0,0,1);
+  PlainVector v4 = MakeMultPlain(0,0,1,0);
+  PlainVector v5 = MakeMultPlain(0,1,0,0);
+  Plain v6 = MakePlain(1.000000);
+  Plain v7 = MakePlain(0.000000);
+  PlainVector v8 = MakeMultPlain(1,0,0,0);
+  RLWECipher v9 = MulPlain(v1, v8);
+  RLWECipher v10 = MulPlain(v2, v8);
+  RLWECipher v11 = Cmp_ue(v9, v10);
+  RLWECipher v12 = Cast_Plain_To_Cipher(v6);
+  RLWECipher v13 = Cast_Plain_To_Cipher(v7);
+  RLWECipher v14 = Select(v11, v12, v13);
+  RLWECipher v15 = MulPlain(v1, v5);
+  RLWECipher v16 = MulPlain(v2, v5);
+  RLWECipher v17 = Cmp_ue(v15, v16);
+  RLWECipher v18 = Select(v17, v12, v13);
+  RLWECipher v19 = Add(v14, v18);
+  RLWECipher v20 = MulPlain(v1, v4);
+  RLWECipher v21 = MulPlain(v2, v4);
+  RLWECipher v22 = Cmp_ue(v20, v21);
+  RLWECipher v23 = Select(v22, v12, v13);
+  RLWECipher v24 = Add(v19, v23);
+  RLWECipher v25 = MulPlain(v1, v3);
+  RLWECipher v26 = MulPlain(v2, v3);
+  RLWECipher v27 = Cmp_ue(v25, v26);
+  RLWECipher v28 = Select(v27, v12, v13);
+  RLWECipher v29 = Add(v24, v28);
+  return v29;
 }
+
 
 
 extern "C" 
@@ -168,7 +177,7 @@ std::vector<uint8_t> aegis_mlir_MVP(const std::vector<uint8_t> &buf1, const std:
     ss2.write(reinterpret_cast<const char *>(buf2.data()), buf2.size());
     Serial::Deserialize(v2, ss2, SerType::BINARY);
 
-    RLWECipher retV = main_graph(v1, v2);
+    RLWECipher retV = hamming_distance(v1, v2);
     std::stringstream retss;
     Serial::Serialize(retV, retss, SerType::BINARY);
     std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
