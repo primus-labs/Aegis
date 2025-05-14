@@ -271,7 +271,7 @@ class FheCmpPattern final : public OpConversionPattern<fhe::CmpOp> {
             newLhsOperand = lhsOperand;
         }
 
-        auto rhsOperand = op.getLhs();
+        auto rhsOperand = op.getRhs();
         auto rhsDestTy = typeConverter->convertType(rhsOperand.getType());
         if (!rhsDestTy) {
             LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << rhsOperand

@@ -211,7 +211,7 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
             newLhsOperand = lhsOperand;
         }
 
-        auto rhsOperand = cmpOp.getLhs();
+        auto rhsOperand = cmpOp.getRhs();
         auto rhsDestTy = typeConverter.convertType(rhsOperand.getType());
         if (!rhsDestTy) {
             return failure();
