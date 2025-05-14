@@ -142,14 +142,16 @@ public:
                 SmallVector<mlir::Operation*> castChain;
                 while (true) {
                     mlir::Operation* currentOp = root.getDefiningOp();
-
-                    if (auto fheCast = dyn_cast<fhe::CastOp>(currentOp)) {
+                    if (currentOp == nullptr) 
+                        break;
+                    
+                    if (auto fheCast = llvm::dyn_cast_or_null<fhe::CastOp>(currentOp)) {
                         if (!fheCast->hasOneUse()) {
                             break;
                         }
                         castChain.push_back(fheCast);
                         root = fheCast.getOperand();
-                    } else if (auto secretCast = dyn_cast<secret::CastOp>(currentOp)) {
+                    } else if (auto secretCast = llvm::dyn_cast_or_null<secret::CastOp>(currentOp)) {
                         if (!secretCast->hasOneUse()) {
                             break;
                         }
