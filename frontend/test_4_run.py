@@ -10,25 +10,18 @@ def save_data(data, file):
     with open(file, 'wb') as f:
         f.write(data)
 
-def load_compile_result(file) -> CompileResult:
-    with open(file, 'r') as f:
-        content = f.read()
-
-    compile_result = CompileResult.from_json(content)
-    return compile_result
-
 if __name__ == '__main__':
     private_data_1 = load_data('data/private_data_1.bin')
     private_data_2 = load_data('data/private_data_2.bin')
-    compile_result = load_compile_result('data/compile_result.json')
+    archive_path = 'server.zip'
 
-    if False:
+    if True:
         server = Server()
         server.load_pub_keys('data/pub_keys.bin')
-        output = server.deserialize_run_serialize([private_data_1, private_data_2], compile_result)
+        output = server.deserialize_run_serialize([private_data_1, private_data_2], archive_path)
     else:
         inference_session = InferenceSession()
         inference_session.get_server().load_pub_keys('data/pub_keys.bin')
-        output = inference_session.deserialize_run_serialize([private_data_1, private_data_2], compile_result)
+        output = inference_session.deserialize_run_serialize([private_data_1, private_data_2], archive_path)
 
     save_data(output[0], 'data/output.bin')

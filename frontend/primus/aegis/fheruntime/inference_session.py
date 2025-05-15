@@ -5,7 +5,7 @@ from typing import List
 
 class FHEInferenceSession:
     _server: FHEServer
-    _compile_result: CompileResult
+    _archive_path: str
 
     def __init__(self, onnx_file: str = None):
         self._server = FHEServer()
@@ -15,16 +15,16 @@ class FHEInferenceSession:
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
             compile_option.outputDir = './'
 
-            self._compile_result = self._server.compile(mlir_file, compile_option)
+            self._archive_path = self._server.compile(mlir_file, compile_option)
 
     def get_server(self) -> FHEServer:
         return self._server
 
-    def get_compile_result(self) -> CompileResult:
-        return self._compile_result
+    def get_archive_path(self) -> str:
+        return self._archive_path
 
-    def run(self, private_data: Value | List[Value], compile_result: CompileResult) -> Value | List[Value]:
-        return self._server.run(private_data, compile_result)
+    def run(self, private_data: Value | List[Value], archive_path: str) -> Value | List[Value]:
+        return self._server.run(private_data, archive_path)
 
-    def deserialize_run_serialize(self, private_data: bytes | List[bytes], compile_result: CompileResult) -> bytes | List[bytes]:
-        return self._server.deserialize_run_serialize(private_data, compile_result)
+    def deserialize_run_serialize(self, private_data: bytes | List[bytes], archive_path: str) -> bytes | List[bytes]:
+        return self._server.deserialize_run_serialize(private_data, archive_path)

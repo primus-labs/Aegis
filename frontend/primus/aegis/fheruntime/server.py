@@ -4,6 +4,8 @@ from .keyset_manager import FHEKeysetManager
 from primus_aegis.compiler import CompileOption, CompileResult
 from primus_aegis import Value
 from typing import List
+import tempfile
+import shutil
 
 class FHEServer:
     _compiler: FHECompiler
@@ -39,13 +41,43 @@ class FHEServer:
             raise RuntimeError(result.stderr)
         return mlir_file
 
-    def compile(self, mlir_file: str, compile_option: CompileOption) -> CompileResult:
-        return self._compiler.compile(mlir_file, compile_option)
+    def make_archive(self, compile_result: CompileResult) -> str:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            if len(compile_result.progSpecFileName) > 0:
+                shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.progSpecFileName, tmp_dir + '/' +  compile_result.progSpecFileName)
+            if len(compile_result.binFileName) > 0:
+                shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.binFileName, tmp_dir + '/' +  compile_result.binFileName)
+            if len(compile_result.cppFileName) > 0:
+                shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.cppFileName, tmp_dir + '/' +  compile_result.cppFileName)
 
-    def run(self, private_data: Value | List[Value], compile_result: CompileResult) -> Value | List[Value]:
+            with open(tmp_dir + '/' + 'compile_result.json', 'w') as f:
+                f.write(compile_result.to_json())
+
+            shutil.make_archive(compile_result.outputDirPath + '/' + 'server', 'zip', tmp_dir)
+        return compile_result.outputDirPath + '/' + 'server.zip'
+    
+    def unpack_archive(self, archive_path: str) -> CompileResult:
+        tmp_dir = tempfile.mkdtemp()
+        print('unpack dir', tmp_dir)
+        shutil.unpack_archive(archive_path, tmp_dir, 'zip')
+        with open(tmp_dir + '/' + 'compile_result.json', 'r') as f:
+            content = f.read()
+        compile_result = CompileResult.from_json(content)
+        compile_result.outputDirPath = tmp_dir
+        print(compile_result.to_json())
+        return compile_result
+
+    def compile(self, mlir_file: str, compile_option: CompileOption) -> str:
+        compile_result = self._compiler.compile(mlir_file, compile_option)
+        archive_path = self.make_archive(compile_result)
+        return archive_path
+
+    def run(self, private_data: Value | List[Value], archive_path: str) -> Value | List[Value]:
         self._require_keys_loaded()
+        compile_result = self.unpack_archive(archive_path)
         return self._runtime.run(private_data, compile_result)
 
-    def deserialize_run_serialize(self, private_data: bytes | List[bytes], compile_result: CompileResult) -> bytes | List[bytes]:
+    def deserialize_run_serialize(self, private_data: bytes | List[bytes], archive_path: str) -> bytes | List[bytes]:
         self._require_keys_loaded()
+        compile_result = self.unpack_archive(archive_path)
         return self._runtime.deserialize_run_serialize(private_data, compile_result)
