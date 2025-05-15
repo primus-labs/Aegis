@@ -327,8 +327,12 @@ void UnrollLoopAndMemOptPass::runOnOperation() {
 
             // Collect the storeMap indexing all newly unrolled stores from the end of
             // the last loop to the end of the current loop.
-            if (failed(collectStoreMap(prevNode, nextNode, storeMap))) {
-                return signalPassFailure();
+            if (prevNode) {
+                if (failed(collectStoreMap(prevNode, nextNode, storeMap))) {
+                    return signalPassFailure();
+                }
+            } else {
+                continue;
             }
 
             //  Walk all load's and perform store to load forwarding.
