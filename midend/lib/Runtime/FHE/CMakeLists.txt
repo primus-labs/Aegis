@@ -53,6 +53,7 @@ set(RT_DEP_LIBS
     AegisLowerSecretToFhe
     AegisFoldArithChain
     AegisBatching
+    AegisLoadStoreToCopy
     AegisLowerLweToRlwe
     AegisAutoBootstrap
     AegisLowerFheToEmitc
