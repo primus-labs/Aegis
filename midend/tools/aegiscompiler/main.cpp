@@ -56,6 +56,8 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createCSEPass());
     manager.addPass(affine::createSimplifyAffineStructuresPass());
     manager.addPass(createLowerAffinePass());
+    manager.addPass(createCanonicalizerPass()); 
+    manager.addPass(createCSEPass());
     // manager.addPass(std::make_unique<UnrollLoopsPass>());
     // manager.addPass(createCanonicalizerPass()); 
     // manager.addPass(createCSEPass());

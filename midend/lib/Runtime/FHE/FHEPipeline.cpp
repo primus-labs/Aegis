@@ -211,6 +211,8 @@ mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleO
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, affine::createSimplifyAffineStructuresPass(), enablePass);
     addNestedAwarePass(pm, createLowerAffinePass(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<GlobalMemrefReplacePass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
