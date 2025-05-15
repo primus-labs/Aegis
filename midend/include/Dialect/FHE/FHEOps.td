@@ -392,7 +392,7 @@ def FHE_RevealOp : FHE_Op<"reveal", []> {
     ];
 }
 
-def FHE_RotateOp: FHE_Op<"rotate", [AllTypesMatch<["cipher", "output"]>]> {
+def FHE_RotateOp: FHE_Op<"rotate", [Pure]> {
   let summary = "Rotate the RLWECipher in slot form.";
 
   let arguments = (ins 
