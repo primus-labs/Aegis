@@ -23,6 +23,7 @@
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
 #include "Pass/FoldArithChain/FoldArithChain.h"
 #include "Pass/Batching/Batching.h"
+#include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
 #include "Pass/LweToRlwe/LowerLweToRlwe.h"
 #include "Pass/AutoBootstrap/AutoBootstrap.h"
 #include "Pass/Unroll/UnrollLoops.h"
@@ -257,6 +258,9 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
     // addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     // addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<LoadStoreToCopyPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<LweToRlwePass>(), enablePass);
