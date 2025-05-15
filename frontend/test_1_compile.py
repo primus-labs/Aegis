@@ -16,24 +16,14 @@ def test_compile() -> CompileResult:
     else:
         inference_session = InferenceSession('data/add.onnx')
         compile_result = inference_session.get_compile_result()
-    print("compileResult.outputDirPath:", compile_result.outputDirPath)
-    print("compileResult.cppFileName:", compile_result.cppFileName)
-    print("compileResult.binFileName:", compile_result.binFileName)
-    print("compileResult.progSpecFileName:", compile_result.progSpecFileName)
+    print(compile_result.to_json())
     return compile_result
 
-def dump_compile_result(compile_result, file):
-    import json
-    j = json.loads('{}')
-    j['outputDirPath'] = compile_result.outputDirPath
-    j['cppFileName'] = compile_result.cppFileName
-    j['binFileName'] = compile_result.binFileName
-    j['progSpecFileName'] = compile_result.progSpecFileName
-
-    content = json.dumps(j)
+def save_compile_result(compile_result, file):
+    content = compile_result.to_json()
     with open(file, 'w') as f:
         f.write(content)
 
 if __name__ == '__main__':
     compile_result = test_compile()
-    dump_compile_result(compile_result, 'data/compile_result.json')
+    save_compile_result(compile_result, 'data/compile_result.json')

@@ -11,17 +11,10 @@ def save_data(data, file):
         f.write(data)
 
 def load_compile_result(file) -> CompileResult:
-    import json
     with open(file, 'r') as f:
         content = f.read()
 
-    j = json.loads(content)
-    compile_result = CompileResult()
-    compile_result.outputDirPath = j['outputDirPath']
-    compile_result.cppFileName = j['cppFileName']
-    compile_result.binFileName = j['binFileName']
-    compile_result.progSpecFileName = j['progSpecFileName']
-
+    compile_result = CompileResult.from_json(content)
     return compile_result
 
 if __name__ == '__main__':
