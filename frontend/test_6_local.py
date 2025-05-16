@@ -16,5 +16,5 @@ if __name__ == '__main__':
 
     inference_session = LocalInferenceSession(onnx_file_path, compile_option)
     output = inference_session.encrypt_run_decrypt([data_1, data_2])
-    print(output)
+    print(output[0])
 

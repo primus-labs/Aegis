@@ -6,6 +6,7 @@ from primus_aegis import Value
 from typing import List
 import tempfile
 import shutil
+import os
 
 class FHEServer:
     _compiler: FHECompiler
@@ -83,7 +84,7 @@ class FHEServer:
         if compile_option == None:
             compile_option = CompileOption()
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
-            compile_option.outputDir = "./output"
+            compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
         self._output_dir = compile_option.outputDir
 
         compile_result = self._compiler.compile(mlir_file, compile_option)
