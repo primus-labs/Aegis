@@ -59,8 +59,6 @@ class FHEServer:
                 shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.binFileName, tmp_dir + '/' +  compile_result.binFileName)
             if len(compile_result.cppFileName) > 0:
                 shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.cppFileName, tmp_dir + '/' +  compile_result.cppFileName)
-                print('copyfile', compile_result.outputDirPath + '/' + compile_result.cppFileName, tmp_dir + '/' + compile_result.cppFileName)
-                print(compile_result.to_json())
 
             with open(tmp_dir + '/' + 'compile_result.json', 'w') as f:
                 f.write(compile_result.to_json())

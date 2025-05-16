@@ -11,6 +11,5 @@ class FHECompiler:
             mlir_content = f.read()
         
         compile_result = self._compiler.compile(mlir_content, compile_option)
-        print('begin compile:', compile_option.to_json(), compile_result.to_json())
         return compile_result
 
