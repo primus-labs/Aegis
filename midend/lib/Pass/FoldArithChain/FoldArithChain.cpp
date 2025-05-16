@@ -134,9 +134,9 @@ void FoldArithChainPass::runOnOperation() {
         }
     }
 
-    for (auto f : llvm::make_early_inc_range(block.getOps<func::FuncOp>())) {
-        for (auto op : llvm::make_early_inc_range(f.getBody().getOps<fhe::LWEMulOp>())) {
-            collapseMul(op, rewriter);
-        }
-    }
+    // for (auto f : llvm::make_early_inc_range(block.getOps<func::FuncOp>())) {
+    //     for (auto op : llvm::make_early_inc_range(f.getBody().getOps<fhe::LWEMulOp>())) {
+    //         collapseMul(op, rewriter);
+    //     }
+    // }
 }

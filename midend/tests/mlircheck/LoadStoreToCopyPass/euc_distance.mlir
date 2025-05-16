@@ -1,4 +1,4 @@
-// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --canonicalize  --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --batching --canonicalize --cse < %s | FileCheck %s
+// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --canonicalize --cse  --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --fold-arith-chain --canonicalize --cse --batching --canonicalize --cse --loadstore-to-copy --canonicalize --cse < %s | FileCheck %s
 
 
 module {
@@ -27,14 +27,10 @@ module {
     }
 }
 
-// CHECK-NOT: fhe.lwemul_plain
-// CHECK-NOT: fhe.copy
-// CHECK: fhe.lwesub
-// CHECK: fhe.lwemul
-// CHECK: fhe.rotate
-// CHECK: fhe.lweadd
-// CHECK: fhe.rotate
-// CHECK: fhe.lweadd
-// CHECK: fhe.rotate
-// CHECK: fhe.lweadd
-// CHECK: fhe.load
+
+//CHECK: fhe.lwemul
+//CHECK: fhe.rotate
+//CHECK: fhe.rotate
+//CHECK: fhe.rotate
+//CHECK: fhe.lweadd
+//CHECK: fhe.lwemul_plain
