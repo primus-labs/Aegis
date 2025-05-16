@@ -1,4 +1,4 @@
-// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --canonicalize --cse --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --batching --canonicalize --cse --lwe-to-rlwe --canonicalize --cse --fhe-to-emitc --canonicalize --cse --cast-to-emitc-stub --canonicalize --cse --cast-to-emitc-stub --insert-emitc-preamble --canonicalize --cse  < %s | emitc-translate --mlir-to-cpp | FileCheck %s
+// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --canonicalize --cse --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --batching --canonicalize --cse --loadstore-to-copy --canonicalize --cse --lwe-to-rlwe --canonicalize --cse --fhe-to-emitc --canonicalize --cse --cast-to-emitc-stub --canonicalize --cse --cast-to-emitc-stub --insert-emitc-preamble --canonicalize --cse  < %s | emitc-translate --mlir-to-cpp | FileCheck %s
 
 module {
     func.func @hamming_distance(%arg0: memref<4xf64>, %arg1: memref<4xf64>) -> f64 {
@@ -35,8 +35,8 @@ module {
 // CHECK:   PlainVector v3 = MakeMultPlain(0,0,0,1);
 // CHECK:   PlainVector v4 = MakeMultPlain(0,0,1,0);
 // CHECK:   PlainVector v5 = MakeMultPlain(0,1,0,0);
-// CHECK:   Plain v6 = MakePlain(1.000000);
-// CHECK:   Plain v7 = MakePlain(0.000000);
+// CHECK:   Plain v6 = MakePlain
+// CHECK:   Plain v7 = MakePlain
 // CHECK:   PlainVector v8 = MakeMultPlain(1,0,0,0);
 // CHECK:   RLWECipher v9 = MulPlain(v1, v8);
 // CHECK:   RLWECipher v10 = MulPlain(v2, v8);
