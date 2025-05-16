@@ -4,6 +4,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
+/// Convert scalar fhe::load/fhe::store sequences to fhe::copy operations
 struct LoadStoreToCopyPass : public mlir::PassWrapper<LoadStoreToCopyPass, mlir::OperationPass<mlir::ModuleOp>> {
     void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
