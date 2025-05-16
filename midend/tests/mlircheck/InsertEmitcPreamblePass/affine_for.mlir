@@ -1,4 +1,4 @@
-// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --batching --canonicalize --cse --lwe-to-rlwe -canonicalize --cse --fhe-to-emitc --canonicalize --cse --cast-to-emitc-stub --insert-emitc-preamble --canonicalize --cse < %s | FileCheck %s
+// RUN: aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --cse --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse --batching --canonicalize --cse --loadstore-to-copy --canonicalize --cse --lwe-to-rlwe -canonicalize --cse --fhe-to-emitc --canonicalize --cse --cast-to-emitc-stub --insert-emitc-preamble --canonicalize --cse < %s | FileCheck %s
 
 
 module  {
@@ -43,10 +43,10 @@ module  {
 //CHECK: emitc.call_opaque "Add"
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "MulPlain"
-//CHECK: emitc.call_opaque "Add"(
+//CHECK: emitc.call_opaque "Add"
 //CHECK: emitc.call_opaque "Copy"
 //CHECK: emitc.call_opaque "LoadPlainWithIndex"
-//CHECK: emitc.call_opaque "MulPlain"(
+//CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "LoadPlainWithIndex"
 //CHECK: emitc.call_opaque "MulPlain"
 //CHECK: emitc.call_opaque "Rotate"
