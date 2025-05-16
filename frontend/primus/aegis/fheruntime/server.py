@@ -1,7 +1,7 @@
 from .compiler import FHECompiler
 from .runtime import FHERuntime
 from .keyset_manager import FHEKeysetManager
-from primus_aegis.compiler import CompileOption, CompileResult
+from primus_aegis.compiler import CompileOption, CompileResult, COMPILE_TARGET
 from primus_aegis import Value
 from typing import List
 import tempfile
@@ -12,14 +12,23 @@ class FHEServer:
     _runtime: FHERuntime
     _keyset_manager: FHEKeysetManager
     _are_keys_loaded: bool
+    _output_dir: str
+    _is_simulate: bool
 
-    def __init__(self):
+    def __init__(self, is_simulate = False):
         self._compiler = FHECompiler()
         self._runtime = FHERuntime()
         self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
+        self._is_simulate = is_simulate
+        self._output_dir = './output'
+
+    def get_output_dir(self) -> str:
+        return self._output_dir
 
     def _require_keys_loaded(self):
+        if self._is_simulate:
+            return
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
 
@@ -71,7 +80,8 @@ class FHEServer:
         if compile_option == None:
             compile_option = CompileOption()
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
-            compile_option.outputDir = "./"
+            compile_option.outputDir = "./output"
+        self._output_dir = compile_option.outputDir
 
         compile_result = self._compiler.compile(mlir_file, compile_option)
         archive_path = self.make_archive(compile_result)

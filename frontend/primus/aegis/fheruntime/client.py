@@ -7,13 +7,17 @@ class FHEClient:
     _data_processor: FHEDataProcessor
     _keyset_manager: FHEKeysetManager
     _are_keys_loaded: bool
+    _is_simulate: bool
 
-    def __init__(self):
+    def __init__(self, is_simulate: bool = False):
         self._data_processor = FHEDataProcessor()
         self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
+        self._is_simulate = is_simulate
 
     def _require_keys_loaded(self):
+        if self._is_simulate:
+            return
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
 
