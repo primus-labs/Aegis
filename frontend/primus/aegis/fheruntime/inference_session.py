@@ -7,14 +7,10 @@ class FHEInferenceSession:
     _server: FHEServer
     _archive_path: str
 
-    def __init__(self, onnx_file: str = None):
+    def __init__(self, onnx_file: str = None, compile_option: CompileOption = None):
         self._server = FHEServer()
         if onnx_file != None:
             mlir_file = self._server.convert_onnx_to_mlir(onnx_file)
-            compile_option = CompileOption()
-            compile_option.compileTarget = COMPILE_TARGET.LIBRARY
-            compile_option.outputDir = './'
-
             self._archive_path = self._server.compile(mlir_file, compile_option)
 
     def get_server(self) -> FHEServer:

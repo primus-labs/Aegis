@@ -67,7 +67,12 @@ class FHEServer:
         print(compile_result.to_json())
         return compile_result
 
-    def compile(self, mlir_file: str, compile_option: CompileOption) -> str:
+    def compile(self, mlir_file: str, compile_option: CompileOption = None) -> str:
+        if compile_option == None:
+            compile_option = CompileOption()
+            compile_option.compileTarget = COMPILE_TARGET.LIBRARY
+            compile_option.outputDir = "./"
+
         compile_result = self._compiler.compile(mlir_file, compile_option)
         archive_path = self.make_archive(compile_result)
         return archive_path
