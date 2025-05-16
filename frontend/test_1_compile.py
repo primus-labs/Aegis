@@ -4,20 +4,20 @@ import numpy as np
 def test_compile() -> CompileResult:
     compile_option = CompileOption()
     compile_option.compileTarget = COMPILE_TARGET.LIBRARY
-    compile_option.outputDir = "./"
+    compile_option.outputDir = './'
 
-    if True:
+    if False:
         server = Server()
         mlir_file = server.convert_onnx_to_mlir('data/add.onnx')
         print(mlir_file)
-        compile_result = server.compile(mlir_file, compile_option)
-        # compile_result = server.compile('data/euclidean_distance.mlir', compile_option)
-        # compile_result = server.compile('data/add.onnx.mlir', compile_option)
+        archive_path = server.compile(mlir_file)
+        # archive_path = server.compile('data/euclidean_distance.mlir', compile_option)
+        # archive_path = server.compile('data/add.onnx.mlir', compile_option)
     else:
-        inference_session = InferenceSession('data/add.onnx')
-        compile_result = inference_session.get_compile_result()
-    print(compile_result.to_json())
-    return compile_result
+        inference_session = InferenceSession('data/add.onnx', compile_option)
+        archive_path = inference_session.get_archive_path()
+    print(archive_path)
+    return archive_path
 
 def save_compile_result(compile_result, file):
     content = compile_result.to_json()
@@ -25,5 +25,4 @@ def save_compile_result(compile_result, file):
         f.write(content)
 
 if __name__ == '__main__':
-    compile_result = test_compile()
-    save_compile_result(compile_result, 'data/compile_result.json')
+    test_compile()
