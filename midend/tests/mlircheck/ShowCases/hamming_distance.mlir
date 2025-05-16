@@ -41,8 +41,8 @@ module {
 // CHECK:   RLWECipher v9 = MulPlain(v1, v8);
 // CHECK:   RLWECipher v10 = MulPlain(v2, v8);
 // CHECK:   RLWECipher v11 = Cmp_ue(v9, v10);
-// CHECK:   RLWECipher v12 = Cast_Plain_To_Cipher(v6);
-// CHECK:   RLWECipher v13 = Cast_Plain_To_Cipher(v7);
+// CHECK:   RLWECipher v12 = Cast_Plain_To_Cipher
+// CHECK:   RLWECipher v13 = Cast_Plain_To_Cipher
 // CHECK:   RLWECipher v14 = Select(v11, v12, v13);
 // CHECK:   RLWECipher v15 = MulPlain(v1, v5);
 // CHECK:   RLWECipher v16 = MulPlain(v2, v5);

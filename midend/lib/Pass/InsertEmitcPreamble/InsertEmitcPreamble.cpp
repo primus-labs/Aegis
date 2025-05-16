@@ -171,9 +171,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
 
     SmallVector<StringRef> verbatimMacros = {
         "#define Copy(src, dest) dest = src",
-        "#define Add(a, b) clientCC->EvalAdd((a), (b))",
         "#define AddPlain(c, p) AddPlainImpl((c), (p))",
-        "#define Sub(a, b) clientCC->EvalSub((a), (b))",
         "#define SubPlain(c, p) SubPlainImpl((c), (p))",
         "#define Mul(a, b) clientCC->EvalMult((a), (b))",
         "#define MulPlain(c, p) MulPlainImpl((c), (p))",
@@ -189,26 +187,43 @@ void InsertEmitcPreamblePass::runOnOperation() {
         "#define Cast_Stub(a) a",
     };
 
-    SmallVector<StringRef> verbatimFuncs = {
-        "inline RLWECipher AddPlainImpl(RLWECipher a, Plain b) {",
-        "    return clientCC->EvalAdd(a, b);",
-        "}",
-        "inline RLWECipher AddPlainImpl(RLWECipher a, PlainVector b) {",
-        "    return clientCC->EvalAdd(a, clientCC->MakeCKKSPackedPlaintext(b));",
-        "}",
-        "inline RLWECipher SubPlainImpl(RLWECipher a, Plain b) {",
-        "    return clientCC->EvalSub(a, b);",
-        "}",
-        "inline RLWECipher SubPlainImpl(RLWECipher a, PlainVector b) {",
-        "    return clientCC->EvalSub(a, clientCC->MakeCKKSPackedPlaintext(b));",
-        "}",
-        "inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {",
-        "    return clientCC->EvalMult(a, b);",
-        "}",
-        "inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {",
-        "    return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));",
-        "}",
-    };
+    constexpr std::string_view kFheUtilFuncs = R"cpp(
+        inline RLWECipher AddPlainImpl(RLWECipher a, Plain b) {
+            return clientCC->EvalAdd(a, b);
+        }
+        inline RLWECipher AddPlainImpl(RLWECipher a, PlainVector b) {
+            return clientCC->EvalAdd(a, clientCC->MakeCKKSPackedPlaintext(b));
+        }
+        inline RLWECipher SubPlainImpl(RLWECipher a, Plain b) {
+            return clientCC->EvalSub(a, b);
+        }
+        inline RLWECipher SubPlainImpl(RLWECipher a, PlainVector b) {
+            return clientCC->EvalSub(a, clientCC->MakeCKKSPackedPlaintext(b));
+        }
+        inline RLWECipher MulPlainImpl(RLWECipher a, Plain b) {
+            return clientCC->EvalMult(a, b);
+        }
+        inline RLWECipher MulPlainImpl(RLWECipher a, PlainVector b) {
+            return clientCC->EvalMult(a, clientCC->MakeCKKSPackedPlaintext(b));
+        }
+        template <typename T1, typename T2>
+        auto Add(T1&& a, T2&& b) -> decltype(auto) {
+            return clientCC->EvalAdd(std::forward<T1>(a), std::forward<T2>(b));
+        }
+        template <typename T1, typename T2, typename... Ts>
+        auto Add(T1&& a, T2&& b, Ts&&... rest) {
+            return Add(clientCC->EvalAdd(std::forward<T1>(a), std::forward<T2>(b)), std::forward<Ts>(rest)...);
+        }
+        template <typename T1, typename T2>
+        auto Sub(T1&& a, T2&& b) -> decltype(auto) {
+            return clientCC->EvalSub(std::forward<T1>(a), std::forward<T2>(b));
+        }
+
+        template <typename T1, typename T2, typename... Ts>
+        auto Sub(T1&& a, T2&& b, Ts&&... rest) {
+            return Sub(clientCC->EvalSub(std::forward<T1>(a), std::forward<T2>(b)), std::forward<Ts>(rest)...);
+        }
+    )cpp";
 
     // Assemble the implementation body of function aegis_mlir_adapor_%s
     // TODO: We consider the first function we need to adapt and call. In the future, 
@@ -309,9 +324,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
         builder.create<emitc::VerbatimOp>(op->getLoc(), loadCryptoResFunc);
 
         // Insert crypt related implementation functions
-        for (auto &stmt : verbatimFuncs) {
-            builder.create<emitc::VerbatimOp>(op->getLoc(), stmt);
-        }
+        builder.create<emitc::VerbatimOp>(op->getLoc(), kFheUtilFuncs);
 
         // Insert alloc implementation functions
         auto allocFunc = std::string(llvm::formatv(kAllocFunc.data(), batchSize));
