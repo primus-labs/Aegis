@@ -34,11 +34,9 @@ module  {
 // CHECK-NOT: arith.addf
 // CHECK-NOT: memref.load
 // CHECK-NOT: memref.store
-// CHECK-NOT: fhe.load
-// CHECK-NOT: fhe.store
+// CHECK-NOT: fhe.copy
 // CHECK: fhe.lwemul
 // CHECK: fhe.rotate
-// CHECK: fhe.lweadd
-// CHECK: fhe.lweadd
-// CHECK: fhe.copy
-// CHECK: fhe.copy
+// CHECK: fhe.rotate
+// CHECK: fhe.rotate
+// CHECK: fhe.store
