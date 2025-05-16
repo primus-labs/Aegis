@@ -1,5 +1,6 @@
 from primus.aegis.fheruntime import FHEClient as Client, FHEServer as Server, FHEInferenceSession as InferenceSession, CompileOption, CompileResult, COMPILE_TARGET 
 from typing import List
+import os
 
 def load_data(file) -> bytes:
     with open(file, 'rb') as f:
@@ -11,17 +12,24 @@ def save_data(data, file):
         f.write(data)
 
 if __name__ == '__main__':
-    private_data_1 = load_data('data/private_data_1.bin')
-    private_data_2 = load_data('data/private_data_2.bin')
-    archive_path = 'server.zip'
+    data_dir = os.getenv('AEGIS_DATA_DIR')
+    output_dir = os.getenv('AEGIS_OUTPUT_DIR')
+    pub_keys_path = os.getenv('AEGIS_PUB_KEYS_PATH')
 
-    if True:
+    private_data_1 = load_data(data_dir + '/private_data_1.bin')
+    private_data_2 = load_data(data_dir + '/private_data_2.bin')
+    archive_path = output_dir + '/server.zip'
+
+    test_server_api = os.getenv('TEST_SERVER_API') == '1'
+    print('test_server_api:', test_server_api)
+
+    if test_server_api:
         server = Server()
-        server.load_pub_keys('data/pub_keys.bin')
+        server.load_pub_keys(pub_keys_path)
         output = server.deserialize_run_serialize([private_data_1, private_data_2], archive_path)
     else:
         inference_session = InferenceSession()
-        inference_session.get_server().load_pub_keys('data/pub_keys.bin')
+        inference_session.get_server().load_pub_keys(pub_keys_path)
         output = inference_session.deserialize_run_serialize([private_data_1, private_data_2], archive_path)
 
-    save_data(output[0], 'data/output.bin')
+    save_data(output[0], data_dir + '/output.bin')

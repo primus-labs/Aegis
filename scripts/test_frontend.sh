@@ -12,6 +12,17 @@ cp -rf ${FRONTEND_DIR}/* ${SO_DIR}/
 
 cd ${SO_DIR}
 
+export AEGIS_OUTPUT_DIR=${SO_DIR}/output
+export AEGIS_PROG_SPEC_PATH=${AEGIS_OUTPUT_DIR}/prog_spec.json
+
+export AEGIS_DATA_DIR=${SO_DIR}/data
+export AEGIS_ALL_KEYS_PATH=${AEGIS_DATA_DIR}/all_keys.bin
+export AEGIS_PUB_KEYS_PATH=${AEGIS_DATA_DIR}/pub_keys.bin
+export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
+
+export TEST_SERVER_API=1
+export TEST_SERVER_API=0
+
 python3 test_1_compile.py
 python3 test_2_keygen.py
 python3 test_3_encrypt.py

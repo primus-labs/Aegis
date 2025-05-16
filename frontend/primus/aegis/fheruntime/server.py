@@ -58,6 +58,8 @@ class FHEServer:
                 shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.binFileName, tmp_dir + '/' +  compile_result.binFileName)
             if len(compile_result.cppFileName) > 0:
                 shutil.copyfile(compile_result.outputDirPath + '/' + compile_result.cppFileName, tmp_dir + '/' +  compile_result.cppFileName)
+                print('copyfile', compile_result.outputDirPath + '/' + compile_result.cppFileName, tmp_dir + '/' + compile_result.cppFileName)
+                print(compile_result.to_json())
 
             with open(tmp_dir + '/' + 'compile_result.json', 'w') as f:
                 f.write(compile_result.to_json())
@@ -68,6 +70,7 @@ class FHEServer:
     def unpack_archive(self, archive_path: str) -> CompileResult:
         tmp_dir = tempfile.mkdtemp()
         print('unpack dir', tmp_dir)
+        print(archive_path)
         shutil.unpack_archive(archive_path, tmp_dir, 'zip')
         with open(tmp_dir + '/' + 'compile_result.json', 'r') as f:
             content = f.read()
