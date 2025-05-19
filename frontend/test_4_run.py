@@ -26,7 +26,8 @@ if __name__ == '__main__':
     if test_server_api:
         server = Server()
         server.load_pub_keys(pub_keys_path)
-        output = server.deserialize_run_serialize([private_data_1, private_data_2], archive_path)
+        compile_result = server.load(archive_path)
+        output = server.deserialize_run_serialize([private_data_1, private_data_2], compile_result)
     else:
         inference_session = InferenceSession()
         inference_session.get_server().load_pub_keys(pub_keys_path)

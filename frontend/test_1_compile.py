@@ -11,7 +11,8 @@ def test_compile() -> str:
         server = Server()
         mlir_file = server.convert_onnx_to_mlir(onnx_file_path)
         print('mlir_file:', mlir_file)
-        archive_path = server.compile(mlir_file)
+        compile_result = server.compile(mlir_file)
+        archive_path = server.save(compile_result, compile_result.outputDirPath)
     else:
         inference_session = InferenceSession(onnx_file = onnx_file_path)
         archive_path = inference_session.get_archive_path()
