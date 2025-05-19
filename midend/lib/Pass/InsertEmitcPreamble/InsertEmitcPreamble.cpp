@@ -6,8 +6,9 @@
 #include "llvm/Support/FormatVariadic.h"
 #include "mlir/include/mlir/Support/LLVM.h" 
 #include "mlir/include/mlir/IR/MLIRContext.h"            
-#include "mlir/include/mlir/IR/PatternMatch.h"           
+#include "mlir/include/mlir/IR/PatternMatch.h"
 #include "Pass/InsertEmitcPreamble/InsertEmitcPreamble.h"
+#include "cpu/FHE/include/OpenFheTemplates.h"
 #include "Common/ProgramSpec.h"
 #include "Common/Protocol.h"
 #include "Common/Utils.h"
@@ -16,6 +17,7 @@
 
 using namespace mlir;
 using namespace aegis;
+using namespace aegiscpu::openfhe;
 
 
 // clang-format off
@@ -146,9 +148,11 @@ void InsertEmitcPreamblePass::runOnOperation() {
 
     // Define the content to be inserted for IncludeOp and VerbatimOp.
     SmallVector<std::pair<StringRef, bool>> incLines = {
-        {"vector",    /*isSystem=*/true},
-        {"iostream",  /*isSystem=*/true},
-        {"openfhe.h", /*isSystem=*/false}
+        {"vector",    /*isStandard=*/true},
+        {"iostream",  /*isStandard=*/true},
+        {"cmath",     /*isStandard=*/true},
+        {"functional",/*isStandard=*/true},
+        {"openfhe.h", /*isStandard=*/false},
     };
 
     SmallVector<StringRef> verbatimUsing = {
@@ -323,8 +327,12 @@ void InsertEmitcPreamblePass::runOnOperation() {
                                                            std::to_string(firstModSize), std::to_string(scaleModeSize), std::to_string(batchSize)));
         builder.create<emitc::VerbatimOp>(op->getLoc(), loadCryptoResFunc);
 
-        // Insert crypt related implementation functions
+        // Insert crypto related implementation functions
         builder.create<emitc::VerbatimOp>(op->getLoc(), kFheUtilFuncs);
+
+        // Insert compare related implementation functions
+        auto cmpFuncs = std::string(llvm::formatv(kCmpFuncsTemplate.data(), batchSize));
+        builder.create<emitc::VerbatimOp>(op->getLoc(), cmpFuncs);
 
         // Insert alloc implementation functions
         auto allocFunc = std::string(llvm::formatv(kAllocFunc.data(), batchSize));

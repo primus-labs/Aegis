@@ -6,3 +6,4 @@ add_mlir_library(
 )
 
 target_include_directories(AegisInsertEmitcPreamble PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(AegisInsertEmitcPreamble PUBLIC ${PROJECT_SOURCE_DIR}/../backend)
