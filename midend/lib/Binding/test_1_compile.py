@@ -7,7 +7,7 @@ from test_cases import testMlirContent
 
 mlirContent = testMlirContent
 compileOption = CompileOption()
-compileOption.compileTarget = COMPILE_TARGET.CPP
+compileOption.compileTarget = COMPILE_TARGET.LIBRARY
 compileOption.outputDir = "./"
 print("compileOption:", compileOption.to_json(1))
 
@@ -17,6 +17,10 @@ if compileOption.compileTarget == COMPILE_TARGET.LIBRARY:
     with open("compileResult.json", "w", encoding="utf-8") as f:
         f.write(compileResult.to_json())
 
+# Please install openfhe to system first,
+# if you encounter "fatal error: openfhe.h: No such file or directory"
+
+#
 # THE IS NOT NECCESSARY, if you have installed the openfhe, so
 # you can set compileOption.compileTarget = COMPILE_TARGET.LIBRARY to skip this
 #
