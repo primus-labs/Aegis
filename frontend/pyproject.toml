@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "primus"
+version = "0.1.0"
+description = "Aegis"
+authors = [{name = "Primus", email = "a@primus.com"}]
+readme = "README.md"
+dependencies = []
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["primus"] 
+
+[tool.setuptools.package-data]
+primus = ["lib/*.so", "bin/*"]

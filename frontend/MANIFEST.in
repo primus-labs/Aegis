@@ -1,0 +1,2 @@
+include primus/lib/*.so
+include primus/bin/*
