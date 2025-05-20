@@ -136,8 +136,11 @@ void InsertEmitcPreamblePass::runOnOperation() {
         builder.create<emitc::VerbatimOp>(op->getLoc(), kFheUtilFuncs);
 
         // Insert compare related implementation functions
-        auto cmpFuncs = std::string(llvm::formatv(kCmpFuncsTemplate.data(), batchSize));
-        builder.create<emitc::VerbatimOp>(op->getLoc(), cmpFuncs);
+        ProtoMessage<aegisprotocol::StatsInfo> statsInfos = progSpec.getStatsInfo();
+        if (statsInfos.asReader().getCmpCount() || statsInfos.asReader().getSelCount()) {
+            auto cmpFuncs = std::string(llvm::formatv(kCmpFuncsTemplate.data(), batchSize));
+            builder.create<emitc::VerbatimOp>(op->getLoc(), cmpFuncs);
+        }
 
         // Insert alloc implementation functions
         auto allocFunc = std::string(llvm::formatv(kAllocFunc.data(), batchSize));

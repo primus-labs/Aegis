@@ -253,7 +253,11 @@ llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::Module
                         rotateCnt++;
                     } else if (calleeName == "Bootstrap") {
                         bootstrapCnt++;
-                    } 
+                    } else if (calleeName == "Select") {
+                        selectCnt++;
+                    } else if (calleeName.starts_with("Cmp_")) {
+                        cmpCnt++;
+                    }
                 }
             }
         });
