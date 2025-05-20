@@ -6,13 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "primus"
 version = "0.1.0"
 description = "Aegis"
-authors = [{name = "Primus", email = "a@primus.com"}]
+authors = [{ name = "Primus", email = "a@primus.com" }]
 readme = "README.md"
 dependencies = []
 requires-python = ">=3.10"
 
-[tool.setuptools]
-packages = ["primus"] 
+[tool.setuptools.packages.find]
+include = ["primus*"]
 
 [tool.setuptools.package-data]
 primus = ["lib/*.so", "bin/*"]
