@@ -28,10 +28,10 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
         cryptoContext->Enable(PKE);
         cryptoContext->Enable(KEYSWITCH);
         cryptoContext->Enable(LEVELEDSHE);
+        cryptoContext->Enable(ADVANCEDSHE);
 
         // Precomputations for bootstrapping
          if (keyInfo.asReader().getEnableBootstrapping()) {
-            cryptoContext->Enable(ADVANCEDSHE);
             cryptoContext->Enable(FHE);
 
             // Precomputations for bootstrapping

@@ -215,23 +215,23 @@ inline RLWECipher Alloc() {
 
 // clang-format off
 constexpr std::string_view kCmpFuncsTemplate = R"cpp(
-std::vector<double> coeff1 = {1.83684403e+00, -2.70230296e-01, 1.39933082e-02, -3.08382753e-04, 3.01902138e-06, -1.08264445e-08};
-std::vector<double> coeff2 = {1.36528002e+01, -1.44508325e+02, 5.88075783e+02, -1.14488119e+03, 1.23031707e+03, -7.83728468e+02, 3.03280966e+02, -6.99653527e+01, 8.84524133e+00, -4.71519103e-01};
-std::vector<double> coeff3 = {5.46535806e+00, -3.13317662e+01, 1.10634375e+02, -2.21351538e+02, 2.64761671e+02, -1.96093273e+02, 9.05786026e+01, -2.53712497e+01, 3.94000641e+00, -2.60142549e-01};
+std::vector<double> coeff1 = {{1.83684403e+00, -2.70230296e-01, 1.39933082e-02, -3.08382753e-04, 3.01902138e-06, -1.08264445e-08};
+std::vector<double> coeff2 = {{1.36528002e+01, -1.44508325e+02, 5.88075783e+02, -1.14488119e+03, 1.23031707e+03, -7.83728468e+02, 3.03280966e+02, -6.99653527e+01, 8.84524133e+00, -4.71519103e-01};
+std::vector<double> coeff3 = {{5.46535806e+00, -3.13317662e+01, 1.10634375e+02, -2.21351538e+02, 2.64761671e+02, -1.96093273e+02, 9.05786026e+01, -2.53712497e+01, 3.94000641e+00, -2.60142549e-01};
 
 template <typename T>
-inline uint64_t ceilLog2(T x) {
+inline uint64_t ceilLog2(T x) {{
     return static_cast<uint64_t>(std::ceil(std::log2(x)));
 }
 
 void EvalPower(std::vector<double> coefficients, std::vector<Ciphertext<lbcrypto::DCRTPoly>>& power_basis,
-               Ciphertext<lbcrypto::DCRTPoly>& result) {
-    if (coefficients.size() == 1) {
-        if (std::fabs(std::round(coefficients[0] * pow(2, 50))) > 1.) {
+               Ciphertext<lbcrypto::DCRTPoly>& result) {{
+    if (coefficients.size() == 1) {{
+        if (std::fabs(std::round(coefficients[0] * pow(2, 50))) > 1.) {{
             result = clientCC->EvalMult(power_basis[0], coefficients[0]);
             return;
         }
-        else {
+        else {{
             return;
         }
     }
@@ -242,10 +242,10 @@ void EvalPower(std::vector<double> coefficients, std::vector<Ciphertext<lbcrypto
     remainder.resize((1 << (m - 1)) / 2);
     quotient.resize(coefficients.size() - remainder.size());
 
-    for (size_t i = 0; i < remainder.size(); i++) {
+    for (size_t i = 0; i < remainder.size(); i++) {{
         remainder[i] = coefficients[i];
     }
-    for (size_t i = 0; i < quotient.size(); i++) {
+    for (size_t i = 0; i < quotient.size(); i++) {{
         quotient[i] = coefficients[i + remainder.size()];
     }
 
@@ -256,24 +256,24 @@ void EvalPower(std::vector<double> coefficients, std::vector<Ciphertext<lbcrypto
     result = clientCC->EvalAdd(result, cipher_remainder);
 }
 
-void polyEvalPower(Ciphertext<DCRTPoly>& result, Ciphertext<DCRTPoly>& x, std::vector<double>& coefficients) {
+void polyEvalPower(Ciphertext<DCRTPoly>& result, Ciphertext<DCRTPoly>& x, std::vector<double>& coefficients) {{
     uint64_t degree = coefficients.size() * 2 - 1;
     uint64_t m      = ceilLog2(degree + 1);
 
     std::vector<Ciphertext<DCRTPoly>> power_basis(m);
     power_basis[0] = x;
-    for (size_t i = 1; i < m; i++) {
+    for (size_t i = 1; i < m; i++) {{
         power_basis[i] = clientCC->EvalMult(power_basis[i - 1], power_basis[i - 1]);
     }
 
     EvalPower(coefficients, power_basis, result);
 }
 
-Ciphertext<DCRTPoly> EvalCmpWithZero(Ciphertext<DCRTPoly>& x) {
+Ciphertext<DCRTPoly> EvalCmpWithZero(Ciphertext<DCRTPoly>& x) {{
     Ciphertext<DCRTPoly> result, x1, x2;
     polyEvalPower(x1, x, coeff1);
     polyEvalPower(x2, x1, coeff2);
-    for (auto &x : coeff3) {
+    for (auto &x : coeff3) {{
         x /= 2.0;
     }
     polyEvalPower(result, x2, coeff3);
@@ -281,7 +281,7 @@ Ciphertext<DCRTPoly> EvalCmpWithZero(Ciphertext<DCRTPoly>& x) {
     return result;
 }
 
-inline Ciphertext<DCRTPoly> EvalCmp_gt(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {
+inline Ciphertext<DCRTPoly> Cmp_gt(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
     auto z = clientCC->EvalSub(x, y);
     auto cond = EvalCmpWithZero(z);
     Plaintext plainTwo = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 2.0));
@@ -289,7 +289,7 @@ inline Ciphertext<DCRTPoly> EvalCmp_gt(const Ciphertext<DCRTPoly> &x, const Ciph
     return clientCC->EvalSub(clientCC->EvalMult(clientCC->EvalMult(cond, cond), cipherTwo), cond);
 }
 
-inline Ciphertext<DCRTPoly> EvalCmp_eq(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {
+inline Ciphertext<DCRTPoly> Cmp_eq(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
     auto z = clientCC->EvalSub(x, y);
     auto cond = EvalCmpWithZero(z);
     Plaintext plainFour = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 4.0));
@@ -298,7 +298,7 @@ inline Ciphertext<DCRTPoly> EvalCmp_eq(const Ciphertext<DCRTPoly> &x, const Ciph
     return clientCC->EvalSub(FourCond, clientCC->EvalMult(FourCond, cond));
 }
 
-inline Ciphertext<DCRTPoly> EvalCmp_lt(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {
+inline Ciphertext<DCRTPoly> Cmp_lt(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
     auto z = clientCC->EvalSub(x, y);
     auto cond = EvalCmpWithZero(z);
     Plaintext plainOne   = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 1.0));
@@ -312,7 +312,7 @@ inline Ciphertext<DCRTPoly> EvalCmp_lt(const Ciphertext<DCRTPoly> &x, const Ciph
     return clientCC->EvalAdd(clientCC->EvalSub(cipherOne, cipherThreeCond), cipherTwoCondPower);
 }
 
-inline Ciphertext<DCRTPoly> EvalCmp_ge(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) { 
+inline Ciphertext<DCRTPoly> Cmp_ge(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
     auto z = clientCC->EvalSub(x, y);
     auto cond = EvalCmpWithZero(z);
     Plaintext plainTwo   = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 2.0));
@@ -324,7 +324,7 @@ inline Ciphertext<DCRTPoly> EvalCmp_ge(const Ciphertext<DCRTPoly> &x, const Ciph
     return clientCC->EvalSub(cipherThreeCond, cipherTwoCondPower);
 }
 
-inline Ciphertext<DCRTPoly> EvalCmp_le(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {
+inline Ciphertext<DCRTPoly> Cmp_le(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
     auto z = clientCC->EvalSub(x, y);
     auto cond = EvalCmpWithZero(z);
     Plaintext plainOne   = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 1.0));
@@ -335,14 +335,14 @@ inline Ciphertext<DCRTPoly> EvalCmp_le(const Ciphertext<DCRTPoly> &x, const Ciph
     return clientCC->EvalSub(clientCC->EvalAdd(cipherOne, cond), cipherTwoCondPower);
 }
 
-inline Ciphertext<DCRTPoly> EvalCmp_ue(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {
+inline Ciphertext<DCRTPoly> Cmp_ue(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
     Plaintext plainOne   = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 1.0));
     auto cipherOne       = clientCC->Encrypt(clientPubKey, plainOne);
-    return clientCC->EvalSub(cipherOne, EvalCmp_eq(x, y));
+    return clientCC->EvalSub(cipherOne, Cmp_eq(x, y));
 }
 
-inline Ciphertext<DCRTPoly> EvalSel(const Ciphertext<DCRTPoly> &cond, const Ciphertext<DCRTPoly> &x, 
-                                    const Ciphertext<DCRTPoly> &y) {
+inline Ciphertext<DCRTPoly> Select(const Ciphertext<DCRTPoly> &cond, const Ciphertext<DCRTPoly> &x, 
+                                    const Ciphertext<DCRTPoly> &y) {{
     Plaintext plainOne = clientCC->MakeCKKSPackedPlaintext(std::vector({0}, 1.0));
     auto cipherOne     = clientCC->Encrypt(clientPubKey, plainOne);
     auto notCond       = clientCC->EvalSub(cipherOne, cond);
