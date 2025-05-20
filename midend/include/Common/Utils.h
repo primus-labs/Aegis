@@ -23,7 +23,7 @@
 
 #define FHE_MAX_MUL_DEPTH   18
 #define FHE_FIRST_MOD_SIZE  60
-#define FHE_SCALE_MOD_SIZE  50
+#define FHE_SCALE_MOD_SIZE  59
 inline bool enableFheBoostrapFlag = false;
 
 namespace mlir {

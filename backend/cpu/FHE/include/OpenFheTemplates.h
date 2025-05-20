@@ -128,6 +128,7 @@ void initCryptContext() {{
         parameters.SetMultiplicativeDepth(mulDepth);
         parameters.SetFirstModSize({3});
         parameters.SetScalingModSize({4});
+        parameters.SetScalingTechnique(FLEXIBLEAUTO);
         parameters.SetBatchSize({5});
         clientCC = GenCryptoContext(parameters);
         if (!Serial::DeserializeFromFile(pubKeyFileName, clientPubKey, SerType::BINARY)) {{
