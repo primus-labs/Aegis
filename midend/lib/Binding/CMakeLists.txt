@@ -20,7 +20,7 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 include_directories(${Python_INCLUDE_DIRS})
 
 # The following two forms of library files can be imported directly into python by `import primus_aegis`
-IF(TRUE)
+IF(FALSE)
   # generate such as "primus_aegis.cpython-version-arch-xxx.so"
   pybind11_add_module(primus_aegis primus_aegis.cpp)
 ELSE()
