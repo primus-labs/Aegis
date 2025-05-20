@@ -33,8 +33,14 @@ private:
     // Insert bootstrap operation and update uses
     void insertBootstrapOp(Operation *insertAfter, Value val);
 
-    // Identify FHE multiplication operations
+    // Identify fhe multiplication operations
     bool isMulOp(Operation *op);
+
+    // Identify fhe comparison operations
+    bool isCmpOp(Operation *op);
+
+    // Identify fhe select operations
+    bool isSelectOp(Operation *op);
 
     // Record where to insert bootstrap operation
     void recordInsertionPoint(Operation *op, Value val) {

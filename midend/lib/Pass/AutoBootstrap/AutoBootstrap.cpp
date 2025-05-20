@@ -10,6 +10,8 @@
 #include "Common/Utils.h"
 
 #define DEBUG_TYPE "auto-bootstrap"
+#define CMP_OP_MULT_DEPTH 14
+#define SELECT_OP_MULT_DEPTH 2
 
 using namespace mlir;
 using namespace aegis;
@@ -61,8 +63,19 @@ unsigned AutoBootstrapPass::getChainDepth(Value val) {
         return it->second;
     }
 
-    // Reset depth for non-multiplication inputs
-    return (val.getDefiningOp() && !isMulOp(val.getDefiningOp())) ? 0 : 1;
+    // Reset depth for non-multiplication/cmp/select inputs
+    auto theOp = val.getDefiningOp();
+    if (theOp) {
+        if (isMulOp(theOp)) {
+            return 1;
+        } else if (isCmpOp(theOp)) {
+            return CMP_OP_MULT_DEPTH;
+        } else if (isSelectOp(theOp)) {
+            return SELECT_OP_MULT_DEPTH;
+        }
+    }
+
+    return 0;
 }
 
 void AutoBootstrapPass::insertBootstrapOp(Operation *insertAfter, Value val) {
@@ -89,6 +102,22 @@ void AutoBootstrapPass::insertBootstrapOp(Operation *insertAfter, Value val) {
 bool AutoBootstrapPass::isMulOp(Operation *op) {
     if (mlir::isa<fhe::LWEMulOp>(op)  || mlir::isa<fhe::LWEMulPlainOp>(op) ||
         mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AutoBootstrapPass::isCmpOp(Operation *op) {
+    if (mlir::isa<fhe::CmpOp>(op)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AutoBootstrapPass::isSelectOp(Operation *op) {
+    if (mlir::isa<fhe::SelectOp>(op)) {
         return true;
     } else {
         return false;
