@@ -20,6 +20,7 @@ using namespace mlir::aegis;
 #include "KeysetGenerator.h"
 #include "Operate.h"
 using namespace aegiscpu;
+using namespace openfhe;
 
 // NOTE!!! MUST INCLUDE THE FOLLOWING HEADERS
 // header files needed for serialization
@@ -334,7 +335,7 @@ class PyFHERuntime {
         }
         {
             // Serial various keys
-            auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+            auto cryptoCtx = aegiscpu::openfhe::CryptoContextMgr::getInstance().getCryptoContext();
 
             const std::string ccFileName = compileResult.outputDirPath + "/__cryptocontext.bin";
             if (!Serial::SerializeToFile(ccFileName, cryptoCtx, SerType::BINARY)) {
@@ -342,7 +343,7 @@ class PyFHERuntime {
             }
 
             const std::string pubKeyFileName = compileResult.outputDirPath + "/__pubkey.bin";
-            std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
+            std::shared_ptr<aegiscpu::openfhe::FHEPublicKey> aegisPubKey = aegiscpu::openfhe::FheKeyset::getInstance().getPubKey();
             PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
             if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
                 throw std::runtime_error("Error writing public keys");

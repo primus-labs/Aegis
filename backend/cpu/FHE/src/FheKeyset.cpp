@@ -15,6 +15,7 @@ using namespace std;
 using namespace lbcrypto;
 
 namespace aegiscpu {
+namespace openfhe {
 
 static std::string serializeBE(uint32_t value) {
   uint8_t buffer[4] = {0};
@@ -167,4 +168,5 @@ void FheKeyset::loads(const std::string &keys) {
   CryptoContextMgr::getInstance().setCryptoContext(cc);
 }
 
+} // namespace openfhe
 } // namespace aegiscpu

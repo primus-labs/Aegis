@@ -10,6 +10,7 @@
 using namespace lbcrypto;
 
 namespace aegiscpu {
+namespace openfhe {
 
 class FheKeyset {
 private:
@@ -53,6 +54,7 @@ public:
   void loads(const std::string &keys);
 };
 
+} // namespace openfhe
 } // namespace aegiscpu
 
 #endif

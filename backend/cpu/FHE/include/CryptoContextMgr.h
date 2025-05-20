@@ -5,6 +5,7 @@
 using namespace lbcrypto;
 
 namespace aegiscpu {
+namespace openfhe {
 
 class CryptoContextMgr {
 private:
@@ -36,6 +37,7 @@ public:
   }
 };
 
+} // namespace openfhe
 } // namespace aegiscpu
 
 #endif

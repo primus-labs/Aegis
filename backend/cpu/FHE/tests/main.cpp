@@ -8,6 +8,7 @@
 #include <protocol.capnp.h>
 
 using namespace aegiscpu;
+using namespace openfhe;
 
 #include <cstdint>
 #include <iostream>
@@ -102,18 +103,18 @@ void _test_encrypt() {
 
   std::vector<double> x1 = {0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 5.0};
   std::vector<double> x2 = {5.0, 4.0, 3.0, 2.0, 1.0, 0.75, 0.5, 0.25};
-  auto c1 = aegiscpu::encrypt(x1);
-  auto c2 = aegiscpu::encrypt(x2);
+  auto c1 = aegiscpu::openfhe::encrypt(x1);
+  auto c2 = aegiscpu::openfhe::encrypt(x2);
   {
     // test decrypt
     // cout << "x1:" << x1 << endl;
-    auto d1 = aegiscpu::decrypt(c1, x1.size());
+    auto d1 = aegiscpu::openfhe::decrypt(c1, x1.size());
     // PrintDiff(x1, d1);
     // cout << "d1:" << d1 << endl;
     assert_eq(x1, d1, "decrypt on c1, !=x1");
 
     // cout << "x2:" << x2 << endl;
-    auto d2 = aegiscpu::decrypt(c2, x2.size());
+    auto d2 = aegiscpu::openfhe::decrypt(c2, x2.size());
     // PrintDiff(x2, d2);
     // cout << "d2:" << d2 << endl;
     assert_eq(x2, d2, "decrypt on c2, !=x2");
@@ -121,8 +122,8 @@ void _test_encrypt() {
 
   {
     std::vector<double> x1 = RandomVector(8, -10.0, 10.0);
-    auto c1 = aegiscpu::encrypt(x1);
-    auto d1 = aegiscpu::decrypt(c1, x1.size());
+    auto c1 = aegiscpu::openfhe::encrypt(x1);
+    auto d1 = aegiscpu::openfhe::decrypt(c1, x1.size());
     assert_eq(x1, d1, "decrypt on c1, !=x1");
   }
 }

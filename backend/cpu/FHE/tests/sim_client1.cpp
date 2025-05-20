@@ -10,6 +10,7 @@
 #include <protocol.capnp.h>
 
 using namespace aegiscpu;
+using namespace openfhe;
 
 #include <cstdint>
 #include <iostream>

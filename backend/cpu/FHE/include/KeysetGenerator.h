@@ -7,12 +7,14 @@
 using mlir::aegis::ProtoMessage;
 
 namespace aegiscpu {
+namespace openfhe {
 
 class KeysetGenerator {
 public:
   static void generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo);
 };
 
+} // namespace openfhe {
 } // namespace aegiscpu
 
 #endif

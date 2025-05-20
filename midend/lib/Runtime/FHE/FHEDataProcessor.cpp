@@ -36,7 +36,7 @@ std::vector<Value> FHEDataProcessor::processOutput(std::vector<Value> &outputs) 
 
 Value FHEDataProcessor::privateInput(Value &arg) {
     auto tensor = arg.getTensor<double>().value();
-    std::vector<uint8_t> res = aegiscpu::encrypt(tensor.values);
+    std::vector<uint8_t> res = aegiscpu::openfhe::encrypt(tensor.values);
     Tensor<uint8_t> resBuf(res, arg.getDims());
     return Value(resBuf);
 }
@@ -49,7 +49,7 @@ Value FHEDataProcessor::processOutput(Value &output) {
     auto tensor = output.getTensor<uint8_t>().value();
     auto dims = output.getDims();
     size_t plaintextSize = std::accumulate(dims.begin(), dims.end(), (size_t)1, std::multiplies<size_t>());
-    std::vector<double> res = aegiscpu::decrypt(tensor.values, plaintextSize);
+    std::vector<double> res = aegiscpu::openfhe::decrypt(tensor.values, plaintextSize);
     Tensor<double> resBuf(res, output.getDims());
     return Value(resBuf);
 }

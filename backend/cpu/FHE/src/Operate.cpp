@@ -3,6 +3,7 @@
 #include "FheKeyset.h"
 
 namespace aegiscpu {
+namespace openfhe {
 
 std::vector<uint8_t> encrypt(const std::vector<double> &data) {
     CryptoContext<DCRTPoly> cc = CryptoContextMgr::getInstance().getCryptoContext();
@@ -53,5 +54,6 @@ Ciphertext<DCRTPoly> deserializeCiphertext(const std::vector<uint8_t> &bytes) {
     Serial::Deserialize<Ciphertext<DCRTPoly>>(newC, ss, SerType::BINARY);
     return newC;
 }
-    
+
+} // namespace openfhe
 } // namespace aegiscpu

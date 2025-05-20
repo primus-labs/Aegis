@@ -7,6 +7,7 @@
 using namespace lbcrypto;
 
 namespace aegiscpu {
+namespace openfhe {
 
 class FHEPrivateKey : public Key {
 private:
@@ -52,6 +53,7 @@ public:
   PublicKey<DCRTPoly> getKey() const { return publicKey; }
 };
 
+} // namespace openfhe
 } // namespace aegiscpu
 
 #endif

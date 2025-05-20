@@ -3,6 +3,7 @@
 #include "CryptoContextMgr.h"
 
 namespace aegiscpu {
+namespace openfhe {
 
 void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
     static std::once_flag initFlag;
@@ -69,4 +70,5 @@ void KeysetGenerator::generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo) {
     });
 }
 
+} // namespace openfhe
 } // namespace aegiscpu

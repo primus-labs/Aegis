@@ -53,7 +53,7 @@ bool approximatelyEqual(T a, T b, T absEpsilon = std::numeric_limits<T>::epsilon
 std::vector<double> encryptRunDecrypt(std::shared_ptr<FHERuntime> runtime, std::vector<double> a, size_t resSizes) {
     assert(runtime);
     //Encrypt
-    std::vector<uint8_t> cipher_a = aegiscpu::encrypt(a);
+    std::vector<uint8_t> cipher_a = aegiscpu::openfhe::encrypt(a);
 
     // Run
     size_t dims = 0;
@@ -70,14 +70,14 @@ std::vector<double> encryptRunDecrypt(std::shared_ptr<FHERuntime> runtime, std::
     std::vector<mlir::aegis::Value> res = *resOrErr;
 
     // Decrypte data
-    return aegiscpu::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
+    return aegiscpu::openfhe::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
 }
 
 std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std::vector<double> a, std::vector<double> b, size_t resSizes) {
     assert(runtime);
     //Encrypt
-    std::vector<uint8_t> cipher_a = aegiscpu::encrypt(a);
-    std::vector<uint8_t> cipher_b = aegiscpu::encrypt(b);
+    std::vector<uint8_t> cipher_a = aegiscpu::openfhe::encrypt(a);
+    std::vector<uint8_t> cipher_b = aegiscpu::openfhe::encrypt(b);
 
     // Run
     size_t dims = 0;
@@ -89,7 +89,7 @@ std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std
     params.push_back(value_a);
     params.push_back(value_b);
 
-    // auto cc = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+    // auto cc = aegiscpu::openfhe::CryptoContextMgr::getInstance().getCryptoContext();
     // std::cout << "encrypt cipher CryptoContext=" << cc.get() << std::endl;
     // auto ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
     // std::cout << "after encrypt, current CryptoContext sizes=" << ccSizes << std::endl;
@@ -102,7 +102,7 @@ std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std
     std::vector<mlir::aegis::Value> res = *resOrErr;
 
     // Decrypte data
-    return aegiscpu::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
+    return aegiscpu::openfhe::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
 }
 
 std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirStr, const std::string &funcName) {
@@ -135,10 +135,10 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
         return nullptr;
     }
     ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpecObj.getKeyInfo();
-    aegiscpu::KeysetGenerator::generate(keyInfos);
+    aegiscpu::openfhe::KeysetGenerator::generate(keyInfos);
 
     // Serial various keys
-    auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+    auto cryptoCtx = aegiscpu::openfhe::CryptoContextMgr::getInstance().getCryptoContext();
     const std::string ccFileName= "/tmp/aegis/cryptocontext.txt";
     if (!Serial::SerializeToFile(ccFileName, cryptoCtx, SerType::BINARY)) {
         std::cerr << "Error writing serialization of the crypto context to cryptocontext.txt" << std::endl;
@@ -146,7 +146,7 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
     }
 
     const std::string pubKeyFileName = "/tmp/aegis/pubkey.txt";
-    std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
+    std::shared_ptr<aegiscpu::openfhe::FHEPublicKey> aegisPubKey = aegiscpu::openfhe::FheKeyset::getInstance().getPubKey();
     PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
     if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
         std::cerr << "Exception writing public key to " << pubKeyFileName << std::endl;
@@ -555,10 +555,10 @@ int main() {
             return -1;
         }
         ProtoMessage<aegisprotocol::KeyInfo> keyInfos = progSpecObj.getKeyInfo();
-        aegiscpu::KeysetGenerator::generate(keyInfos);
+        aegiscpu::openfhe::KeysetGenerator::generate(keyInfos);
 
         // Serial various keys
-        auto cryptoCtx = aegiscpu::CryptoContextMgr::getInstance().getCryptoContext();
+        auto cryptoCtx = aegiscpu::openfhe::CryptoContextMgr::getInstance().getCryptoContext();
         const std::string ccFileName= "/tmp/aegis/cryptocontext.txt";
         if (!Serial::SerializeToFile(ccFileName, cryptoCtx, SerType::BINARY)) {
             std::cerr << "Error writing serialization of the crypto context to cryptocontext.txt" << std::endl;
@@ -566,7 +566,7 @@ int main() {
         }
 
         const std::string pubKeyFileName = "/tmp/aegis/pubkey.txt";
-        std::shared_ptr<aegiscpu::FHEPublicKey> aegisPubKey = aegiscpu::FheKeyset::getInstance().getPubKey();
+        std::shared_ptr<aegiscpu::openfhe::FHEPublicKey> aegisPubKey = aegiscpu::openfhe::FheKeyset::getInstance().getPubKey();
         PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
         if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
             std::cerr << "Exception writing public key to " << pubKeyFileName << std::endl;
