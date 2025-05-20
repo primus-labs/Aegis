@@ -402,6 +402,97 @@ bool case_4() {
 }
 
 
+/**********************************
+***********    case 5    **********
+***********************************/
+constexpr std::string_view mlirCase5 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
+        %cond = arith.cmpf "olt", %arg0, %arg1 : f32
+        %result = arith.select %cond, %arg0, %arg1 : f32
+        return %result : f32
+    }
+}
+)mlir";
+
+constexpr std::string_view mlirCase5_2 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
+        %cond = arith.cmpf "ogt", %arg0, %arg1 : f32
+        %result = arith.select %cond, %arg0, %arg1 : f32
+        return %result : f32
+    }
+}
+)mlir";
+
+constexpr std::string_view mlirCase5_3 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
+        %cond = arith.cmpf "oeq", %arg0, %arg1 : f32
+        %result = arith.select %cond, %arg0, %arg1 : f32
+        return %result : f32
+    }
+}
+)mlir";
+
+bool case_5() {
+    std::vector<double> a1 = {-2.0};
+    std::vector<double> b1 = {-4.0};
+    std::vector<double> expect_output = {-4.0};      
+    if (!mlirUnitTest_2(mlirCase5, a1, b1, expect_output)) {
+        return false;
+    }
+
+    std::vector<double> a2 = {2.0};
+    std::vector<double> b2 = {4.0};
+    std::vector<double> expect_output2 = {2.0};      
+    if (!mlirUnitTest_2(mlirCase5, a2, b2, expect_output2)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool case_5_2() {
+    std::vector<double> a1 = {-2.0};
+    std::vector<double> b1 = {-4.0};
+    std::vector<double> expect_output = {-2.0};      
+    if (!mlirUnitTest_2(mlirCase5_2, a1, b1, expect_output)) {
+        return false;
+    }
+
+    std::vector<double> a2 = {2.0};
+    std::vector<double> b2 = {4.0};
+    std::vector<double> expect_output2 = {4.0};      
+    if (!mlirUnitTest_2(mlirCase5_2, a2, b2, expect_output2)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool case_5_3() {
+    std::vector<double> a1 = {5.0};
+    std::vector<double> b1 = {-5.0};
+    std::vector<double> expect_output = {-5.0};      
+    if (!mlirUnitTest_2(mlirCase5_3, a1, b1, expect_output)) {
+        return false;
+    }
+
+    std::vector<double> a2 = {4.0};
+    std::vector<double> b2 = {4.0};
+    std::vector<double> expect_output2 = {4.0};      
+    if (!mlirUnitTest_2(mlirCase5_3, a2, b2, expect_output2)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 //----------------------------------------------------------------
 int main() {
     {
@@ -421,6 +512,21 @@ int main() {
         }
 
         if (!case_4()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_5()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_5_2()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_5_3()) {
             std::cout << "Test fail" << std::endl;
             return -1;
         }
@@ -509,6 +615,7 @@ int main() {
             return -1;
         }
 
+        
         // case 1:
         {
             // scene 1:
@@ -617,6 +724,20 @@ int main() {
             std::vector<double> a1 = {10.0};
             std::vector<double> b1 = {14.0};
             std::vector<double> expect_output = {24.0};      
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, b1, expect_output.size());
+            for (auto i = 0; i < expect_output.size(); i++) {
+                if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
+                    std::cout << "Test fail" << std::endl;
+                    return -1;
+                }
+            }
+        }
+
+        // case 5:
+        {
+            std::vector<double> a1 = {-2.0};
+            std::vector<double> b1 = {-4.0};
+            std::vector<double> expect_output = {-4.0};      
             std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, b1, expect_output.size());
             for (auto i = 0; i < expect_output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
