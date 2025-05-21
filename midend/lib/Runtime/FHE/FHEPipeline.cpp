@@ -28,6 +28,7 @@
 #include "Pass/AutoBootstrap/AutoBootstrap.h"
 #include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
+#include "Pass/Branch/LowerBranch.h"
 #include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassOptions.h"
@@ -208,6 +209,9 @@ mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleO
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<UnrollLoopAndMemOptPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<BranchPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, affine::createSimplifyAffineStructuresPass(), enablePass);

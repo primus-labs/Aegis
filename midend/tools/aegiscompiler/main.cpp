@@ -17,6 +17,7 @@
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
 #include "Pass/FoldArithChain/FoldArithChain.h"
 #include "Pass/Batching/Batching.h"
+#include "Pass/Branch/LowerBranch.h"
 #include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
 #include "Pass/LweToRlwe/LowerLweToRlwe.h"
 #include "Pass/AutoBootstrap/AutoBootstrap.h"
@@ -53,6 +54,9 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<UnrollLoopAndMemOptPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<BranchPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(affine::createSimplifyAffineStructuresPass());
@@ -153,6 +157,7 @@ int main(int argc, char **argv) {
     registerCanonicalizerPass();
     affine::registerAffineLoopUnrollPass();
     PassRegistration<UnrollLoopAndMemOptPass>();
+    PassRegistration<BranchPass>();
     PassRegistration<UnrollLoopsPass>();
     PassRegistration<GlobalMemrefReplacePass>();
     PassRegistration<ExtractLoopBodyPass>();

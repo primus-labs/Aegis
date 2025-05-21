@@ -32,6 +32,7 @@ set(DEP_LIBS
         AegisGlobalMemrefReplace
         AegisExtractLoopBody
         AegisExpandMemrefCopy
+        AegisLowerBranch
         AegisForwardInsertToExtract
         AegisForwardStoreToLoad
         AegisLowerArithToSecret

@@ -41,6 +41,7 @@ set(RT_DEP_LIBS
 
     AegisCommon
     AegisUnrollAndMemOpt
+    AegisLowerBranch
     AegisUnrollLoops
     AegisGlobalMemrefReplace
     AegisExtractLoopBody
