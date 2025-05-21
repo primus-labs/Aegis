@@ -90,8 +90,17 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
             }
         }
 
+        // get param name
+        llvm::StringRef nameVal;
+        if (auto nameAttr = funcOp.getArgAttr(i, PARAM_ATTR_NAME)) {
+            if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
+                nameVal = strAttr.getValue();
+            }
+        }
+
+        // get param type
         auto ty = funcType.getInputs()[i];
-        auto param = getFuncParamFromType(ty, dims);
+        auto param = getFuncParamFromType(ty, dims, std::string(nameVal));
         if (!param) {
             return param.takeError();
         }
@@ -112,8 +121,17 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
             }
         }
 
+        // get param name form metadata
+        llvm::StringRef nameVal;
+        if (auto nameAttr = funcOp.getArgAttr(i, PARAM_ATTR_NAME)) {
+            if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
+                nameVal = strAttr.getValue();
+            }
+        }
+
+        // get param type
         auto ty = funcType.getResults()[i];
-        auto result = getFuncParamFromType(ty, dims);
+        auto result = getFuncParamFromType(ty, dims, std::string(nameVal));
         if (!result) {
             return result.takeError();
         }
@@ -124,10 +142,12 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
 }
 
 
-llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty, const std::vector<int> dims) {
+llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty, const std::vector<int> dims,
+                                                                            const std::string& paramName) {
     if (mlir::isa<emitc::OpaqueType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
-            funcParam.asBuilder().setType(false);
+        funcParam.asBuilder().setName(paramName);
+        funcParam.asBuilder().setType(false);
         if (mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipher" ||
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipherGrid" || 
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipher" ||
@@ -145,6 +165,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
         mlir::isa<fhe::LWECipherMatrixType>(ty) || mlir::isa<fhe::RLWECipherType>(ty) ||
         mlir::isa<fhe::RLWECipherGridType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
+        funcParam.asBuilder().setName(paramName);
         funcParam.asBuilder().setType(true);
         auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
         for (size_t i = 0; i < dims.size(); ++i) {
@@ -154,6 +175,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
     } else if (mlir::isa<mlir::IntegerType>(ty) || mlir::isa<mlir::FloatType>(ty) ||
                mlir::isa<mlir::IndexType>(ty) ) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
+        funcParam.asBuilder().setName(paramName);
         funcParam.asBuilder().setType(false);
         auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
         for (size_t i = 0; i < dims.size(); ++i) {
@@ -165,7 +187,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
         for (int64_t i = 0; i < tensorTy.getRank(); i++) {
             dims.push_back(tensorTy.getShape()[i]);
         }
-        return getFuncParamFromType(tensorTy.getElementType(), dims);
+        return getFuncParamFromType(tensorTy.getElementType(), dims, paramName);
     }
 
     return ErrorMsg("Failed to recognize function param for type : ") << ty;

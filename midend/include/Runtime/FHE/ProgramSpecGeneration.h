@@ -18,7 +18,8 @@ llvm::Expected<ProtoMessage<aegisprotocol::Functions>> getAllFunctionsInfo(mlir:
 
 llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::func::FuncOp funcOp);
 
-llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty, const std::vector<int> dims);
+llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir::Type ty, const std::vector<int> dims,
+                                                                            const std::string& paramName);
 
 llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp module, CompileOptions options);
 
