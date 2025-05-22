@@ -9,7 +9,7 @@ namespace py = pybind11;
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEDataProcessor.h"
 #include "Runtime/FHE/FHERuntime.h"
-#include "cpu/FHE/include/CryptoContextMgr.h"
+#include "CryptoContextMgr.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <capnp/serialize.h>

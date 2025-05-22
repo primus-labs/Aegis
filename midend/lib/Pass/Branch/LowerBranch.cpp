@@ -71,7 +71,7 @@ void BranchPass::runOnOperation() {
 
             // Clone operations except yield
             for (auto &op : llvm::make_range(thenBlock->begin(), std::prev(thenBlock->end()))) {
-            rewriter.clone(op, mapper);
+                rewriter.clone(op, mapper);
             }
 
             // Get yield result from original block

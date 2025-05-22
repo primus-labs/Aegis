@@ -3,6 +3,5 @@ dist/
 
 # ignore the following files
 # run ./scripts/copy_files_to_frontend.sh
-primus_aegis.so
-onnx-mlir
-mlir-translate
+primus/bin/*
+primus/lib/*
