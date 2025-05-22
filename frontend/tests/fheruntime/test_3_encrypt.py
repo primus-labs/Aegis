@@ -13,8 +13,11 @@ if __name__ == '__main__':
     client = Client()
     client.load_all_keys(all_keys_path)
 
-    private_data_1 = np.array([10])
-    private_data_2 = np.array([14])
+    private_data_1 = np.array([[1, 3], [5, 7], [9, 11]])
+    private_data_2 = np.array([[2, 4], [6, 8], [10, 12]])
+
+    private_data_1 = np.array([1, 3, 5, 7, 9, 11])
+    private_data_2 = np.array([2, 4, 6, 8, 10, 12])
 
     ser_1 = client.encrypt_serialize(private_data_1)
     ser_2 = client.encrypt_serialize(private_data_2)

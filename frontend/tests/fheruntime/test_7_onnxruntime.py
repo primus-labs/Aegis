@@ -17,7 +17,7 @@ if __name__ == '__main__':
     print(input_name)
     print(output_name)
 
-    x1 = np.array([10.0], dtype = np.float32)
-    x2 = np.array([14.0], dtype = np.float32)
-    output = inference_session.run(['Y', 'Y'], {'X1': x1, 'X2': x2})
+    x1 = np.array([[1, 3], [5, 7], [9, 11]], dtype = np.float32)
+    x2 = np.array([[2, 4], [6, 8], [10, 12]], dtype = np.float32)
+    output = inference_session.run(['Y'], {'X1': x1, 'X2': x2})
     print(output)

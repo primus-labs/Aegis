@@ -36,26 +36,54 @@ class FHEInferenceSession:
     def get_archive_path(self) -> str:
         return self._archive_path
 
-    def compute_input_data(self, input_feed, compile_result: CompileResult) -> List[Value] | List[bytes]:
+    def _compute_input_output_names(self, compile_result: CompileResult) -> (List[str], List[str]):
         prog_spec_file_path = compile_result.outputDirPath + '/' + compile_result.progSpecFileName
         with open(prog_spec_file_path, 'r') as f:
             content = f.read()
         j = json.loads(content)
-        inputs = j['funcsInfo']['functions'][0]['inputs']
+        function = j['funcsInfo']['functions'][0]
+        inputs = function['inputs']
+        outputs = function['outputs']
 
         input_names = [i['name'] for i in inputs]
+        output_names = [o['name'] for o in outputs]
+        return (input_names, output_names)
+
+    def _check_input_output_names(self, input_names, output_names, all_input_names, all_output_names):
+        if not all([i in all_input_names for i in input_names]):
+            raise RuntimeError("some input names is not valid")
+
+        if not all([i in input_names for i in all_input_names]):
+            raise RuntimeError("some input is not provided")
+
+        if output_names != None and not all([o in all_output_names for o in output_names]):
+            raise RuntimeError("some output name is not valid")
+
+    def _compute_input_data(self, input_feed, input_names: List[str]) -> List[Value] | List[bytes]:
         input_data = [input_feed[n] for n in input_names]
         return input_data
 
+    def _compute_output_data(self, output_data, output_names: List[str], all_output_names: List[str]) -> List[bytes] | List[Value]:
+        if output_names == None:
+            return output_data
+        else:
+            return [output_data[all_output_names.index(element)] for element in output_names]
+
     def run(self, output_names: List[str], input_feed, archive_path: str) -> Value | List[Value]:
         compile_result = self._server.load(archive_path)
-        private_data = self.compute_input_data(input_feed, compile_result)
-        return self._server.run(private_data, compile_result)
+        (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
+        self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
+        private_data = self._compute_input_data(input_feed, all_input_names)
+        output_data =  self._server.run(private_data, compile_result)
+        return self._compute_output_data(output_data, output_names, all_output_names)
 
     def deserialize_run_serialize(self, output_names: List[str], input_feed, archive_path: str) -> bytes | List[bytes]:
         compile_result = self._server.load(archive_path)
-        private_data = self.compute_input_data(input_feed, compile_result)
-        return self._server.deserialize_run_serialize(private_data, compile_result)
+        (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
+        self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
+        private_data = self._compute_input_data(input_feed, all_input_names)
+        output_data = self._server.deserialize_run_serialize(private_data, compile_result)
+        return self._compute_output_data(output_data, output_names, all_output_names)
 
 class LocalFHEInferenceSession(FHEInferenceSession):
     _client: FHEClient
@@ -65,12 +93,15 @@ class LocalFHEInferenceSession(FHEInferenceSession):
         self._client.keygen(self._server.get_output_dir() + '/prog_spec.json')
 
     def encrypt_run_decrypt(self, output_names: List[str], input_feed) -> np.ndarray | List[np.ndarray]:
-        input_data = self.compute_input_data(input_feed, self._compile_result);
+        (all_input_names, all_output_names) = self._compute_input_output_names(self._compile_result)
+        self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
+        input_data = self._compute_input_data(input_feed, all_input_names);
         if isinstance(input_data, np.ndarray):
             private_data = self._client.encrypt(input_data)
         else:
             private_data = [self._client.encrypt(input_d) for input_d in input_data]
         output_data = self._server.run(private_data, self._compile_result)
+        output_data = self._compute_output_data(output_data, output_names, all_output_names)
         if isinstance(output_data, np.ndarray):
             decrypted_data = self._client.decrypt(output_data)
         else:

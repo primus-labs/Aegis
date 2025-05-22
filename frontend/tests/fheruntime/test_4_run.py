@@ -7,9 +7,14 @@ def load_data(file) -> bytes:
         content = f.read()
     return content
 
-def save_data(data, file):
-    with open(file, 'wb') as f:
-        f.write(data)
+def save_data_array(data, file):
+    size = len(data)
+    with open(file + '.num', 'w') as f:
+        f.write(str(size))
+    
+    for i in range(size):
+        with open(file + '.' + str(i), 'wb') as f:
+            f.write(data[i])
 
 if __name__ == '__main__':
     data_dir = os.getenv('AEGIS_DATA_DIR')
@@ -33,4 +38,4 @@ if __name__ == '__main__':
         inference_session.get_server().load_pub_keys(pub_keys_path)
         output = inference_session.deserialize_run_serialize(['Y'], {'X1': private_data_1, 'X2': private_data_2}, archive_path)
 
-    save_data(output[0], data_dir + '/output.bin')
+    save_data_array(output, data_dir + '/output.bin')
