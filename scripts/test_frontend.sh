@@ -14,7 +14,7 @@ export AEGIS_PROG_SPEC_PATH=${AEGIS_OUTPUT_DIR}/prog_spec.json
 export AEGIS_DATA_DIR=${TEST_DIR}/data
 export AEGIS_ALL_KEYS_PATH=${AEGIS_DATA_DIR}/all_keys.bin
 export AEGIS_PUB_KEYS_PATH=${AEGIS_DATA_DIR}/pub_keys.bin
-export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
+export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add_1d.onnx
 
 export TEST_SERVER_API=1
 export TEST_SERVER_API=0
