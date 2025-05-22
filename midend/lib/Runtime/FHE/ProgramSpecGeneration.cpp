@@ -121,15 +121,15 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
             }
         }
 
-        // get param name form metadata
+        // get result name
         llvm::StringRef nameVal;
-        if (auto nameAttr = funcOp.getArgAttr(i, PARAM_ATTR_NAME)) {
+        if (auto nameAttr = funcOp.getResultAttr(i, PARAM_ATTR_NAME)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
                 nameVal = strAttr.getValue();
             }
         }
 
-        // get param type
+        // get result type
         auto ty = funcType.getResults()[i];
         auto result = getFuncParamFromType(ty, dims, std::string(nameVal));
         if (!result) {
