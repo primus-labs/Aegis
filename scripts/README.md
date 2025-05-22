@@ -24,6 +24,7 @@ Use `./scripts/copy_files_to_frontend.sh` to copy the necessary files to the fol
 │   ├── mlir-translate
 │   └── onnx-mlir
 └── lib
+    ├── libAegisRuntime.so*
     └── primus_aegis.so
 ```
 
@@ -43,6 +44,6 @@ Use `./scripts/build_wheel.sh` to package the frontend into the `dist/` folder:
 **Note**: To execute this packaging script, you need to install python `3.10+` and do the following installation:
 
 ```sh 
-pip install build 
-apt install python3.10-venv # corresponding to the python version 
+sudo pip install build 
+sudo apt install python3.10-venv # corresponding to the python version 
 ```
