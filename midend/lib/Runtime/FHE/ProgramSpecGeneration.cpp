@@ -211,6 +211,24 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
         }
     });
 
+    // Adjust batch size to power of 2
+    auto adjustBatchSize = [](int64_t batchSize) -> int64_t {
+        if (batchSize <= 1) {
+            return 1;
+        } else {
+            batchSize -= 1;
+            batchSize |= (batchSize >> 1);
+            batchSize |= (batchSize >> 2);
+            batchSize |= (batchSize >> 4);
+            batchSize |= (batchSize >> 8);
+            batchSize |= (batchSize >> 16);
+            batchSize |= (batchSize >> 32);
+            batchSize += 1;     
+            return batchSize;
+        }
+    };
+    auto batchSize = adjustBatchSize(max_size);
+
     // TODO: We must analyze the specific code to generate the most efficient keyinfo,
     // here we simply set the default value.
     auto keyInfos = ProtoMessage<aegisprotocol::KeyInfo>();
@@ -223,7 +241,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     keyInfos.asBuilder().setMultDepth(FHE_MAX_MUL_DEPTH);
     keyInfos.asBuilder().setFirstModSize(FHE_FIRST_MOD_SIZE);
     keyInfos.asBuilder().setScaleModSize(FHE_SCALE_MOD_SIZE);
-    keyInfos.asBuilder().setBatchSize(max_size); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
+    keyInfos.asBuilder().setBatchSize(batchSize); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384
     keyInfos.asBuilder().setEnableBootstrapping(enableFheBoostrapFlag);
 
     // Set galois key indexs
