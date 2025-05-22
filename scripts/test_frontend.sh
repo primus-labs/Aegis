@@ -1,21 +1,15 @@
 #! /bin/bash
 
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
-export MLIR_TRANSLATE_PATH=${SCRIPT_DIR}/../third_party/llvm-project/build/bin
-
-SO_DIR=${SCRIPT_DIR}/../build/lib/Binding
-FRONTEND_DIR=${SCRIPT_DIR}/../frontend
-
-rm -rf ${SO_DIR}/data
-cp -rf ${FRONTEND_DIR}/* ${SO_DIR}/
+TEST_DIR=${SCRIPT_DIR}/../frontend/tests/fheruntime
 
 
-cd ${SO_DIR}
+cd ${TEST_DIR}
 
-export AEGIS_OUTPUT_DIR=${SO_DIR}/output
+export AEGIS_OUTPUT_DIR=${TEST_DIR}/output
 export AEGIS_PROG_SPEC_PATH=${AEGIS_OUTPUT_DIR}/prog_spec.json
 
-export AEGIS_DATA_DIR=${SO_DIR}/data
+export AEGIS_DATA_DIR=${TEST_DIR}/data
 export AEGIS_ALL_KEYS_PATH=${AEGIS_DATA_DIR}/all_keys.bin
 export AEGIS_PUB_KEYS_PATH=${AEGIS_DATA_DIR}/pub_keys.bin
 export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
