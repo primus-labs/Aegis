@@ -31,6 +31,6 @@ if __name__ == '__main__':
     else:
         inference_session = InferenceSession()
         inference_session.get_server().load_pub_keys(pub_keys_path)
-        output = inference_session.deserialize_run_serialize([private_data_1, private_data_2], archive_path)
+        output = inference_session.deserialize_run_serialize(['Y'], {'X1': private_data_1, 'X2': private_data_2}, archive_path)
 
     save_data(output[0], data_dir + '/output.bin')

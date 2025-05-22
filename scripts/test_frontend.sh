@@ -3,6 +3,8 @@
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
 TEST_DIR=${SCRIPT_DIR}/../frontend/tests/fheruntime
 
+${SCRIPT_DIR}/build_wheel.sh
+pip install --force-reinstall dist/primus-0.1.0-py3-none-any.whl
 
 cd ${TEST_DIR}
 

@@ -10,10 +10,10 @@ if __name__ == '__main__':
     with open(onnx_file_path, 'rb') as f:
         onnx_file_bytes = f.read()
 
-    data_1 = np.array([10])
-    data_2 = np.array([14])
+    data_1 = np.array([10], dtype = np.float32)
+    data_2 = np.array([14], dtype = np.float32)
 
     inference_session = LocalInferenceSession(path_or_bytes = onnx_file_path)
-    output = inference_session.encrypt_run_decrypt([data_1, data_2])
+    output = inference_session.encrypt_run_decrypt(['Y'], {'X1' : data_1, 'X2': data_2})
     print(output[0])
 

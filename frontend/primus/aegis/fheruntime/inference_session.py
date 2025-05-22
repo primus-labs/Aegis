@@ -5,6 +5,7 @@ from primus_aegis import Value
 from typing import List
 import numpy as np
 import os
+import json
 import tempfile
 
 class FHEInferenceSession:
@@ -35,12 +36,25 @@ class FHEInferenceSession:
     def get_archive_path(self) -> str:
         return self._archive_path
 
-    def run(self, private_data: Value | List[Value], archive_path: str) -> Value | List[Value]:
+    def compute_input_data(self, input_feed, compile_result: CompileResult) -> List[Value] | List[bytes]:
+        prog_spec_file_path = compile_result.outputDirPath + '/' + compile_result.progSpecFileName
+        with open(prog_spec_file_path, 'r') as f:
+            content = f.read()
+        j = json.loads(content)
+        inputs = j['funcsInfo']['functions'][0]['inputs']
+
+        input_names = [i['name'] for i in inputs]
+        input_data = [input_feed[n] for n in input_names]
+        return input_data
+
+    def run(self, output_names: List[str], input_feed, archive_path: str) -> Value | List[Value]:
         compile_result = self._server.load(archive_path)
+        private_data = self.compute_input_data(input_feed, compile_result)
         return self._server.run(private_data, compile_result)
 
-    def deserialize_run_serialize(self, private_data: bytes | List[bytes], archive_path: str) -> bytes | List[bytes]:
+    def deserialize_run_serialize(self, output_names: List[str], input_feed, archive_path: str) -> bytes | List[bytes]:
         compile_result = self._server.load(archive_path)
+        private_data = self.compute_input_data(input_feed, compile_result)
         return self._server.deserialize_run_serialize(private_data, compile_result)
 
 class LocalFHEInferenceSession(FHEInferenceSession):
@@ -50,7 +64,8 @@ class LocalFHEInferenceSession(FHEInferenceSession):
         self._client = FHEClient(True)
         self._client.keygen(self._server.get_output_dir() + '/prog_spec.json')
 
-    def encrypt_run_decrypt(self, input_data: np.ndarray | List[np.ndarray]) -> np.ndarray | List[np.ndarray]:
+    def encrypt_run_decrypt(self, output_names: List[str], input_feed) -> np.ndarray | List[np.ndarray]:
+        input_data = self.compute_input_data(input_feed, self._compile_result);
         if isinstance(input_data, np.ndarray):
             private_data = self._client.encrypt(input_data)
         else:
