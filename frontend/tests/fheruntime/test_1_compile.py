@@ -7,6 +7,9 @@ def test_compile() -> str:
     test_server_api = os.getenv('TEST_SERVER_API') == '1'
     print('test_server_api:', test_server_api)
 
+    with open(onnx_file_path, 'rb') as f:
+        onnx_file_bytes = f.read()
+
     if test_server_api:
         server = Server()
         mlir_file = server.convert_onnx_to_mlir(onnx_file_path)
@@ -14,7 +17,7 @@ def test_compile() -> str:
         compile_result = server.compile(mlir_file)
         archive_path = server.save(compile_result, compile_result.outputDirPath)
     else:
-        inference_session = InferenceSession(onnx_file = onnx_file_path)
+        inference_session = InferenceSession(path_or_bytes = onnx_file_path)
         archive_path = inference_session.get_archive_path()
     return archive_path
 

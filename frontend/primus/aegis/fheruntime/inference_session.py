@@ -4,18 +4,30 @@ from primus_aegis.compiler import CompileOption, COMPILE_TARGET, CompileResult
 from primus_aegis import Value
 from typing import List
 import numpy as np
+import os
+import tempfile
 
 class FHEInferenceSession:
     _server: FHEServer
     _compile_result: CompileResult
     _archive_path: str
 
-    def __init__(self, onnx_file: str = None, compile_option: CompileOption = None, is_simulate: bool = False):
+    def __init__(self, path_or_bytes: bytes | str | os.PathLike = None, compile_option: CompileOption = None, is_simulate: bool = False):
         self._server = FHEServer(is_simulate)
-        if onnx_file != None:
-            mlir_file = self._server.convert_onnx_to_mlir(onnx_file)
-            self._compile_result = self._server.compile(mlir_file, compile_option)
-            self._archive_path = self._server.save(self._compile_result, self._compile_result.outputDirPath)
+        if path_or_bytes != None:
+            if isinstance(path_or_bytes, bytes):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    onnx_file = tmp_dir + '/' + 'tmp.onnx'
+                    with open(onnx_file, 'wb') as f:
+                        f.write(path_or_bytes)
+                    self._do_compile(onnx_file, compile_option)
+            else:
+                self._do_compile(path_or_bytes, compile_option)
+
+    def _do_compile(self, onnx_file: str | os.PathLike, compile_option: CompileOption):
+        mlir_file = self._server.convert_onnx_to_mlir(onnx_file)
+        self._compile_result = self._server.compile(mlir_file, compile_option)
+        self._archive_path = self._server.save(self._compile_result, self._compile_result.outputDirPath)
 
     def get_server(self) -> FHEServer:
         return self._server
@@ -33,8 +45,8 @@ class FHEInferenceSession:
 
 class LocalFHEInferenceSession(FHEInferenceSession):
     _client: FHEClient
-    def __init__(self, onnx_file: str = None, compile_option: CompileOption = None):
-        super().__init__(onnx_file, compile_option, True)
+    def __init__(self, path_or_bytes: bytes | str | os.PathLike = None, compile_option: CompileOption = None):
+        super().__init__(path_or_bytes, compile_option, True)
         self._client = FHEClient(True)
         self._client.keygen(self._server.get_output_dir() + '/prog_spec.json')
 

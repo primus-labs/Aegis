@@ -23,3 +23,4 @@ python3 test_3_encrypt.py
 python3 test_4_run.py
 python3 test_5_decrypt.py
 python3 test_6_local.py
+python3 test_7_onnxruntime.py
