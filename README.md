@@ -71,7 +71,7 @@ TODO.
 TODO.
 
 ## Contributing
-TODO.
+Aegis is an open source project developed under the Apache-2.0 license and maintained by [Primus Labs](https://www.primuslabs.xyz/). Contributions from individuals and organizations are all welcome. Before beginning, please take a look at our [contributing guidelines](CONTRIBUTING.md). Our project adheres to [code of conduct](CODE_OF_CONDUCT.md). By participating in our community, you are expected to uphold this code. 
 
 ## License
 [Apache License 2.0](LICENSE)
