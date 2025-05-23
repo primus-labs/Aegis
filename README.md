@@ -68,7 +68,8 @@ Aegis accepts pre-trained machine learning ONNX models as input, converts them t
 TODO.
 
 ## Resources
-TODO.
+- [Core Architecture](https://fhe.primuslabs.xyz/docs/Installation/core_architecture)
+- [Compilation Workflow](https://fhe.primuslabs.xyz/docs/Installation/compile_workflow)
 
 ## Contributing
 Aegis is an open source project developed under the Apache-2.0 license and maintained by [Primus Labs](https://www.primuslabs.xyz/). Contributions from individuals and organizations are all welcome. Before beginning, please take a look at our [contributing guidelines](CONTRIBUTING.md). Our project adheres to [code of conduct](CODE_OF_CONDUCT.md). By participating in our community, you are expected to uphold this code. 
