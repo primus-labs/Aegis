@@ -923,6 +923,44 @@ Examples:
 | :----: | ----------- |
 | `cleartext` | any type
 
+### `fhe.rotate_ex` (aegis::fhe::RotateExOp)
+
+_Rotate the RLWECipher in slot form._
+
+
+Syntax:
+
+```
+operation ::= `fhe.rotate_ex` `(` operands `)` attr-dict `:`  `(` type(operands) `)` `->` type(results)
+```
+
+
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>r</code></td><td>::mlir::IntegerAttr</td><td>32-bit signed integer attribute</td></tr>
+<tr><td><code>i</code></td><td>::mlir::IntegerAttr</td><td>32-bit signed integer attribute</td></tr>
+</table>
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `cipher` | rlwecipher or rlweciphermat or lweciphervec or lweciphermat
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `output` | rlwecipher or rlweciphermat or lweciphervec or lweciphermat
+
 ### `fhe.rotate` (aegis::fhe::RotateOp)
 
 _Rotate the RLWECipher in slot form._
@@ -935,7 +973,11 @@ operation ::= `fhe.rotate` `(` operands `)` attr-dict `:`  `(` type(operands) `)
 ```
 
 
-Interfaces: `InferTypeOpInterface`
+Traits: `AlwaysSpeculatableImplTrait`
+
+Interfaces: `ConditionallySpeculatable`, `NoMemoryEffect (MemoryEffectOpInterface)`
+
+Effects: `MemoryEffects::Effect{}`
 
 #### Attributes:
 
