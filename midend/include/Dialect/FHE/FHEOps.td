@@ -407,6 +407,22 @@ def FHE_RotateOp: FHE_Op<"rotate", [Pure]> {
   let hasFolder = 1;
 }
 
+def FHE_RotateExOp: FHE_Op<"rotate_ex", [Pure]> {
+  let summary = "Rotate the RLWECipher in slot form.";
+
+  let arguments = (ins 
+    AnyTypeOf<[RLWECipher, RLWECipherGrid, LWECipherVector, LWECipherMatrix]>:$cipher,
+    SI32Attr:$r,
+    SI32Attr:$i
+  );
+
+  let results = (outs 
+    AnyTypeOf<[RLWECipher, RLWECipherGrid, LWECipherVector, LWECipherMatrix]>:$output
+  );
+
+  let hasFolder = 1;
+}
+
 def FHE_RelinearizeOp : FHE_Op<"relinearize", [AllTypesMatch<["input", "output"]>]> {
 
   let summary = "FHE Relinearization op, compresses ciphertext size, maintains computational efficiency.​​";

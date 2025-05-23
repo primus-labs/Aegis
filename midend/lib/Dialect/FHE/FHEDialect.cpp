@@ -46,6 +46,15 @@ namespace fhe {
     return {};
 }
 
+/// simplify rotate(cipher, 0, 0) to cipher
+::mlir::OpFoldResult fhe::RotateExOp::fold(fhe::RotateExOp::FoldAdaptor adaptor)
+{
+    if (getR() == 0 && getI() == 0)
+        return getCipher();
+
+    return {};
+}
+
 
 
 /*****************************************************************************/
