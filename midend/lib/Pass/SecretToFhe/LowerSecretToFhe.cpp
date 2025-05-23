@@ -409,7 +409,7 @@ class SecretLoadPattern final : public OpConversionPattern<secret::LoadOp> {
             destUnitTy = CipherTy.getPlaintextType();
         } else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(destTy)) {
             destUnitTy = CipherTy.getPlaintextType();
-        } else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(destTy)) {
+        } else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(destTy)) {
             destUnitTy = CipherTy.getPlaintextType();
         }
 
@@ -673,6 +673,9 @@ void LowerSecretToFhePass::runOnOperation() {
             if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy) || mlir::isa<secret::SecretType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
+            llvm::outs() << "dest type:" << t << "\n";
+            llvm::outs() << "src type:" << srcTy << "\n";
+            llvm::outs() << "src 0-th value:" << vs[0] << "\n";
             llvm::errs() << "[SecretToFhePass] Unsupported type detected, mybe don't handle this type " 
                          << srcTy << "\n";
         } else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
