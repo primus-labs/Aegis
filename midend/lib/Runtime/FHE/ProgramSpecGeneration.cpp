@@ -229,8 +229,22 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     };
     auto batchSize = adjustBatchSize(max_size);
 
+    // Retrieve the correct multiplication depth value.
+    unsigned maxMulDepth = FHE_MAX_MUL_DEPTH_NO_CMP;
+    module.walk([&](mlir::Operation *op) {
+        if (mlir::isa<emitc::CallOpaqueOp>(op)) {
+            if (auto callOp = mlir::dyn_cast_or_null<emitc::CallOpaqueOp>(op)) {
+                StringRef calleeName = callOp.getCallee();
+                if (calleeName.starts_with("Cmp_")) {
+                    maxMulDepth = FHE_MAX_MUL_DEPTH_WITH_CMP;
+                    return mlir::WalkResult::interrupt();
+                }
+            }
+        }
+        return mlir::WalkResult::advance();
+    });
+
     // TODO: We must analyze the specific code to generate the most efficient keyinfo,
-    // here we simply set the default value.
     auto keyInfos = ProtoMessage<aegisprotocol::KeyInfo>();
     // keyInfos.asBuilder().setPolyModDegree(8192);
     // auto coffModChBuilder = keyInfos.asBuilder().initCoffModCh(3);
@@ -238,7 +252,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
     // coffModChBuilder.set(1, 60);
     // coffModChBuilder.set(2, 60);
     // keyInfos.asBuilder().setScale(40);
-    keyInfos.asBuilder().setMultDepth(FHE_MAX_MUL_DEPTH);
+    keyInfos.asBuilder().setMultDepth(maxMulDepth);
     keyInfos.asBuilder().setFirstModSize(FHE_FIRST_MOD_SIZE);
     keyInfos.asBuilder().setScaleModSize(FHE_SCALE_MOD_SIZE);
     keyInfos.asBuilder().setBatchSize(batchSize); //BatchSize == ringDim / 2, 128bit -> 4096, 192bit -> 8192, 256bit -> 16384

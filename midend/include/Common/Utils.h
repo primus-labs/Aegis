@@ -21,7 +21,8 @@
 #define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
 #define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
 
-#define FHE_MAX_MUL_DEPTH   18
+#define FHE_MAX_MUL_DEPTH_WITH_CMP   18
+#define FHE_MAX_MUL_DEPTH_NO_CMP     8
 #define FHE_FIRST_MOD_SIZE  60
 #define FHE_SCALE_MOD_SIZE  59
 inline bool enableFheBoostrapFlag = false;

@@ -23,6 +23,17 @@ void AutoBootstrapPass::getDependentDialects(mlir::DialectRegistry &registry) co
 void AutoBootstrapPass::runOnOperation() {
     ModuleOp module = getOperation();
 
+    // Phase 0: Check if the fhe::cmp operation exists. If it exists, set maxMulDepth = FHE_MAX_MUL_DEPTH_WITH_CMP; 
+    // otherwise, set maxMulDepth = FHE_MAX_MUL_DEPTH_NO_CMP.
+    maxMulDepth = FHE_MAX_MUL_DEPTH_NO_CMP;
+    module.walk([&](mlir::Operation *op) {
+        if (mlir::isa<fhe::CmpOp>(op)) {
+            maxMulDepth = FHE_MAX_MUL_DEPTH_WITH_CMP;
+            return mlir::WalkResult::interrupt();
+        }
+        return mlir::WalkResult::advance();
+    });
+
     // Phase 1: Analyze multiplication chains across entire module
     module.walk([&](Operation *op) {
         if (isMulOp(op)) {
@@ -50,7 +61,7 @@ void AutoBootstrapPass::processMulOp(Operation *mulOp) {
     
 
     // Trigger bootstrap after 8 consecutive multiplications
-    if (currentDepth >= FHE_MAX_MUL_DEPTH) {
+    if (currentDepth >= maxMulDepth) {
         enableFheBoostrapFlag = true;
         recordInsertionPoint(mulOp, result);
         resetChainDepth(result);

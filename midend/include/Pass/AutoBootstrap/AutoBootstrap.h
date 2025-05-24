@@ -53,6 +53,9 @@ private:
     }
 
 private:
+    // the fhe max mul depth
+    unsigned int maxMulDepth;
+
     // Global tracking of multiplication chain depth for each value
     std::map<Value, unsigned, ValueCompare> valueChainDepth;
   
