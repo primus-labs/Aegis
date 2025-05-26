@@ -256,9 +256,16 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
 
         // Now create a scalar again by creating an load op, preserving type constraints
         rewriter.setInsertionPointAfter(new_op);
-        auto indexValue = rewriter.create<arith::ConstantIndexOp>(op.getLoc(), target_slot);
-        auto res_new_op = rewriter.create<fhe::LoadOp>(op.getLoc(), op.getType(), new_op.getResult(), mlir::ValueRange{indexValue});
-        op->replaceAllUsesWith(res_new_op);
+        if (target_row == -1) {
+            auto indexValue = rewriter.create<arith::ConstantIndexOp>(op.getLoc(), target_slot);
+            auto res_new_op = rewriter.create<fhe::LoadOp>(op.getLoc(), op.getType(), new_op.getResult(), mlir::ValueRange{indexValue});
+            op->replaceAllUsesWith(res_new_op);
+        } else {
+            auto rowValue = rewriter.create<arith::ConstantIndexOp>(op.getLoc(), target_row);
+            auto indexValue = rewriter.create<arith::ConstantIndexOp>(op.getLoc(), target_slot);
+            auto res_new_op = rewriter.create<fhe::LoadOp>(op.getLoc(), op.getType(), new_op.getResult(), mlir::ValueRange{rowValue, indexValue});
+            op->replaceAllUsesWith(res_new_op);
+        }
 
         // Finally, remove the original op
         rewriter.eraseOp(op);
