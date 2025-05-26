@@ -79,12 +79,27 @@ def FHE_LoadOp : FHE_Op<"load", [MemoryEffects<[MemRead]>, Pure]> {
     let description = [{
         Example:
         ```mlir
-        %0 = "fhe.load" %A[%1]: (!fhe.LWECipherVector<i32>)
-        %3 = "fhe.load" %A[%1, %2] : (!fhe.LWECipherVector<i32>)
+        %0 = "fhe.load" %A[%1]: (!fhe.LWECipherVector<4xi32>)
+        %3 = "fhe.load" %A[%1, %2] : (!fhe.LWECipherVector<4xi32>)
         ```
     }];
 
     let arguments = (ins AnyType:$memref, Variadic<AnyType>:$indices);
+    let results = (outs AnyType:$result);
+}
+
+def FHE_VloadOp : FHE_Op<"vload", [MemoryEffects<[MemRead]>, Pure]> {
+    let summary = "read a vector elements from a LWECipherMatrix.";
+
+    let description = [{
+        Example:
+        ```mlir
+        %0 = "fhe.vload" %A[%1]: (!fhe.LWECipherMatrix<4x16i32>)
+        %3 = "fhe.vload" %A[%1, %2] : (!fhe.LWECipherMatrix<4x16i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyType:$memref, AnyType:$row);
     let results = (outs AnyType:$result);
 }
 
@@ -94,12 +109,26 @@ def FHE_StoreOp : FHE_Op<"store", [MemoryEffects<[MemWrite]>]> {
     let description = [{
         Example:
         ```mlir
-        "fhe.store" %0, %A[%1]: (!fhe.LWECipherVectori32>) 
-        "fhe.store" %0, %A[%1, 5]: (!fhe.LWECipherVector<i32>) 
+        "fhe.store" %0, %A[%1]: (!fhe.LWECipherVector<4xi32>) 
+        "fhe.store" %0, %A[%1, 5]: (!fhe.LWECipherVector<4xi32>) 
         ```
     }];
 
     let arguments = (ins AnyType:$valueToStore, AnyType:$memref, Variadic<AnyType>:$indices);
+}
+
+def FHE_VstoreOp : FHE_Op<"vstore", [MemoryEffects<[MemWrite]>]> {
+    let summary = "Store a vector to a LWECipherMatrix memory location given by row.";
+
+    let description = [{
+        Example:
+        ```mlir
+        "fhe.vstore" %0, %A[%1]: (!fhe.LWECipherMatrix<4x16xi32>) 
+        "fhe.vstore" %0, %A[%1, 5]: (!fhe.LWECipherMatrix<4x16xi32>) 
+        ```
+    }];
+
+    let arguments = (ins AnyType:$valueToStore, AnyType:$memref, AnyType:$row);
 }
 
 def FHE_CopyOp : FHE_Op<"copy", []> {
