@@ -2,6 +2,7 @@ from .data_processor import FHEDataProcessor
 from .keyset_manager import FHEKeysetManager
 from primus_aegis import Value
 import numpy as np
+from typing import List
 
 class FHEClient:
     _data_processor: FHEDataProcessor
@@ -37,18 +38,21 @@ class FHEClient:
         self._keyset_manager.load_keys(key_file)
         self._are_keys_loaded = True
 
-    def encrypt(self, plain_input: np.ndarray) -> Value:
+    def encrypt(self, plain_input: np.ndarray | List[np.ndarray], serialize_output: bool = False) -> Value | bytes:
         self._require_keys_loaded()
-        return self._data_processor.encrypt(plain_input)
+        if isinstance(plain_input, List):
+            return [self.encrypt(i, serialize_output) for i in plain_input]
 
-    def encrypt_serialize(self, plain_input: np.ndarray) -> bytes:
-        self._require_keys_loaded()
-        return self._data_processor.encrypt_serialize(plain_input)
+        output = self._data_processor.encrypt(plain_input)
+        if serialize_output:
+            output = output.to_bytes()
+        return output
 
-    def decrypt(self, ciphertext_input: Value) -> np.ndarray:
+    def decrypt(self, ciphertext_input: Value | bytes | List[Value] | List[bytes]) -> np.ndarray:
         self._require_keys_loaded()
+        if isinstance(ciphertext_input, List):
+            return [self.decrypt(i) for i in ciphertext_input]
+
+        if isinstance(ciphertext_input, bytes):
+            ciphertext_input = Value.from_bytes(ciphertext_input)
         return self._data_processor.decrypt(ciphertext_input)
-
-    def deserialize_decrypt(self, ciphertext_input: bytes) -> np.ndarray:
-        self._require_keys_loaded()
-        return self._data_processor.deserialize_decrypt(ciphertext_input)

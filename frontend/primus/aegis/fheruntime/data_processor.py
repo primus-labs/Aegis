@@ -9,12 +9,5 @@ class FHEDataProcessor:
     def encrypt(self, plain_input: np.ndarray) -> Value:
         return DataProcessor.privateInput(plain_input)
 
-    def encrypt_serialize(self, plain_input: np.ndarray) -> bytes:
-        return self.encrypt(plain_input).to_bytes()
-
     def decrypt(self, ciphertext: Value) -> Value:
         return DataProcessor.processOutput(ciphertext)
-
-    def deserialize_decrypt(self, ciphertext: bytes) -> Value:
-        value = Value.from_bytes(ciphertext)
-        return self.decrypt(value)

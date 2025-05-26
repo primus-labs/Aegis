@@ -2,17 +2,7 @@ from primus.aegis.fheruntime import FHEClient as Client
 import numpy as np
 import os
 from typing import List
-
-def load_data(file) -> List[bytes]:
-    with open(file + '.num', 'r') as f:
-        size = int(f.read())
-
-    lst = []
-    for i in range(size):
-        with open(file + '.' + str(i), 'rb') as f:
-            content = f.read()
-            lst.append(content)
-    return lst
+from test_utils import load_data_array
 
 if __name__ == '__main__':
     data_dir = os.getenv('AEGIS_DATA_DIR')
@@ -21,6 +11,6 @@ if __name__ == '__main__':
     client = Client()
     client.load_all_keys(all_keys_path)
 
-    ser_output = load_data(data_dir + '/output.bin')
-    output = [client.deserialize_decrypt(o) for o in ser_output]
+    ser_output = load_data_array(data_dir + '/output.bin')
+    output = client.decrypt(ser_output)
     print(output)

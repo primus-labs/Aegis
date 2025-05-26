@@ -1,10 +1,7 @@
 from primus.aegis.fheruntime import FHEClient as Client 
 import numpy as np
 import os
-
-def save(ser: bytes, file: str):
-    with open(file, 'wb') as f:
-        f.write(ser)
+from test_utils import save_data_array
 
 if __name__ == '__main__':
     all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
@@ -19,8 +16,6 @@ if __name__ == '__main__':
     private_data_1 = np.array([1, 3, 5, 7, 9, 11])
     private_data_2 = np.array([2, 4, 6, 8, 10, 12])
 
-    ser_1 = client.encrypt_serialize(private_data_1)
-    ser_2 = client.encrypt_serialize(private_data_2)
+    ser = client.encrypt([private_data_1, private_data_2], True)
 
-    save(ser_1, data_dir + "/private_data_1.bin")
-    save(ser_2, data_dir + "/private_data_2.bin")
+    save_data_array(ser, data_dir + "/private_data.bin")

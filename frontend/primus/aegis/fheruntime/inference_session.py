@@ -68,20 +68,12 @@ class FHEInferenceSession:
         else:
             return [output_data[all_output_names.index(element)] for element in output_names]
 
-    def run(self, output_names: List[str], input_feed, archive_path: str) -> Value | List[Value]:
+    def run(self, output_names: List[str], input_feed, archive_path: str) -> Value | List[Value] | bytes | List[bytes]:
         compile_result = self._server.load(archive_path)
         (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
         self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
         private_data = self._compute_input_data(input_feed, all_input_names)
         output_data =  self._server.run(private_data, compile_result)
-        return self._compute_output_data(output_data, output_names, all_output_names)
-
-    def deserialize_run_serialize(self, output_names: List[str], input_feed, archive_path: str) -> bytes | List[bytes]:
-        compile_result = self._server.load(archive_path)
-        (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
-        self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
-        private_data = self._compute_input_data(input_feed, all_input_names)
-        output_data = self._server.deserialize_run_serialize(private_data, compile_result)
         return self._compute_output_data(output_data, output_names, all_output_names)
 
 class LocalFHEInferenceSession(FHEInferenceSession):
@@ -95,16 +87,10 @@ class LocalFHEInferenceSession(FHEInferenceSession):
         (all_input_names, all_output_names) = self._compute_input_output_names(self._compile_result)
         self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
         input_data = self._compute_input_data(input_feed, all_input_names);
-        if isinstance(input_data, np.ndarray):
-            private_data = self._client.encrypt(input_data)
-        else:
-            private_data = [self._client.encrypt(input_d) for input_d in input_data]
+        private_data = self._client.encrypt(input_data)
         output_data = self._server.run(private_data, self._compile_result)
         output_data = self._compute_output_data(output_data, output_names, all_output_names)
-        if isinstance(output_data, np.ndarray):
-            decrypted_data = self._client.decrypt(output_data)
-        else:
-            decrypted_data = [self._client.decrypt(output_d) for output_d in output_data]
+        decrypted_data = self._client.decrypt(output_data)
         return decrypted_data
 
 

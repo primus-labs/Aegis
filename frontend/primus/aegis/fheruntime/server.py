@@ -89,10 +89,25 @@ class FHEServer:
         compile_result = self._compiler.compile(mlir_file, compile_option)
         return compile_result
 
-    def run(self, private_data: Value | List[Value], compile_result: CompileResult) -> Value | List[Value]:
+    def run(self, private_data: bytes | List[bytes] | Value | List[Value], compile_result: CompileResult) -> bytes | List[bytes] | Value | List[Value]:
         self._require_keys_loaded()
-        return self._runtime.run(private_data, compile_result)
+        is_input_serialized = False
+        if isinstance(private_data, bytes):
+            private_data = Value.from_bytes(private_data)
+            is_input_serialized = True
+        elif isinstance(private_data, List) and isinstance(private_data[0], bytes):
+            private_data = [Value.from_bytes(data) for data in private_data]
+            is_input_serialized = True
 
-    def deserialize_run_serialize(self, private_data: bytes | List[bytes], compile_result: CompileResult) -> bytes | List[bytes]:
-        self._require_keys_loaded()
-        return self._runtime.deserialize_run_serialize(private_data, compile_result)
+        output = self._runtime.run(private_data, compile_result)
+
+        if not is_input_serialized:
+            return output
+
+        if isinstance(output, Value):
+            ser_value = output.to_bytes()
+        else:
+            ser_value = [o.to_bytes() for o in output]
+
+        return ser_value
+
