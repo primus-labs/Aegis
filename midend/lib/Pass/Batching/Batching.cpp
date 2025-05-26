@@ -30,25 +30,43 @@ template <typename OpType>
 LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, OpType op) {
     // We care only about ops that return scalars, assuming others are already "SIMD-compatible"
     if (mlir::isa<fhe::LWECipherType>(op.getType())) {
+        int target_row  = -1; //(-1 => cipher vector not cipher matrix)
         int target_slot = -1; //(-1 => no target slot required)
 
         // We only search one level deep for now.
         for (auto u : op->getUsers()) {
             if (fhe::LoadOp loadOp = mlir::dyn_cast_or_null<fhe::LoadOp>(u)) {
-                assert(static_cast<int64_t>(loadOp.getIndices().size()) == 1 && "LoadOp indices size > 1 not support");
-                auto idx = getConstantIntValue(loadOp.getIndices()[0]);
-                assert(idx.has_value());
-                target_slot = idx.value();
+                assert(static_cast<int64_t>(loadOp.getIndices().size()) <= 2 && "LoadOp indices size > 2 not support");
+                if (loadOp.getIndices().size() == 1) {
+                    auto idx = getConstantIntValue(loadOp.getIndices()[0]);
+                    assert(idx.has_value());
+                    target_slot = idx.value();
+                } else if (loadOp.getIndices().size() == 2) {
+                    auto row = getConstantIntValue(loadOp.getIndices()[0]);
+                    auto idx = getConstantIntValue(loadOp.getIndices()[1]);
+                    assert(row.has_value() && idx.has_value());
+                    target_row = row.value();
+                    target_slot = idx.value();
+                }
                 break;
             } else if (fhe::StoreOp storeOp = mlir::dyn_cast_or_null<fhe::StoreOp>(u)) {
-                assert(static_cast<int64_t>(storeOp.getIndices().size()) == 1 && "StoreOp indices size > 1 not support");
-                auto idx = getConstantIntValue(storeOp.getIndices()[0]);
-                assert(idx.has_value());
-                target_slot = idx.value();
+                assert(static_cast<int64_t>(storeOp.getIndices().size()) <= 2 && "StoreOp indices size > 2 not support");
+                if (storeOp.getIndices().size() == 1) {
+                    auto idx = getConstantIntValue(storeOp.getIndices()[0]);
+                    assert(idx.has_value());
+                    target_slot = idx.value();
+                } else if (storeOp.getIndices().size() == 2) {
+                    auto row = getConstantIntValue(storeOp.getIndices()[0]);
+                    auto idx = getConstantIntValue(storeOp.getIndices()[1]);
+                    assert(row.has_value() && idx.has_value());
+                    target_row = row.value();
+                    target_slot = idx.value();
+                }
                 break;
             } else if (auto retOp = mlir::dyn_cast_or_null<func::ReturnOp>(u)) {
                 if (mlir::isa<fhe::LWECipherType>(retOp->getOperandTypes().front())) {
                     // we eventually want this as a scalar, which means slot 0
+                    target_row = 0;
                     target_slot = 0;
                 }
                 break;
@@ -61,14 +79,29 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                 if (mlir::isa<fhe::LWECipherType>((*it).getType())) {
                     // scalar-type input that needs to be converted
                     if (fhe::LoadOp loadOp = (*it).template getDefiningOp<fhe::LoadOp>()) {
-                        assert(static_cast<int64_t>(loadOp.getIndices().size()) == 1 && "LoadOp indices size > 1 not support");
-                        auto idx = getConstantIntValue(loadOp.getIndices()[0]);
-                        assert(idx.has_value());
-                        auto i = idx.value();
-                        if (target_slot == -1) {
-                            target_slot = i;
+                        assert(static_cast<int64_t>(loadOp.getIndices().size()) <= 2 && "LoadOp indices size > 2 not support");
+                        if (loadOp.getIndices().size() == 1) {
+                            auto idx = getConstantIntValue(loadOp.getIndices()[0]);
+                            assert(idx.has_value());
+                            auto i = idx.value();
+                            if (target_slot == -1) {
+                                target_slot = i;
+                                break;
+                            }
+                        } else if (loadOp.getIndices().size() == 2) {
+                            auto row = getConstantIntValue(loadOp.getIndices()[0]);
+                            auto idx = getConstantIntValue(loadOp.getIndices()[1]);
+                            assert(row.has_value() && idx.has_value());
+                            auto r = row.value();
+                            auto i = idx.value();
+                            if (target_row == -1) {
+                                target_row = r;
+                            }
+                            if (target_slot == -1) {
+                                target_slot = i;
+                            }
                             break;
-                        }
+                        } 
                     }
                 }
             }
@@ -82,21 +115,36 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
         // find the maximum size of vector involved
         int max_size = -1;
         for (auto operand : new_op.getOperands()) {
-            if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(operand.getType())) {
+            if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(operand.getType())) {
+                max_size = std::max(max_size, operandTy.getCol());
+            } else if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(operand.getType())) {
                 max_size = std::max(max_size, operandTy.getSize());
             } else if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherType>(operand.getType())) {
                 // scalar-type input that will be converted
                 if (auto loadOp = operand.template getDefiningOp<fhe::LoadOp>()) {
-                    auto loadTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(loadOp.getMemref().getType());
-                    assert(loadTy && "here, the fhe::LoadOp must be applied to LWECipherVector");
-                    max_size = std::max(max_size, loadTy.getSize());
+                    if (mlir::isa<fhe::LWECipherVectorType>(loadOp.getMemref().getType())) {
+                        auto loadTy = mlir::dyn_cast<fhe::LWECipherVectorType>(loadOp.getMemref().getType());
+                        max_size = std::max(max_size, loadTy.getSize());
+                    } else if (mlir::isa<fhe::LWECipherMatrixType>(loadOp.getMemref().getType())) {
+                        auto loadTy = mlir::dyn_cast<fhe::LWECipherMatrixType>(loadOp.getMemref().getType());
+                        max_size = std::max(max_size, loadTy.getCol());
+                    }
                 }
             }
         }
 
         // convert the new op all operands from scalar to batched
         for (auto it = new_op->operand_begin(); it != new_op->operand_end(); ++it) {
-            if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>((*it).getType())) {
+            if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>((*it).getType())) {
+                // Check if it needs to be resized
+                if (operandTy.getCol() < max_size) {
+                    auto resizeTy = fhe::LWECipherMatrixType::get(rewriter.getContext(), operandTy.getPlaintextType(), 
+                                                                  operandTy.getRow(), max_size);
+                    auto resizeOp = rewriter.create<fhe::CastOp>(op.getLoc(), resizeTy, *it);
+                    rewriter.replaceUsesWithIf((*it).getDefiningOp()->getResults(), {resizeOp},
+                                               [&](OpOperand &operand) { return operand.getOwner() == new_op; });
+                }
+            } else if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>((*it).getType())) {
                 // Check if it needs to be resized
                 if (operandTy.getSize() < max_size) {
                     auto resizeTy = fhe::LWECipherVectorType::get(rewriter.getContext(), operandTy.getPlaintextType(), max_size);
@@ -108,7 +156,22 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                 // scalar-type input that needs to be converted
                 if (fhe::LoadOp loadOp = (*it).template getDefiningOp<fhe::LoadOp>()) {
                     // Check if it needs to be resized
-                    if (auto memTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(loadOp.getMemref().getType())) {
+                    if (auto memTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(loadOp.getMemref().getType())) {
+                        if (memTy.getCol() < max_size) {
+                            auto resizeTy = fhe::LWECipherMatrixType::get(rewriter.getContext(), memTy.getPlaintextType(), 
+                                                                          memTy.getRow(), max_size);
+                            auto curInsertPt = rewriter.getInsertionPoint();
+                            rewriter.setInsertionPoint(loadOp);
+                            auto resizeOp = rewriter.create<fhe::CastOp>(loadOp.getLoc(), resizeTy, loadOp.getMemref());
+                            auto resizeLoadOp = rewriter.create<fhe::LoadOp>(
+                                                loadOp.getLoc(), loadOp.getType(), resizeOp, loadOp.getIndices());
+                            rewriter.replaceUsesWithIf(loadOp, {resizeLoadOp}, [&](OpOperand &operand) {
+                                return operand.getOwner() == new_op;
+                            });
+                            loadOp = resizeLoadOp;
+                            rewriter.setInsertionPoint(&*curInsertPt);
+                        }
+                    } else if (auto memTy = mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(loadOp.getMemref().getType())) {
                         if (memTy.getSize() < max_size) {
                             auto resizeTy = fhe::LWECipherVectorType::get(rewriter.getContext(), memTy.getPlaintextType(), max_size);
                             auto curInsertPt = rewriter.getInsertionPoint();
@@ -125,16 +188,34 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                     }
 
                     // Instead of using the load operation, use a rotation operation instead.
-                    assert(static_cast<int64_t>(loadOp.getIndices().size()) == 1 && "LoadOp indices size > 1 not support");
-                    auto idx = getConstantIntValue(loadOp.getIndices()[0]);
-                    assert(idx.has_value());
-                    auto i = idx.value();
+                    assert(static_cast<int64_t>(loadOp.getIndices().size()) <= 2 && "LoadOp indices size > 2 not support");
+                    int r, i;
+                    if (loadOp.getIndices().size() == 1) {
+                        auto idx = getConstantIntValue(loadOp.getIndices()[0]);
+                        assert(idx.has_value());
+                        i = idx.value();
 
-                    // no other target slot defined yet, let's make this the target
-                    // we'll rotate by zero, but that's later canonicalized to no-op anyway
-                    if (target_slot == -1) {
-                        target_slot = i;   
-                    }
+                        // no other target slot defined yet, let's make this the target
+                        // we'll rotate by zero, but that's later canonicalized to no-op anyway
+                        if (target_slot == -1) {
+                            target_slot = i;   
+                        }
+                    } else if (loadOp.getIndices().size() == 2) {
+                        auto row = getConstantIntValue(loadOp.getIndices()[0]);
+                        auto idx = getConstantIntValue(loadOp.getIndices()[1]);
+                        assert(row.has_value() && idx.has_value());
+                        r = row.value();
+                        i = idx.value();
+
+                        // no other target row && target slot defined yet, let's make this the target
+                        // we'll rotate by zero, but that's later canonicalized to no-op anyway
+                        if (target_row == -1) {
+                            target_row = r;   
+                        }
+                        if (target_slot == -1) {
+                            target_slot = i;   
+                        }
+                    }           
 
                     // calculate right shift rotate count.
                     auto shiftRightCnt = ((target_slot - i + max_size) % max_size);
@@ -145,8 +226,14 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                                             << ",max sizes=" << max_size << "rotate index=" << shiftRightCnt << "\n");
                 
                     // new rotate op an replace uses
-                    auto rotOp = rewriter.create<fhe::RotateOp>(loadOp.getLoc(), loadOp.getMemref().getType(), 
-                                                                loadOp.getMemref(), shiftRightCnt);
+                    mlir::Value rotOp;
+                    if (loadOp.getIndices().size() == 1) {
+                        rotOp = rewriter.create<fhe::RotateOp>(loadOp.getLoc(), loadOp.getMemref().getType(), 
+                                                               loadOp.getMemref(), shiftRightCnt);
+                    } else if (loadOp.getIndices().size() == 2) {
+                        rotOp = rewriter.create<fhe::RotateExOp>(loadOp.getLoc(), loadOp.getMemref().getType(), 
+                                                               loadOp.getMemref(), target_row, shiftRightCnt);
+                    }
                     rewriter.replaceUsesWithIf(loadOp, {rotOp}, [&](OpOperand &operand) { 
                         return operand.getOwner() == new_op; 
                     });
