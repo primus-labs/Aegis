@@ -37,7 +37,7 @@ class FHEServer:
         self._keyset_manager.load_keys(key_file)
         self._are_keys_loaded = True
 
-    def convert_onnx_to_mlir(self, onnx_file: str) -> str:
+    def _convert_onnx_to_mlir(self, onnx_file: str) -> str:
         import os
         import subprocess
         cmd = ['onnx-mlir', '--EmitMLIR', onnx_file]
@@ -78,12 +78,13 @@ class FHEServer:
         print(compile_result.to_json())
         return compile_result
 
-    def compile(self, mlir_file: str, compile_option: CompileOption = None) -> CompileResult:
+    def compile(self, onnx_file: str, compile_option: CompileOption = None) -> CompileResult:
         if compile_option == None:
             compile_option = CompileOption()
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
             compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
         self._output_dir = compile_option.outputDir
+        mlir_file = self._convert_onnx_to_mlir(onnx_file)
 
         compile_result = self._compiler.compile(mlir_file, compile_option)
         return compile_result

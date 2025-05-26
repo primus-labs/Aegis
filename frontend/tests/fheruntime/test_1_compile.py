@@ -12,9 +12,7 @@ def test_compile() -> str:
 
     if test_server_api:
         server = Server()
-        mlir_file = server.convert_onnx_to_mlir(onnx_file_path)
-        print('mlir_file:', mlir_file)
-        compile_result = server.compile(mlir_file)
+        compile_result = server.compile(onnx_file_path)
         archive_path = server.save(compile_result, compile_result.outputDirPath)
     else:
         inference_session = InferenceSession(path_or_bytes = onnx_file_path)

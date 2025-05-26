@@ -26,8 +26,7 @@ class FHEInferenceSession:
                 self._do_compile(path_or_bytes, compile_option)
 
     def _do_compile(self, onnx_file: str | os.PathLike, compile_option: CompileOption):
-        mlir_file = self._server.convert_onnx_to_mlir(onnx_file)
-        self._compile_result = self._server.compile(mlir_file, compile_option)
+        self._compile_result = self._server.compile(onnx_file, compile_option)
         self._archive_path = self._server.save(self._compile_result, self._compile_result.outputDirPath)
 
     def get_server(self) -> FHEServer:
