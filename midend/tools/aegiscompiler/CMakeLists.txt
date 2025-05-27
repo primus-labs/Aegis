@@ -40,6 +40,7 @@ set(DEP_LIBS
         AegisLowerMemrefToSecret
         AegisLowerSecretToFhe
         AegisFoldArithChain
+        AegisLowerMultiDimLoad
         AegisBatching
         AegisLoadStoreToCopy
         AegisLowerLweToRlwe

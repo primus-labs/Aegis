@@ -22,6 +22,7 @@
 #include "Pass/MemrefToSecret/LowerMemrefToSecret.h"
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
 #include "Pass/FoldArithChain/FoldArithChain.h"
+#include "Pass/MultiDimLoad/LowerMultiDimLoad.h"
 #include "Pass/Batching/Batching.h"
 #include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
 #include "Pass/LweToRlwe/LowerLweToRlwe.h"
@@ -259,6 +260,9 @@ mlir::LogicalResult lowerSecretToFhe(mlir::MLIRContext &context, mlir::ModuleOp 
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<FoldArithChainPass>(), enablePass);
+    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
+    addNestedAwarePass(pm, createCSEPass(), enablePass);
+    addNestedAwarePass(pm, std::make_unique<LowerMultiDimLoadPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<BatchingPass>(), enablePass);

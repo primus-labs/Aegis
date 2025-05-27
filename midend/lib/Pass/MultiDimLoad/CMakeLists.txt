@@ -1,10 +1,10 @@
 
 add_mlir_library(
-    AegisMultiDimLoad
+    AegisLowerMultiDimLoad
     LowerMultiDimLoad.cpp
 
     DEPENDS
     AegisFHEIncGen
 )
 
-target_include_directories(AegisMultiDimLoad PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(AegisLowerMultiDimLoad PUBLIC ${PROJECT_SOURCE_DIR}/include)

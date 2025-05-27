@@ -16,6 +16,7 @@
 #include "Pass/MemrefToSecret/LowerMemrefToSecret.h"
 #include "Pass/SecretToFhe/LowerSecretToFhe.h"
 #include "Pass/FoldArithChain/FoldArithChain.h"
+#include "Pass/MultiDimLoad/LowerMultiDimLoad.h"
 #include "Pass/Batching/Batching.h"
 #include "Pass/Branch/LowerBranch.h"
 #include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
@@ -88,6 +89,9 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<FoldArithChainPass>());
+    manager.addPass(createCanonicalizerPass());
+    manager.addPass(createCSEPass());
+    manager.addPass(std::make_unique<LowerMultiDimLoadPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<BatchingPass>());
@@ -170,6 +174,7 @@ int main(int argc, char **argv) {
     PassRegistration<CollectMetadataPass>();
     PassRegistration<LowerSecretToFhePass>();
     PassRegistration<FoldArithChainPass>();
+    PassRegistration<LowerMultiDimLoadPass>();
     PassRegistration<BatchingPass>();
     PassRegistration<LoadStoreToCopyPass>();
     PassRegistration<LweToRlwePass>();
