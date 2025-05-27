@@ -111,61 +111,95 @@ LogicalResult LweUnaryOpToRlweUnaryOp(IRRewriter &rewriter, MLIRContext *context
     return failure();
 }
 
+// Convert LWE fhe::xLoadOp to RLWE fhe::xLoadOp
+template <typename LoadOpType>
+LogicalResult LweLoadToRlweLoad(Operation* op, IRRewriter& rewriter, MLIRContext *context, TypeConverter& typeConverter) {
+    auto loadOp = llvm::cast<LoadOpType>(op);
+    auto srcTy = loadOp.getMemref().getType();
+    auto destTy = typeConverter.convertType(srcTy);
+    if (!destTy) {
+        return failure();
+    }
+
+    Value fheMemrefVal = loadOp.getMemref();
+    if (srcTy != destTy) {
+        fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, loadOp.getLoc(), destTy, loadOp.getMemref());
+        assert(fheMemrefVal && "Type conversion failed");
+    }
+
+    auto srcResTy = loadOp.getType();
+    auto destResTy = typeConverter.convertType(srcResTy);
+    if (!destResTy) {
+        return failure();
+    }
+
+    using OpCategory = std::conditional_t<std::is_same_v<LoadOpType, fhe::LoadOp>,
+                                          std::integral_constant<int, 0>,
+                                          std::integral_constant<int, 1>>;
+    if constexpr (OpCategory::value == 0) {
+        auto indices = loadOp.getIndices();
+        rewriter.replaceOpWithNewOp<fhe::LoadOp>(op, destResTy, fheMemrefVal, indices);
+    } else {
+        auto row = loadOp.getRow();
+        rewriter.replaceOpWithNewOp<fhe::VloadOp>(op, destResTy, fheMemrefVal, row);
+    }
+
+    return success();
+}
+
+// Convert LWE fhe::xStoreOp to RLWE fhe::xStoreOp
+template <typename StoreOpType>
+LogicalResult LweStoreToRlweStore(Operation* op, IRRewriter& rewriter, MLIRContext *context, TypeConverter& typeConverter) {
+    auto storeOp = llvm::cast<StoreOpType>(op);
+    auto srcTy = storeOp.getMemref().getType();
+    auto destTy = typeConverter.convertType(srcTy);
+    if (!destTy) {
+        return failure();
+    }
+    auto valueToStoreDestTy = typeConverter.convertType(storeOp.getValueToStore().getType());
+    if (!valueToStoreDestTy) {
+        return failure();
+    }
+
+    Value fheValToStore = storeOp.getValueToStore();
+    if (valueToStoreDestTy != storeOp.getValueToStore().getType()) {
+        fheValToStore = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), valueToStoreDestTy, storeOp.getValueToStore());
+        assert(fheValToStore);
+    }
+
+    Value fheMemrefVal = storeOp.getMemref();
+    if (destTy != srcTy) {
+        fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), destTy, storeOp.getMemref());
+        assert(fheMemrefVal);
+    }
+
+    using OpCategory = std::conditional_t<std::is_same_v<StoreOpType, fhe::StoreOp>,
+                                          std::integral_constant<int, 0>,
+                                          std::integral_constant<int, 1>>;
+    if constexpr (OpCategory::value == 0) {
+        auto indices = storeOp.getIndices();
+        rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheMemrefVal, indices);
+    } else {
+        auto row = storeOp.getRow();
+        rewriter.replaceOpWithNewOp<fhe::VstoreOp>(op, fheValToStore, fheMemrefVal, row);
+    }
+    
+    return success();
+}
+
 // Convert fhe Op LWECipher type to RLWECipher type.
 template <typename OpType> 
 LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *context, OpType op,
                                          TypeConverter typeConverter) {
     rewriter.setInsertionPoint(op);
     if (mlir::isa<fhe::LoadOp>(op)) {
-        auto loadOp = llvm::cast<fhe::LoadOp>(op);
-        auto srcTy = loadOp.getMemref().getType();
-        auto destTy = typeConverter.convertType(srcTy);
-        if (!destTy) {
-            return failure();
-        }
-        Value fheMemrefVal = loadOp.getMemref();
-        if (srcTy != destTy) {
-            fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, loadOp.getLoc(), destTy, loadOp.getMemref());
-            assert(fheMemrefVal);
-        }
-
-        // Get rlwecipher Plaintext Type
-        mlir::Type destUnitTy;
-        if (auto CipherTy = mlir::dyn_cast_or_null<fhe::RLWECipherType>(destTy)) {
-            destUnitTy = CipherTy.getPlaintextType();
-        } else if (auto CipherTy = mlir::dyn_cast_or_null<fhe::RLWECipherGridType>(destTy)) {
-            destUnitTy = CipherTy.getPlaintextType();
-        }
-        auto unitCipherTy = fhe::RLWECipherType::get(context, destUnitTy, 1);
-         
-        rewriter.replaceOpWithNewOp<fhe::LoadOp>(op, unitCipherTy, fheMemrefVal, loadOp.getIndices());
-        return success();
+        return LweLoadToRlweLoad<fhe::LoadOp>(op, rewriter, context, typeConverter);
+    } else if (mlir::isa<fhe::VloadOp>(op)) {
+        return LweLoadToRlweLoad<fhe::VloadOp>(op, rewriter, context, typeConverter);
     } else if (mlir::isa<fhe::StoreOp>(op)) {
-        auto storeOp = llvm::cast<fhe::StoreOp>(op);
-        auto srcTy = storeOp.getMemref().getType();
-        auto destTy = typeConverter.convertType(srcTy);
-        if (!destTy) {
-            return failure();
-        }
-        auto valueToStoreDestTy = typeConverter.convertType(storeOp.getValueToStore().getType());
-        if (!valueToStoreDestTy) {
-            return failure();
-        }
-
-        Value fheValToStore = storeOp.getValueToStore();
-        if (valueToStoreDestTy != storeOp.getValueToStore().getType()) {
-            fheValToStore = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), valueToStoreDestTy, storeOp.getValueToStore());
-            assert(fheValToStore);
-        }
-
-        Value fheMemrefVal = storeOp.getMemref();
-        if (destTy != srcTy) {
-            fheMemrefVal = typeConverter.materializeTargetConversion(rewriter, storeOp.getLoc(), destTy, storeOp.getMemref());
-            assert(fheMemrefVal);
-        }
-        
-        rewriter.replaceOpWithNewOp<fhe::StoreOp>(op, fheValToStore, fheMemrefVal, storeOp.getIndices());
-        return success();
+        return LweStoreToRlweStore<fhe::StoreOp>(op, rewriter, context, typeConverter);
+    } else if (mlir::isa<fhe::VstoreOp>(op)) {
+        return LweStoreToRlweStore<fhe::VstoreOp>(op, rewriter, context, typeConverter);
     } else if (mlir::isa<fhe::CopyOp>(op)) {
         auto copyOp = llvm::cast<fhe::CopyOp>(op);
         auto sourceValTy = typeConverter.convertType(copyOp.getSource().getType());
@@ -439,13 +473,21 @@ void LweToRlwePass::runOnOperation() {
                     if (LweUnaryOpToRlweUnaryOp<fhe::LWENegOp>(rewriter, &getContext(), negOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
-                // load/store operation
+                // load/vload/store/vstore operation
                 } else if (fhe::LoadOp loadOp = llvm::dyn_cast_or_null<fhe::LoadOp>(op)) {
                     if (ConvertOpLWETypeToRLWEType<fhe::LoadOp>(rewriter, &getContext(), loadOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
+                } else if (fhe::VloadOp vloadOp = llvm::dyn_cast_or_null<fhe::VloadOp>(op)) {
+                    if (ConvertOpLWETypeToRLWEType<fhe::VloadOp>(rewriter, &getContext(), vloadOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
                 } else if (fhe::StoreOp storeOp = llvm::dyn_cast_or_null<fhe::StoreOp>(op)){
                     if (ConvertOpLWETypeToRLWEType<fhe::StoreOp>(rewriter, &getContext(), storeOp, type_converter).failed()) {
+                        return WalkResult::interrupt();
+                    }
+                } else if (fhe::VstoreOp vstoreOp = llvm::dyn_cast_or_null<fhe::VstoreOp>(op)){
+                    if (ConvertOpLWETypeToRLWEType<fhe::VstoreOp>(rewriter, &getContext(), vstoreOp, type_converter).failed()) {
                         return WalkResult::interrupt();
                     }
                 // copy operation
