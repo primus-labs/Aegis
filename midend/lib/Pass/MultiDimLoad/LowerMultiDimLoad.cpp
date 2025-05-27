@@ -36,6 +36,7 @@ struct LowerMultiDimLoadPattern : public OpRewritePattern<fhe::LoadOp> {
         if (!memRefTy) {
             return loadOp.emitError("Unsupported memory type ") << memRefTy;
         }
+        int matCol = memRefTy.getCol();
 
         // Get row & col form the memref type
         auto row = getConstantIntValue(indices[0]);
@@ -47,7 +48,7 @@ struct LowerMultiDimLoadPattern : public OpRewritePattern<fhe::LoadOp> {
         // Create reduced-dimension type
         mlir::Value rowVal = rewriter.create<arith::ConstantOp>(loadOp.getLoc(), rewriter.getIndexAttr(nRow));
         mlir::Value colVal = rewriter.create<arith::ConstantOp>(loadOp.getLoc(), rewriter.getIndexAttr(nCol));
-        auto newMemRefType = fhe::LWECipherVectorType::get(rewriter.getContext(), memRefTy.getPlaintextType(), nCol);
+        auto newMemRefType = fhe::LWECipherVectorType::get(rewriter.getContext(), memRefTy.getPlaintextType(), matCol);
 
         // Create vload operation
         auto vloadOp = rewriter.create<fhe::VloadOp>(
