@@ -189,40 +189,42 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
 
                     // Instead of using the load operation, use a rotation operation instead.
                     assert(static_cast<int64_t>(loadOp.getIndices().size()) <= 2 && "LoadOp indices size > 2 not support");
-                    int r, i;
+                    int src_row, src_slot;
                     if (loadOp.getIndices().size() == 1) {
                         auto idx = getConstantIntValue(loadOp.getIndices()[0]);
                         assert(idx.has_value());
-                        i = idx.value();
+                        src_slot = idx.value();
 
                         // no other target slot defined yet, let's make this the target
                         // we'll rotate by zero, but that's later canonicalized to no-op anyway
                         if (target_slot == -1) {
-                            target_slot = i;   
+                            target_slot = src_slot;   
                         }
                     } else if (loadOp.getIndices().size() == 2) {
                         auto row = getConstantIntValue(loadOp.getIndices()[0]);
                         auto idx = getConstantIntValue(loadOp.getIndices()[1]);
                         assert(row.has_value() && idx.has_value());
-                        r = row.value();
-                        i = idx.value();
+                        src_row = row.value();
+                        src_slot = idx.value();
 
                         // no other target row && target slot defined yet, let's make this the target
                         // we'll rotate by zero, but that's later canonicalized to no-op anyway
                         if (target_row == -1) {
-                            target_row = r;   
+                            target_row = src_row;   
                         }
                         if (target_slot == -1) {
-                            target_slot = i;   
+                            target_slot = src_slot;   
                         }
                     }           
 
+                    // Here, target_slot is the slot index in the destination operand (e.g., store) 
+                    // where the value from the source operation is placed, while i is the index in the source operand.
                     // calculate right shift rotate count.
-                    auto shiftRightCnt = ((target_slot - i + max_size) % max_size);
+                    auto shiftRightCnt = ((target_slot - src_slot + max_size) % max_size);
                     if (NegativeShiftRight) {
                         shiftRightCnt = -shiftRightCnt;
                     }
-                    LLVM_DEBUG(llvm::dbgs() << "target_slot=" << target_slot << ",load index=" << i 
+                    LLVM_DEBUG(llvm::dbgs() << "target_slot=" << target_slot << ",load index=" << src_slot 
                                             << ",max sizes=" << max_size << "rotate index=" << shiftRightCnt << "\n");
                 
                     // new rotate op an replace uses
@@ -256,7 +258,7 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
 
         // Now create a scalar again by creating an load op, preserving type constraints
         rewriter.setInsertionPointAfter(new_op);
-        if (target_row == -1) {
+        if (target_row == -1 || mlir::isa<fhe::LWECipherVectorType>(new_op.getResult().getType())) {
             auto indexValue = rewriter.create<arith::ConstantIndexOp>(op.getLoc(), target_slot);
             auto res_new_op = rewriter.create<fhe::LoadOp>(op.getLoc(), op.getType(), new_op.getResult(), mlir::ValueRange{indexValue});
             op->replaceAllUsesWith(res_new_op);
