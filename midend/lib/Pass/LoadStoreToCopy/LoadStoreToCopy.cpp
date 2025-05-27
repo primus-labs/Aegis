@@ -12,6 +12,7 @@
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/Sequence.h"
 #include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
+#include "Common/Utils.h"
 
 #define DEBUG_TYPE "loadstore-to-copy"
 
@@ -272,7 +273,7 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
             /*
             // Create rotation amount (bring element to position 0)
             auto rotateAmount = ((-target_slot + max_size) % max_size);
-            if (NegativeShiftRight) {
+            if (kNegativeShiftRight) {
                 rotateAmount = -rotateAmount;
             }
             LLVM_DEBUG(llvm::dbgs() << "target slot=" << target_slot << ", max size=" << max_size << ", (shift right to 0 slot)real rotate value=" << rotateAmount << "\n");
@@ -442,6 +443,20 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                                     }
                                 }
 
+                                // if target_slot != oneValIdx, we need calculate the rotate index,
+                                // then insert rotate op after the lwemulplain op
+                                bool bNeedRot = false;
+                                mlir::Value rotOp;
+                                if (target_slot != oneValIdx) {
+                                    bNeedRot = true;
+                                    auto shiftRightCnt = ((target_slot - oneValIdx + max_size) % max_size);
+                                    if (kNegativeShiftRight) {
+                                        shiftRightCnt = -shiftRightCnt;
+                                    }
+                                    rotOp = rewriter.create<fhe::RotateOp>(mulplainOp.getLoc(), mulplainOp.getType(), 
+                                                                           mulplainOp, shiftRightCnt);
+                                }
+
                                 // Invert the mast value and create constOp
                                 mlir::Type elementType = rewriter.getI32Type();
                                 auto arrayType = mlir::VectorType::get({max_size}, elementType);
@@ -456,8 +471,14 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                                                                                 ValueRange({storeOp.getMemref(), invertMaskOp}));
 
                                 // Combine new and existing values
-                                auto addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
+                                mlir::Value addOp;
+                                if (bNeedRot) {
+                                    addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
+                                                                            ValueRange({mulVal, rotOp}));
+                                } else {
+                                    addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
                                                                             ValueRange({mulVal, storeOp.getValueToStore()}));
+                                }
 
                                 // copy the new values(fhe::LWEAddOp) to StoreOp memref value
                                 auto result = rewriter.create<fhe::CopyOp>(storeOp.getLoc(), addOp, storeOp.getMemref());
@@ -514,6 +535,20 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                                     }
                                 }
 
+                                // if target_slot != oneValIdx, we need calculate the rotate index,
+                                // then insert rotate op after the lwemulplain op
+                                bool bNeedRot = false;
+                                mlir::Value rotOp;
+                                if (target_slot != oneValIdx) {
+                                    bNeedRot = true;
+                                    auto shiftRightCnt = ((target_slot - oneValIdx + max_size) % max_size);
+                                    if (kNegativeShiftRight) {
+                                        shiftRightCnt = -shiftRightCnt;
+                                    }
+                                    rotOp = rewriter.create<fhe::RotateOp>(mulplainOp.getLoc(), mulplainOp.getType(), 
+                                                                           mulplainOp, shiftRightCnt);
+                                }
+
                                 // Create fhe.vload op
                                 mlir::Value rowVal = rewriter.create<arith::ConstantOp>(storeOp.getLoc(), rewriter.getIndexAttr(target_row));
                                 auto vecType = fhe::LWECipherVectorType::get(rewriter.getContext(), ptType, max_size);
@@ -533,8 +568,14 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                                                                                 ValueRange({vloadVal, invertMaskOp}));
 
                                 // Combine new and existing values
-                                auto addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
-                                                                            ValueRange({mulVal, storeOp.getValueToStore()}));
+                                mlir::Value addOp;
+                                if (bNeedRot) {
+                                    addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
+                                                                           ValueRange({mulVal, rotOp}));
+                                } else {
+                                    addOp = rewriter.create<fhe::LWEAddOp>(storeOp.getLoc(), mulVal.getType(),
+                                                                           ValueRange({mulVal, storeOp.getValueToStore()}));
+                                }
 
                                 // store the new values(fhe::LWEAddOp) to matrix memref value
                                 auto result = rewriter.create<fhe::VstoreOp>(storeOp.getLoc(), addOp, storeOp.getMemref(), rowVal);

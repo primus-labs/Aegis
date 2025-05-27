@@ -15,16 +15,12 @@
 #include "Dialect/FHE/FHEOps.h"
 #include "Dialect/FHE/FHETypes.h"
 #include "Pass/Batching/Batching.h"
+#include "Common/Utils.h"
 
 #define DEBUG_TYPE "batching"
 
 using namespace mlir;
 using namespace aegis;
-
-// In OpenFHE and other FHE libraries, the implementation of ​​homomorphic rotation​​ differs, 
-// particularly in terms of ​​rotation direction​​ and ​​parameter definitions​​, which require special attention. 
-// In OpenFHE, ​​positive numbers​​ represent a ​​left cyclic shift​​, while ​​negative numbers​​ correspond to a ​​right cyclic shift​​.
-static constexpr bool NegativeShiftRight = true;    //default for OpenFHE
 
 template <typename OpType>
 LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, OpType op) {
@@ -221,7 +217,7 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
                     // where the value from the source operation is placed, while i is the index in the source operand.
                     // calculate right shift rotate count.
                     auto shiftRightCnt = ((target_slot - src_slot + max_size) % max_size);
-                    if (NegativeShiftRight) {
+                    if (kNegativeShiftRight) {
                         shiftRightCnt = -shiftRightCnt;
                     }
                     LLVM_DEBUG(llvm::dbgs() << "target_slot=" << target_slot << ",load index=" << src_slot 

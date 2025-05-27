@@ -27,6 +27,11 @@
 #define FHE_SCALE_MOD_SIZE  59
 inline bool enableFheBoostrapFlag = false;
 
+// In OpenFHE and other FHE libraries, the implementation of ​​homomorphic rotation​​ differs, 
+// particularly in terms of ​​rotation direction​​ and ​​parameter definitions​​, which require special attention. 
+// In OpenFHE, ​​positive numbers​​ represent a ​​left cyclic shift​​, while ​​negative numbers​​ correspond to a ​​right cyclic shift​​.
+inline constexpr bool kNegativeShiftRight = true;    //default for OpenFHE
+
 namespace mlir {
 namespace aegis {
 
