@@ -2,6 +2,7 @@
 
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
 TEST_DIR=${SCRIPT_DIR}/../frontend/tests/fheruntime
+export PYTHONPATH=/usr/local/python_packages/mlir_core
 
 ${SCRIPT_DIR}/build_wheel.sh
 pip install --force-reinstall dist/primus-0.1.0-py3-none-any.whl
@@ -17,7 +18,7 @@ export AEGIS_PUB_KEYS_PATH=${AEGIS_DATA_DIR}/pub_keys.bin
 export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add_1d.onnx
 
 export TEST_SERVER_API=1
-export TEST_SERVER_API=0
+# export TEST_SERVER_API=0
 
 python3 test_1_compile.py
 python3 test_2_keygen.py

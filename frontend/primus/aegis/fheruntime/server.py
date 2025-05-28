@@ -1,9 +1,10 @@
 from .compiler import FHECompiler
 from .runtime import FHERuntime
 from .keyset_manager import FHEKeysetManager
+from .py2mlir_converter import Py2MLIRConverter
 from primus_aegis.compiler import CompileOption, CompileResult, COMPILE_TARGET
 from primus_aegis import Value
-from typing import List
+from typing import Callable, List
 import tempfile
 import shutil
 import os
@@ -51,6 +52,10 @@ class FHEServer:
             raise RuntimeError(result.stderr)
         return mlir_file
 
+    def _convert_py_to_mlir(self, output_dir: str, function: Callable) -> str:
+        converter = Py2MLIRConverter(output_dir)
+        return converter.convert(function)
+
     def save(self, compile_result: CompileResult, output_dir: str) -> str:
         with tempfile.TemporaryDirectory() as tmp_dir:
             if len(compile_result.progSpecFileName) > 0:
@@ -78,13 +83,18 @@ class FHEServer:
         print(compile_result.to_json())
         return compile_result
 
-    def compile(self, onnx_file: str, compile_option: CompileOption = None) -> CompileResult:
+    def compile(self, onnx_file: str = None, py_function: Callable = None, compile_option: CompileOption = None) -> CompileResult:
         if compile_option == None:
             compile_option = CompileOption()
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
             compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
         self._output_dir = compile_option.outputDir
-        mlir_file = self._convert_onnx_to_mlir(onnx_file)
+        if onnx_file != None:
+            mlir_file = self._convert_onnx_to_mlir(onnx_file)
+        elif py_function != None:
+            mlir_file = self._convert_py_to_mlir(self._output_dir, py_function)
+        else:
+            raise RuntimeError("onnx_file and py_function are None")
 
         compile_result = self._compiler.compile(mlir_file, compile_option)
         return compile_result
