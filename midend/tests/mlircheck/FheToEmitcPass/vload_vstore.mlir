@@ -16,7 +16,7 @@ module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i6
 }
 
 
-//CHECK: %8 = emitc.call_opaque "Alloc"() {args = [16]} : () -> !emitc.opaque<"std::vector<RLWECipher>">
+//CHECK: %8 = emitc.call_opaque "AllocArray"() {args = [3, 16]} : () -> !emitc.opaque<"std::vector<RLWECipher>"> 
 //CHECK: %9 = emitc.call_opaque "Vload"(%arg0, %5) : (!emitc.opaque<"std::vector<RLWECipher>">, index) -> !emitc.opaque<"RLWECipher">
 //CHECK: %10 = emitc.call_opaque "Vload"(%arg1, %5) : (!emitc.opaque<"std::vector<RLWECipher>">, index) -> !emitc.opaque<"RLWECipher">
 //CHECK: %11 = emitc.call_opaque "Add"(%9, %10) : (!emitc.opaque<"RLWECipher">, !emitc.opaque<"RLWECipher">) -> !emitc.opaque<"RLWECipher">

@@ -199,17 +199,15 @@ constexpr std::string_view kDeserisBufCode = R"cpp(
 // clang-format off
 constexpr std::string_view kAllocFunc = R"cpp(
 RLWECipher Alloc(size_t size) {
-    if (size > {0})
-        size = {0};
-    std::vector<double> constVec(size, 0.0);
+    std::vector<double> constVec({0}, 0.0);
     Plaintext plaintext = clientCC->MakeCKKSPackedPlaintext(constVec);
     return clientCC->Encrypt(clientPubKey, plaintext);
 }
 inline RLWECipher Alloc() {
-    if ({0} >= 16)
-        return Alloc(16);
-    else
-        return Alloc({0});
+    return Alloc({0});
+}
+std::vector<RLWECipher> AllocArray(size_t row, size_t col) {
+    return std::vector<RLWECipher>(row, Alloc(col));
 }
 )cpp";
 // clang-format on
