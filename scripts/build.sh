@@ -13,28 +13,27 @@ mkdir -p build
 cd build
 
 cmake -G Ninja ../llvm \
--DLLVM_ENABLE_PROJECTS="mlir;clang;openmp" \
--DLLVM_BUILD_EXAMPLES=OFF \
--DLLVM_TARGETS_TO_BUILD=X86 \
--DCMAKE_BUILD_TYPE=Release \
--DLLVM_ENABLE_ASSERTIONS=OFF \
--DLLVM_ENABLE_RTTI=ON   \
--DCMAKE_C_COMPILER=clang \
--DCMAKE_CXX_COMPILER=clang++ \
--DLLVM_ENABLE_LLD=ON \
--DLLVM_CCACHE_BUILD=OFF \
--DPython3_EXECUTABLE=$(which python3) \
--DMLIR_ENABLE_BINDINGS_PYTHON=ON \
--DLLVM_INSTALL_UTILS=ON \
--DMLIR_INCLUDE_INTEGRATION_TESTS=OFF  \
--DMLIR_INCLUDE_TESTS=OFF
+  -DLLVM_ENABLE_PROJECTS="mlir;clang;openmp" \
+  -DLLVM_BUILD_EXAMPLES=OFF \
+  -DLLVM_TARGETS_TO_BUILD=X86 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_ASSERTIONS=OFF \
+  -DLLVM_ENABLE_RTTI=ON \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DLLVM_ENABLE_LLD=ON \
+  -DLLVM_CCACHE_BUILD=OFF \
+  -DPython3_EXECUTABLE=$(which python3) \
+  -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+  -DLLVM_INSTALL_UTILS=ON \
+  -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
+  -DMLIR_INCLUDE_TESTS=OFF
 
 ninja -j8
 
 # we use ninja to build mlir, so we not make componet
 #cmake --build .
 #make -j8
-
 
 echo "****************************************************"
 echo "**************     build onnx-mlir     *************"
@@ -44,12 +43,11 @@ cd ../../onnx-mlir
 mkdir -p build
 cd build
 cmake -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLLVM_ENABLE_ASSERTIONS=ON \
-        -DMLIR_DIR=${MLIR_DIR} \
-        ..
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_ASSERTIONS=ON \
+  -DMLIR_DIR=${MLIR_DIR} \
+  ..
 ninja -j8
-
 
 echo "****************************************************"
 echo "**************      build OpenFHE      *************"
@@ -60,7 +58,6 @@ cd build
 cmake ..
 make -j8
 
-
 echo "****************************************************"
 echo "**************       build aegis       *************"
 echo "****************************************************"
@@ -69,7 +66,6 @@ mkdir -p build
 cd build
 cmake ../midend/ -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/
 make -j8
-
 
 echo "****************************************************"
 echo "**************       test aegis        *************"
