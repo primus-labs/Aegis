@@ -53,6 +53,8 @@ constexpr std::string_view kMacroStmts = R"cpp(
 #define Cast_Plain_To_Index(clr) size_t(clr)
 #define Cast_Plain_To_Cipher(clr) clientCC->Encrypt(clientPubKey, clientCC->MakeCKKSPackedPlaintext(std::vector<double>(clr)))
 #define Cast_Stub(a) a
+#define Vload(arg, idx) arg[idx]
+#define Vstore(val, arg, idx) arg[idx] = val
 )cpp";
 // clang-format on
 
