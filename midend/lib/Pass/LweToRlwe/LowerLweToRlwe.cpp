@@ -10,6 +10,7 @@
 #include "mlir/include/mlir/Support/LLVM.h"
 #include "llvm/include/llvm/Support/Debug.h"
 #include "llvm/ADT/APSInt.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Sequence.h"
 #include <queue>
 
@@ -19,15 +20,12 @@ using namespace mlir;
 using namespace aegis;
 using namespace fhe;
 
-void LweToRlwePass::getDependentDialects(mlir::DialectRegistry &registry) const {
-    registry.insert<fhe::FHEDialect, mlir::affine::AffineDialect, 
-                    func::FuncDialect, mlir::scf::SCFDialect>();
-}
 
 // Transform the batched LWE operator to RLWE operator
 template <typename OpType> 
-LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, OpType op,
-                                    TypeConverter typeConverter) {
+LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, Operation* genericOp,
+                                  TypeConverter& typeConverter) {
+    auto op = mlir::cast<OpType>(genericOp);
     rewriter.setInsertionPoint(op);
 
     auto destTy = typeConverter.convertType(op.getType());
@@ -78,8 +76,9 @@ LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, Op
 
 // Transform the unary LWE operator to RLWE operator
 template <typename OpType> 
-LogicalResult LweUnaryOpToRlweUnaryOp(IRRewriter &rewriter, MLIRContext *context, OpType op,
-                                      TypeConverter typeConverter) {
+LogicalResult LweUnaryOpToRlweUnaryOp(IRRewriter &rewriter, MLIRContext *context, Operation* genericOp,
+                                      TypeConverter& typeConverter) {
+    auto op = mlir::cast<OpType>(genericOp);
     rewriter.setInsertionPoint(op);
 
     auto dstType = typeConverter.convertType(op.getType());
@@ -187,10 +186,11 @@ LogicalResult LweStoreToRlweStore(Operation* op, IRRewriter& rewriter, MLIRConte
     return success();
 }
 
-// Convert fhe Op LWECipher type to RLWECipher type.
+// Transform the LWE memory operator to RLWE memory operator
 template <typename OpType> 
-LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *context, OpType op,
-                                         TypeConverter typeConverter) {
+LogicalResult LweMemOpToRlweMemOp(IRRewriter &rewriter, MLIRContext *context, Operation* genericOp,
+                                  TypeConverter& typeConverter) {
+    auto op = mlir::cast<OpType>(genericOp);
     rewriter.setInsertionPoint(op);
     if (mlir::isa<fhe::LoadOp>(op)) {
         return LweLoadToRlweLoad<fhe::LoadOp>(op, rewriter, context, typeConverter);
@@ -225,7 +225,62 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
 
         rewriter.replaceOpWithNewOp<fhe::CopyOp>(op, sourceVal, targetVal);
         return success();
-    } else if (mlir::isa<fhe::CmpOp>(op)) {
+    } else if (mlir::isa<fhe::AllocOp>(op)) {
+        auto allocOp = llvm::cast<fhe::AllocOp>(op);
+
+        auto destTy = typeConverter.convertType(allocOp.getType());
+        if (!destTy) {
+            return failure();
+        }
+
+        IntegerAttr alignmentAttr;
+        auto alignment = allocOp.getAlignment();
+        if (alignment.has_value())
+            alignmentAttr = rewriter.getI64IntegerAttr(alignment.value());
+
+        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destTy, alignmentAttr);
+        return success();
+    } else if (mlir::isa<fhe::AllocaOp>(op)) {
+        auto allocaOp = llvm::cast<fhe::AllocaOp>(op);
+
+        auto destType = typeConverter.convertType(allocaOp.getType());
+        if (!destType) {
+            return failure();
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::AllocaOp>(op, destType);
+        return success();
+    } else if (mlir::isa<fhe::DeallocOp>(op)) {
+        auto deallocOp = llvm::cast<fhe::DeallocOp>(op);
+
+        Value newOperand;
+        auto oldOperand = deallocOp.getOperand();
+        auto opDestTy = typeConverter.convertType(oldOperand.getType());
+        if (!opDestTy) {
+            return failure();
+        }
+
+        if (oldOperand.getType() != opDestTy) {
+            newOperand = typeConverter.materializeTargetConversion(rewriter, deallocOp.getLoc(), opDestTy, oldOperand);
+            assert(newOperand);
+        } else {
+            newOperand = oldOperand;
+        }
+
+        rewriter.replaceOpWithNewOp<fhe::DeallocOp>(op, newOperand);
+        return success();
+    }
+
+    return failure();
+}
+
+// Transform the LWE controlflow operator to RLWE controlflow operator
+template <typename OpType> 
+LogicalResult LweCtrlOpToRlweCtrlOp(IRRewriter &rewriter, MLIRContext *context, Operation* genericOp,
+                                    TypeConverter& typeConverter) {
+    auto op = mlir::cast<OpType>(genericOp);
+    rewriter.setInsertionPoint(op);
+    if (mlir::isa<fhe::CmpOp>(op)) {
         auto cmpOp = llvm::cast<fhe::CmpOp>(op);
         auto destTy = typeConverter.convertType(cmpOp.getType());
         if (!destTy) {
@@ -310,54 +365,139 @@ LogicalResult ConvertOpLWETypeToRLWEType(IRRewriter &rewriter, MLIRContext *cont
 
         rewriter.replaceOpWithNewOp<fhe::SelectOp>(op, destTy, newCondOperand, newTrueValOperand, newFalseValOperand);
         return success();
-    } else if (mlir::isa<fhe::AllocOp>(op)) {
-        auto allocOp = llvm::cast<fhe::AllocOp>(op);
-
-        auto destTy = typeConverter.convertType(allocOp.getType());
-        if (!destTy) {
-            return failure();
-        }
-
-        IntegerAttr alignmentAttr;
-        auto alignment = allocOp.getAlignment();
-        if (alignment.has_value())
-            alignmentAttr = rewriter.getI64IntegerAttr(alignment.value());
-
-        rewriter.replaceOpWithNewOp<fhe::AllocOp>(op, destTy, alignmentAttr);
-        return success();
-    } else if (mlir::isa<fhe::AllocaOp>(op)) {
-        auto allocaOp = llvm::cast<fhe::AllocaOp>(op);
-
-        auto destType = typeConverter.convertType(allocaOp.getType());
-        if (!destType) {
-            return failure();
-        }
-
-        rewriter.replaceOpWithNewOp<fhe::AllocaOp>(op, destType);
-        return success();
-    } else if (mlir::isa<fhe::DeallocOp>(op)) {
-        auto deallocOp = llvm::cast<fhe::DeallocOp>(op);
-
-        Value newOperand;
-        auto oldOperand = deallocOp.getOperand();
-        auto opDestTy = typeConverter.convertType(oldOperand.getType());
-        if (!opDestTy) {
-            return failure();
-        }
-
-        if (oldOperand.getType() != opDestTy) {
-            newOperand = typeConverter.materializeTargetConversion(rewriter, deallocOp.getLoc(), opDestTy, oldOperand);
-            assert(newOperand);
-        } else {
-            newOperand = oldOperand;
-        }
-
-        rewriter.replaceOpWithNewOp<fhe::DeallocOp>(op, newOperand);
     }
 
-    return success(); 
+    return failure();
 }
 
+// Define operation category tags 
+namespace FheOpCategory {
+struct Binary;  
+struct Unary;   
+struct Memory;  
+struct Control; 
+struct Custom; 
+};
+
+// Primary trait template
+template <typename OpT>
+struct FheOpTraits {
+  // Default category is Custom, requiring explicit specialization
+  using category = FheOpCategory::Custom;
+  
+  // Static assert reminds specialization
+  static_assert(sizeof(OpT) == 0, 
+      "Must specialize FheOpTraits for all handled operation types!");
+};
+
+// Specialization binary operations
+#define SPECIALIZE_BINARY_OP(OpT) \
+template <> \
+struct FheOpTraits<OpT> { \
+  using category = FheOpCategory::Binary; \
+  static constexpr auto converter = &LweBinOpToRlweBinOp<OpT>; \
+}
+
+SPECIALIZE_BINARY_OP(fhe::LWESubOp);
+SPECIALIZE_BINARY_OP(fhe::LWESubPlainOp);
+SPECIALIZE_BINARY_OP(fhe::LWEAddOp);
+SPECIALIZE_BINARY_OP(fhe::LWEAddPlainOp); 
+SPECIALIZE_BINARY_OP(fhe::LWEMulOp);
+SPECIALIZE_BINARY_OP(fhe::LWEMulPlainOp);
+
+// Specialization unary operations
+#define SPECIALIZE_UNARY_OP(OpT)           \
+template <> \
+struct FheOpTraits<OpT> { \
+  using category = FheOpCategory::Unary; \
+  static constexpr auto converter = &LweUnaryOpToRlweUnaryOp<OpT>; \
+};
+
+SPECIALIZE_UNARY_OP(fhe::LWENegOp);
+
+// Specialization memory operations
+#define SPECIALIZE_MEMORY_OP(OpT) \
+template <> \
+struct FheOpTraits<OpT> { \
+  using category = FheOpCategory::Memory; \
+  static constexpr auto converter = &LweMemOpToRlweMemOp<OpT>; \
+};
+
+SPECIALIZE_MEMORY_OP(fhe::LoadOp);
+SPECIALIZE_MEMORY_OP(fhe::VloadOp);
+SPECIALIZE_MEMORY_OP(fhe::StoreOp);
+SPECIALIZE_MEMORY_OP(fhe::VstoreOp);
+SPECIALIZE_MEMORY_OP(fhe::CopyOp);
+SPECIALIZE_MEMORY_OP(fhe::AllocOp);
+SPECIALIZE_MEMORY_OP(fhe::AllocaOp);
+SPECIALIZE_MEMORY_OP(fhe::DeallocOp);
+
+// Specialization controlflow operations
+#define SPECIALIZE_CONTROL_OP(OpT) \
+template <> \
+struct FheOpTraits<OpT> { \
+  using category = FheOpCategory::Control; \
+  static constexpr auto converter = &LweCtrlOpToRlweCtrlOp<OpT>; \
+};
+
+SPECIALIZE_CONTROL_OP(fhe::CmpOp);
+SPECIALIZE_CONTROL_OP(fhe::SelectOp);
+
+// Dispatch Table Construction
+using LweConverterFunc = LogicalResult(*)(IRRewriter&, MLIRContext*, Operation*, TypeConverter&);
+
+// Safe wrapper for getting op name
+template <typename OpT>
+std::string getFheOpName() {
+  return OpT::getOperationName().str();
+};
+
+// Build global dispatch table
+static const std::unordered_map<std::string, LweConverterFunc>& getDispatchTable() {
+  // Thread-safe static initialization
+  static const auto dispatchTable = [] {
+    std::unordered_map<std::string, LweConverterFunc> table;
+    
+    // Registered macro: Compile-time trait check
+    #define REGISTER_OP(OpT) \
+        static_assert( \
+            !std::is_same_v<FheOpTraits<OpT>::category, FheOpCategory::Custom>, \
+            "FheOpTraits must be specialized for " #OpT); \
+        table[getFheOpName<OpT>()] = FheOpTraits<OpT>::converter
+
+    // Register all supported operations
+    REGISTER_OP(fhe::LWESubOp);
+    REGISTER_OP(fhe::LWESubPlainOp);
+    REGISTER_OP(fhe::LWEAddOp);
+    REGISTER_OP(fhe::LWEAddPlainOp);
+    REGISTER_OP(fhe::LWEMulOp);
+    REGISTER_OP(fhe::LWEMulPlainOp);
+    REGISTER_OP(fhe::LWENegOp);
+    
+    REGISTER_OP(fhe::LoadOp);
+    REGISTER_OP(fhe::VloadOp);
+    REGISTER_OP(fhe::StoreOp);
+    REGISTER_OP(fhe::VstoreOp);
+    REGISTER_OP(fhe::CopyOp);
+    REGISTER_OP(fhe::AllocOp);
+    REGISTER_OP(fhe::AllocaOp);
+    REGISTER_OP(fhe::DeallocOp);
+
+    REGISTER_OP(fhe::CmpOp);
+    REGISTER_OP(fhe::SelectOp);
+
+    #undef REGISTER_OP
+    return table;
+  }();
+
+  return dispatchTable;
+}
+
+
+void LweToRlwePass::getDependentDialects(mlir::DialectRegistry &registry) const {
+    registry.insert<fhe::FHEDialect, mlir::affine::AffineDialect, 
+                    func::FuncDialect, mlir::scf::SCFDialect>();
+}
 
 // Tranform pure LWE ciphertexts into RLWE ciphertexts after batching optimizations
 void LweToRlwePass::runOnOperation() {
@@ -443,84 +583,23 @@ void LweToRlwePass::runOnOperation() {
     for (auto f : llvm::make_early_inc_range(block.getOps<func::FuncOp>())) {
         // handle function body stmts
         if (f.walk([&](Operation *op) {
-                // binary operation
-                if (fhe::LWESubOp subOp = llvm::dyn_cast_or_null<fhe::LWESubOp>(op)) {
-                    if (LweBinOpToRlweBinOp<fhe::LWESubOp>(rewriter, &getContext(), subOp, type_converter).failed()) {
+                auto it = getDispatchTable().find(op->getName().getStringRef().str());
+                if (it == getDispatchTable().end()) {
+                    auto opName = op->getName().getStringRef();
+                    if (opName.starts_with("lwe")) {
+                        op->emitError() << "Unsupported LWE operation : " << opName.str();
                         return WalkResult::interrupt();
                     }
-                } else if (fhe::LWESubPlainOp subPlainOp = llvm::dyn_cast_or_null<fhe::LWESubPlainOp>(op)) {
-                    if (LweBinOpToRlweBinOp<fhe::LWESubPlainOp>(rewriter, &getContext(), subPlainOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::LWEAddOp addOp = llvm::dyn_cast_or_null<fhe::LWEAddOp>(op)) {
-                    if (LweBinOpToRlweBinOp<fhe::LWEAddOp>(rewriter, &getContext(), addOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::LWEAddPlainOp addPlainOp = llvm::dyn_cast_or_null<fhe::LWEAddPlainOp>(op)) {
-                    if (LweBinOpToRlweBinOp<fhe::LWEAddPlainOp>(rewriter, &getContext(), addPlainOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::LWEMulOp mulOp = llvm::dyn_cast_or_null<fhe::LWEMulOp>(op)) {
-                    if (LweBinOpToRlweBinOp<fhe::LWEMulOp>(rewriter, &getContext(), mulOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::LWEMulPlainOp mulPlainOp = llvm::dyn_cast_or_null<fhe::LWEMulPlainOp>(op)) {
-                    if (LweBinOpToRlweBinOp<fhe::LWEMulPlainOp>(rewriter, &getContext(), mulPlainOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                // unary operation
-                } else if (fhe::LWENegOp negOp = llvm::dyn_cast_or_null<fhe::LWENegOp>(op)) {
-                    if (LweUnaryOpToRlweUnaryOp<fhe::LWENegOp>(rewriter, &getContext(), negOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                // load/vload/store/vstore operation
-                } else if (fhe::LoadOp loadOp = llvm::dyn_cast_or_null<fhe::LoadOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::LoadOp>(rewriter, &getContext(), loadOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::VloadOp vloadOp = llvm::dyn_cast_or_null<fhe::VloadOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::VloadOp>(rewriter, &getContext(), vloadOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::StoreOp storeOp = llvm::dyn_cast_or_null<fhe::StoreOp>(op)){
-                    if (ConvertOpLWETypeToRLWEType<fhe::StoreOp>(rewriter, &getContext(), storeOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::VstoreOp vstoreOp = llvm::dyn_cast_or_null<fhe::VstoreOp>(op)){
-                    if (ConvertOpLWETypeToRLWEType<fhe::VstoreOp>(rewriter, &getContext(), vstoreOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                // copy operation
-                } else if (fhe::CopyOp copyOp = llvm::dyn_cast_or_null<fhe::CopyOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::CopyOp>(rewriter, &getContext(), copyOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                // cmp/select operation
-                } else if (fhe::CmpOp cmpOp = llvm::dyn_cast_or_null<fhe::CmpOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::CmpOp>(rewriter, &getContext(), cmpOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::SelectOp selOp = llvm::dyn_cast_or_null<fhe::SelectOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::SelectOp>(rewriter, &getContext(), selOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                // alloc/dealloc/alloca
-                } else if (fhe::AllocOp allocOp = llvm::dyn_cast_or_null<fhe::AllocOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::AllocOp>(rewriter, &getContext(), allocOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::AllocaOp allocaOp = llvm::dyn_cast_or_null<fhe::AllocaOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::AllocaOp>(rewriter, &getContext(), allocaOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
-                } else if (fhe::DeallocOp deallocOp = llvm::dyn_cast_or_null<fhe::DeallocOp>(op)) {
-                    if (ConvertOpLWETypeToRLWEType<fhe::DeallocOp>(rewriter, &getContext(), deallocOp, type_converter).failed()) {
-                        return WalkResult::interrupt();
-                    }
+                    return WalkResult(success());
+                }
+
+                // Execute conversion
+                if (failed(it->second(rewriter, &getContext(), op, type_converter))) {
+                    return WalkResult::interrupt();
                 }
 
                 return WalkResult(success());
-             }).wasInterrupted()) {
+            }).wasInterrupted()) {
             signalPassFailure();
         }
 
