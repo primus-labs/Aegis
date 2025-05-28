@@ -977,6 +977,19 @@ class FheAllocPattern final : public OpConversionPattern<fhe::AllocOp> {
 
     LogicalResult matchAndRewrite(fhe::AllocOp op, typename fhe::AllocOp::Adaptor adaptor,
                                   ConversionPatternRewriter &rewriter) const override {
+        // Get row sizes
+        auto getRow = [](Type type) -> auto {
+            if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(type)) {
+                return operandTy.getRow();
+            } else if (auto operandTy = mlir::dyn_cast_or_null<fhe::RLWECipherGridType>(type)) {
+                return operandTy.getRow();
+            } else {
+                return 0;
+            }
+        };
+        auto rowSizes = getRow(op.getType());
+
+        // Convert source type to dest type
         auto destTy = typeConverter->convertType(op.getType());
         if (!destTy) {
             LLVM_DEBUG(llvm::dbgs() << "call convertType fail for op: " << op 
@@ -984,13 +997,24 @@ class FheAllocPattern final : public OpConversionPattern<fhe::AllocOp> {
             return failure();
         }
 
-        auto alignment = op.getAlignment();
-        mlir::ArrayAttr args = rewriter.getArrayAttr({
-            rewriter.getI64IntegerAttr(alignment.value())
-        });
-
-        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Alloc", ValueRange{},
-                                                         args, ArrayAttr{});
+        // Replace
+        if (!rowSizes) {
+            auto alignment = op.getAlignment();
+            mlir::ArrayAttr args = rewriter.getArrayAttr({
+                rewriter.getI64IntegerAttr(alignment.value())
+            });
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "Alloc", ValueRange{},
+                                                             args, ArrayAttr{});
+        } else {
+            auto alignment = op.getAlignment();
+            mlir::ArrayAttr args = rewriter.getArrayAttr({
+                rewriter.getI64IntegerAttr(rowSizes),
+                rewriter.getI64IntegerAttr(alignment.value()),
+            });
+            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, destTy, "AllocArray", ValueRange{},
+                                                             args, ArrayAttr{});
+        }
+        
         return success();
     }
 };
