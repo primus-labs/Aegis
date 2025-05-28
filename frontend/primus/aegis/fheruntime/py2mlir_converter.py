@@ -11,7 +11,7 @@ class Py2MLIRConverter:
     def __init__(self, output_dir: str):
         self.output_dir = output_dir
 
-    def pythontomlir(self, functionstr: str, mlir_output_path: str):
+    def python_to_mlir(self, functionstr: str, mlir_output_path: str):
         """
         Converts Python function to MLIR format using the heir-opt tool.
         
@@ -37,12 +37,12 @@ class Py2MLIRConverter:
             function (Callable): The function to be compiled.
 
         Returns:
-            Tuple[str, List[int]]: A tuple containing the path to the compiled C++ file and a list of rotate steps.
+            str: the path to the compiled mlir file 
         """
         function_name = function.__name__
         source_code = inspect.getsource(function)
 
         mlir_output_path = os.path.join(self.output_dir, f'{function_name}.mlir')
-        self.pythontomlir(source_code, mlir_output_path)
+        self.python_to_mlir(source_code, mlir_output_path)
         return mlir_output_path
 
