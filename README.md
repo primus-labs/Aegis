@@ -36,6 +36,19 @@ sudo pip install scikit-learn   # (Optional)
 
 > python version 3.10 or above (which can be checked by running python --version).
 
+
+### MacOS(Arm64)
+
+```shell
+brew install ninja
+brew install lld clang
+brew install python3
+brew install protobuf
+pip3 install onnx
+brew install libomp
+```
+
+
 ### Installation
 
 #### Using Pip

@@ -28,7 +28,7 @@ ELSE()
   add_library(primus_aegis SHARED primus_aegis.cpp)
   set_target_properties(primus_aegis PROPERTIES PREFIX "")
 ENDIF()
-target_link_libraries(${target_name} PRIVATE pybind11::headers nlohmann_json::nlohmann_json)
+target_link_libraries(${target_name} PRIVATE pybind11::headers pybind11::module nlohmann_json::nlohmann_json)
 
 target_link_libraries(${target_name}
   PRIVATE
