@@ -48,10 +48,8 @@ void InsertEmitcPreamblePass::runOnOperation() {
     std::string mainFuncName = theFunc.asReader().getName();
     std::vector<std::pair<bool, int>> paramsInfo;
     for (auto param : theFunc.asReader().getInputs()) {
-        int inputDims = 1;
-        if (param.getShape().getDimensions().size() > 0) {
-            inputDims = param.getShape().getDimensions()[0];
-        }
+        int inputDims = param.getShape().getDimensions().size() ? 
+                        param.getShape().getDimensions().size() : 1;
 
         if (param.getType()) {
             paramsInfo.push_back({true, inputDims});  //cryptext type
