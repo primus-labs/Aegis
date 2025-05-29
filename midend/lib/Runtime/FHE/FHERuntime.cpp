@@ -23,21 +23,47 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         assert(vectFuncs.size() == 1 && "Only one public function can be generated.");
 
         // Prepare parameters
-        int idx = 0;
+        int valIdx = 0;
         std::vector<ArgWrapperBase*> args;
         for (auto func : vectFuncs) {
-            for (auto param : func.asReader().getInputs()) {
-                if (param.getType()) {
-                    // Ciphertext params, Currently only supports the vector<uint8_t> type,
-                    // with plans to extend support to vector<vector<uint8_t>> types in the future.
-                    std::vector<uint8_t> realData = input[idx].getTensor<uint8_t>().value().values;
-                    args.emplace_back(new VectorWrapper(realData));
+            for (auto arg : func.asReader().getInputs()) {
+                // Get the input argument dims
+                auto dims = arg.getShape().getDimensions();
+                auto dim_size = dims.size();
+                assert(!dim_size && "Function parameter dimensions are incorrect");
+                assert(dim_size > 2 && "Function parameters with dimensions higher than 2D are currently not supported");
+
+                if (arg.getType()) {
+                    if (dim_size == 1) {
+                        // Each Value in the vector container input represents a parameter (a Ciphertext object)
+                        std::vector<uint8_t> cipherData = input[valIdx++].getTensor<uint8_t>().value().values;
+                        args.emplace_back(new VectorWrapper(cipherData));
+                    } else if (dim_size > 1){
+                        // Multi Value in the vector container input represents a parameter (a Ciphertext object)
+                        std::vector<std::vector<uint8_t>> cipherData;
+                        for (auto i = 0; i < dims[0]; i++) {
+                            std::vector<uint8_t> unitCipherData = input[valIdx++].getTensor<uint8_t>().value().values;
+                            cipherData.emplace_back(unitCipherData);
+                        }
+                        args.emplace_back(new MatrixtWrapper(cipherData));
+                    }
                 } else {
-                    // Plaintext params, it must be the vector<uint8_t> type.
-                    std::vector<uint8_t> realData = input[idx].getTensor<uint8_t>().value().values;
-                    args.emplace_back(new VectorWrapper(realData));
+                    if (dim_size == 1) {
+                        // clear argument, Each Value in the vector container input represents a parameter
+                        // Not a Plaintext object, but standard types such as uint_8 and other integer values.
+                        std::vector<uint8_t> plainData = input[valIdx++].getTensor<uint8_t>().value().values;
+                        args.emplace_back(new VectorWrapper(plainData));
+                    } else if (dim_size > 1) {
+                        // clear argument, Multi Value in the vector container input represents a parameter
+                        // Not a Plaintext object, but standard types such as uint_8 and other integer values.
+                        std::vector<std::vector<uint8_t>> plainData;
+                        for (auto i = 0; i < dims[0]; i++) {
+                            std::vector<uint8_t> unitPlainData = input[valIdx++].getTensor<uint8_t>().value().values;
+                            plainData.emplace_back(unitPlainData);
+                        }
+                        args.emplace_back(new MatrixtWrapper(plainData));
+                    }
                 }
-                idx++;
             }
         }
 
@@ -61,9 +87,7 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         return std::vector<Value>{res};
     }
     catch (const std::exception& e) {
-        std::string err("error:");
-        err += e.what();
-        return ErrorMsg(err.c_str());
+        return ErrorMsg(e.what());
     }
 }
 
