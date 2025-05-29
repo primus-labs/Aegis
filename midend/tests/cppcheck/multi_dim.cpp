@@ -259,8 +259,8 @@ std::vector<RLWECipher> main_graph(std::vector<RLWECipher> v1, std::vector<RLWEC
 // }
 
 extern "C" 
-std::vector<std::vector<uint8_t>> aegis_mlir_main_graph(const std::vector<std::vector<uint8_t>> &buf1, 
-                                                        const std::vector<std::vector<uint8_t>> &buf2) {
+std::vector<uint8_t> aegis_mlir_main_graph(const std::vector<std::vector<uint8_t>> &buf1, 
+                                           const std::vector<std::vector<uint8_t>> &buf2) {
     initCryptContext();
 
     std::vector<RLWECipher> v1;
@@ -283,12 +283,12 @@ std::vector<std::vector<uint8_t>> aegis_mlir_main_graph(const std::vector<std::v
 
     std::vector<RLWECipher> retV = main_graph(v1, v2);
 
-    std::vector<std::vector<uint8_t>> resBuf;
+    std::vector<uint8_t> resBuf;
     for (auto k = 0; k < retV.size(); k++) {
         std::stringstream retss;
         Serial::Serialize(retV[k], retss, SerType::BINARY);
         std::vector<uint8_t> tmpBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
-        resBuf.push_back(tmpBuf);
+        resBuf.insert(resBuf.end(), tmpBuf.begin(), tmpBuf.end());
     }
     return resBuf;
 }
