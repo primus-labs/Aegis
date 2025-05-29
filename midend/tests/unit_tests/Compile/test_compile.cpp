@@ -36,6 +36,39 @@ module {
 }
 )mlir";
 
+constexpr std::string_view prog_content_3 = R"mlir(
+module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128", llvm.target_triple = "x86_64-unknown-linux-gnu", "onnx-mlir.symbol-postfix" = "add"} {
+  func.func @main_graph(%arg0: memref<3x2xf32> {onnx.name = "X1", onnx.type = "encrypted"}, 
+                        %arg1: memref<3x2xf32> {onnx.name = "X2", onnx.type = "encrypted"}) 
+                        -> (memref<3x2xf32> {onnx.name = "Y"}) attributes {llvm.emit_c_interface} {
+    %alloc = memref.alloc() {alignment = 16 : i64} : memref<3x2xf32>
+    affine.for %arg2 = 0 to 3 {
+      affine.for %arg3 = 0 to 2 {
+        %0 = affine.load %arg0[%arg2, %arg3] : memref<3x2xf32>
+        %1 = affine.load %arg1[%arg2, %arg3] : memref<3x2xf32>
+        %2 = arith.addf %0, %1 : f32
+        affine.store %2, %alloc[%arg2, %arg3] : memref<3x2xf32>
+      }
+    }
+    return %alloc : memref<3x2xf32>
+  }
+}
+)mlir";
+
+constexpr std::string_view prog_content_4 = R"mlir(
+module {
+  func.func @add_1d_6elements(%arg0: memref<6xf32>, %arg1: memref<6xf32>) -> memref<6xf32> {
+    affine.for %arg2 = 0 to 6 {
+      %0 = affine.load %arg0[%arg2] : memref<6xf32>
+      %1 = affine.load %arg1[%arg2] : memref<6xf32>
+      %2 = arith.addf %0, %1 : f32
+      affine.store %2, %arg0[%arg2] : memref<6xf32>
+    }
+    return %arg0 : memref<6xf32>
+  }
+}
+)mlir";
+
 
 bool compileMlir(std::string_view mlirContent) {
     auto compile_context =  CompileContext::createContext();
@@ -105,6 +138,14 @@ int main() {
     }
 
     if (run_case(prog_content_2)) {
+        return -1;
+    }
+
+    if (run_case(prog_content_3)) {
+        return -1;
+    }
+
+    if (run_case(prog_content_4)) {
         return -1;
     }
 
