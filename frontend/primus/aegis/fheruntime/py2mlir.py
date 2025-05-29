@@ -219,7 +219,6 @@ class MLIRGenerator(ast.NodeVisitor):
 
 
     def store_to_subscript(self, target, value):
-        print('store to subscript')
         indices = []
         base_node = target
         while isinstance(base_node, ast.Subscript):
@@ -426,7 +425,6 @@ class MLIRGenerator(ast.NodeVisitor):
             raise NotImplementedError(f"Unsupported expression in affine index: {ast.dump(expr)}")
 
     def visit_Subscript(self, node):
-        print('visit subscript')
         indices = []
         base_node = node
         while isinstance(base_node, ast.Subscript):
@@ -647,6 +645,12 @@ class MLIRGenerator(ast.NodeVisitor):
                 op = arith.CmpFOp(arith.CmpFPredicate.OLT, left, right)
             elif isinstance(node.ops[0], ast.Eq):
                 op = arith.CmpFOp(arith.CmpFPredicate.OEQ, left, right)
+            elif isinstance(node.ops[0], ast.GtE):
+                op = arith.CmpFOp(arith.CmpFPredicate.OGE, left, right)
+            elif isinstance(node.ops[0], ast.LtE):
+                op = arith.CmpFOp(arith.CmpFPredicate.OLE, left, right)
+            elif isinstance(node.ops[0], ast.NotEq):
+                op = arith.CmpFOp(arith.CmpFPredicate.ONE, left, right)
             else:
                 raise NotImplementedError(f"Unsupported comparison operator: {type(node.ops[0])}")
         return op.result
