@@ -30,7 +30,7 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
                 // Get the input argument dims
                 auto dims = arg.getShape().getDimensions();
                 auto dim_size = dims.size();
-                assert(!dim_size && "Function parameter dimensions are incorrect");
+                assert(dim_size <= 0 && "Function parameter dimensions are incorrect");
                 assert(dim_size > 2 && "Function parameters with dimensions higher than 2D are currently not supported");
 
                 if (arg.getType()) {
