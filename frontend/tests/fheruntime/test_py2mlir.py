@@ -33,6 +33,28 @@ def test_case_eq(x1: float, x2: float):
 def test_case_neq(x1: float, x2: float):
     return x1 != x2
 
+def test_case_max(x1: float, x2: float):
+    x = 0
+    if x1 > x2:
+        x = x1
+    else:
+        x = x2
+    return x
+
+def test_case_min(x1: float, x2: float):
+    x = 0
+    if x1 < x2:
+        x = x1
+    else:
+        x = x2
+    return x
+
+def test_case_sum(x: list[float, 10]):
+    s = 0.0
+    for i in range(10):
+        s += x[i]
+    return s
+
 if __name__ == '__main__':
     converter = Py2MLIRConverter('./test_cases')
     converter.convert(test_case_add)
@@ -47,3 +69,8 @@ if __name__ == '__main__':
     converter.convert(test_case_le)
     converter.convert(test_case_eq)
     converter.convert(test_case_neq)
+
+    converter.convert(test_case_max)
+    converter.convert(test_case_min)
+
+    converter.convert(test_case_sum)
