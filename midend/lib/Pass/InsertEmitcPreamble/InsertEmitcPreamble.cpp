@@ -46,12 +46,17 @@ void InsertEmitcPreamblePass::runOnOperation() {
     }
     ProtoMessage<aegisprotocol::Function> theFunc = progSpec.getFuncInfo()[0];
     std::string mainFuncName = theFunc.asReader().getName();
-    std::vector<bool> paramsType;
+    std::vector<std::pair<bool, int>> paramsInfo;
     for (auto param : theFunc.asReader().getInputs()) {
+        int inputDims = 1;
+        if (param.getShape().getDimensions().size() > 0) {
+            inputDims = param.getShape().getDimensions()[0];
+        }
+
         if (param.getType()) {
-            paramsType.push_back(true);  //cryptext type
+            paramsInfo.push_back({true, inputDims});  //cryptext type
         } else {
-            paramsType.push_back(false); //plaintext type
+            paramsInfo.push_back({false, inputDims}); //plaintext type
         }
     }
 
@@ -59,36 +64,49 @@ void InsertEmitcPreamblePass::runOnOperation() {
     // TODO:If a formal parameter has an clear type annotation, 
     // the arguments passed to it might be of different types.
     std::string allParamsStr;
-    for (auto i = 0; i < paramsType.size(); i++) {
-        if (i == (paramsType.size()-1)) {
-            allParamsStr += ("const std::vector<uint8_t> &buf" + std::to_string(i+1));
+    for (auto i = 0; i < paramsInfo.size(); i++) {
+        if (paramsInfo[i].second > 1) {
+            if (i == (paramsInfo.size()-1)) {
+                allParamsStr += ("const std::vector<std::vector<uint8_t>> &buf" + std::to_string(i+1));
+            } else {
+                allParamsStr += ("const std::vector<std::vector<uint8_t>> &buf" + std::to_string(i+1) + ", ");
+            }
         } else {
-            allParamsStr += ("const std::vector<uint8_t> &buf" + std::to_string(i+1) + ", ");
+            if (i == (paramsInfo.size()-1)) {
+                allParamsStr += ("const std::vector<uint8_t> &buf" + std::to_string(i+1));
+            } else {
+                allParamsStr += ("const std::vector<uint8_t> &buf" + std::to_string(i+1) + ", ");
+            }
         }
     }
 
     // Assemble the parameter transformation code.
     std::string allTransStr;
-    for (auto i = 0; i < paramsType.size(); i++) {
-        if (paramsType[i]) {
-            auto idx = std::to_string(i+1);
-            auto toCipher = std::string(
-                    llvm::formatv(kDeserisBufCode.data(), idx, idx, idx, idx, idx, idx, idx));
-            allTransStr += toCipher;
+    for (auto i = 0; i < paramsInfo.size(); i++) {
+        if (paramsInfo[i].first) {
+            if (paramsInfo[i].second > 1) {
+                auto idx = std::to_string(i+1);
+                auto toCipher = std::string(llvm::formatv(kDeserisBufToMultiCipher.data(), idx));
+                allTransStr += toCipher;
+            } else {
+                auto idx = std::to_string(i+1);
+                auto toCipher = std::string(llvm::formatv(kDeserisBufToSingleCipher.data(), idx));
+                allTransStr += toCipher;
+            }
         }
     }
 
     // Assmble the main function all argument string
     std::string allArgumentsStr;
-    for (auto i = 0; i < paramsType.size(); i++) {
-        if (paramsType[i]) {
-            if (i == (paramsType.size()-1)) {
+    for (auto i = 0; i < paramsInfo.size(); i++) {
+        if (paramsInfo[i].first) {
+            if (i == (paramsInfo.size()-1)) {
                 allArgumentsStr += ("v" + std::to_string(i+1));
             } else {
                 allArgumentsStr += ("v" + std::to_string(i+1) + + ", ");
             }
         } else {
-            if (i == (paramsType.size()-1)) {
+            if (i == (paramsInfo.size()-1)) {
                 allArgumentsStr += ("buf" + std::to_string(i+1));
             } else {
                 allArgumentsStr += ("buf" + std::to_string(i+1) + + ", ");
@@ -127,6 +145,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
         int batchSize = keyInfos.asReader().getBatchSize();
         std::string scheme = keyInfos.asReader().getScheme();
         bool enableBootstrap = keyInfos.asReader().getEnableBootstrapping();
+        int outputDimSize = progSpec.getFuncInfo()[0].asReader().getOutputs()[0].getShape().getDimensions().size();
         
         auto loadCryptoResFunc = std::string(llvm::formatv(kInitCtxFunc.data(), std::to_string(mulDepth), std::to_string(enableBootstrap), scheme, 
                                                            std::to_string(firstModSize), std::to_string(scaleModeSize), std::to_string(batchSize)));
@@ -148,9 +167,15 @@ void InsertEmitcPreamblePass::runOnOperation() {
 
         // Insert aegis_mlir_xxx implementation functions at the end of the block
         builder.setInsertionPointToEnd(moduleBlock);
+        std::string callFuncStr;
+        if (outputDimSize > 1) {
+            callFuncStr = mainFuncName + "(" + allArgumentsStr + ")";
+        } else {
+            callFuncStr = "1, " + mainFuncName + "(" + allArgumentsStr + ")";
+        }
         auto adaptorFunc = std::string(
                                 llvm::formatv(kAegisAdaptorFunc.data(), EXPORT_FUNCNAME_PRIFIX, mainFuncName,   
-                                              allParamsStr, allTransStr, mainFuncName, allArgumentsStr));
+                                              allParamsStr, allTransStr, callFuncStr));
         builder.create<emitc::VerbatimOp>(op->getLoc(), adaptorFunc);
 
         return mlir::WalkResult::interrupt();

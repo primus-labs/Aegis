@@ -180,21 +180,38 @@ extern "C"
 std::vector<uint8_t> {0}{1}({2}) {
     initCryptContext();
     {3}
-    RLWECipher retV = {4}({5});
-    std::stringstream retss;
-    Serial::Serialize(retV, retss, SerType::BINARY);
-    std::vector<uint8_t> retBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
-    return retBuf;
+    std::vector<RLWECipher> retV({4});
+    std::vector<uint8_t> resBuf;
+    for (auto r = 0; r < retV.size(); r++) {{
+        std::stringstream retss;
+        Serial::Serialize(retV[r], retss, SerType::BINARY);
+        std::vector<uint8_t> tmpBuf((std::istreambuf_iterator<char>(retss)), std::istreambuf_iterator<char>());
+        resBuf.insert(resBuf.end(), tmpBuf.begin(), tmpBuf.end());
+    }
+    return resBuf;
 }
 )cpp";
 // clang-format on
 
 // clang-format off
-constexpr std::string_view kDeserisBufCode = R"cpp(
-    Ciphertext<DCRTPoly> v{0};
-    std::stringstream ss{1};
-    ss{2}.write(reinterpret_cast<const char *>(buf{3}.data()), buf{4}.size());
-    Serial::Deserialize(v{5}, ss{6}, SerType::BINARY);
+constexpr std::string_view kDeserisBufToSingleCipher = R"cpp(
+    RLWECipher v{0};
+    std::stringstream ss{0};
+    ss{0}.write(reinterpret_cast<const char *>(buf{0}.data()), buf{0}.size());
+    Serial::Deserialize(v{0}, ss{0}, SerType::BINARY);
+)cpp";
+// clang-format on
+
+// clang-format off
+constexpr std::string_view kDeserisBufToMultiCipher = R"cpp(
+    std::vector<RLWECipher> v{0};
+    for (auto i{0} = 0; i{0} < buf{0}.size(); i{0}++) {{
+        RLWECipher tmp{0};
+        std::stringstream ss{0};
+        ss{0}.write(reinterpret_cast<const char *>(buf{0}[i{0}].data()), buf{0}[i{0}].size());
+        Serial::Deserialize(tmp{0}, ss{0}, SerType::BINARY);
+        v{0}.emplace_back(tmp{0});
+    }
 )cpp";
 // clang-format on
 
@@ -208,7 +225,7 @@ RLWECipher Alloc(size_t size) {
 inline RLWECipher Alloc() {
     return Alloc({0});
 }
-std::vector<RLWECipher> AllocArray(size_t row, size_t col) {
+std::vector<RLWECipher> AllocArray(size_t row, size_t col) {{
     return std::vector<RLWECipher>(row, Alloc(col));
 }
 )cpp";

@@ -149,10 +149,10 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
         funcParam.asBuilder().setName(paramName);
         funcParam.asBuilder().setType(false);
         if (mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipher" ||
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipherGrid" || 
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "std::vector<RLWECipher>" || 
             mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipher" ||
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipherVector" ||
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipherMatrix") {
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "std::vector<LWECipher>" ||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == "std::vector<std::vector<LWECipher>>") {
             funcParam.asBuilder().setType(true);
             auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
             for (size_t i = 0; i < dims.size(); ++i) {

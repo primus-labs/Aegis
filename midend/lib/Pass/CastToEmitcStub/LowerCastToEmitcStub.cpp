@@ -28,7 +28,7 @@ using namespace aegis::secret;
 static bool isOpaqueRLWE(Type type) {
     return mlir::isa<emitc::OpaqueType>(type) && 
                 (mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipher" ||
-                 mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipherGrid");
+                 mlir::cast<emitc::OpaqueType>(type).getValue() == "std::vector<RLWECipher>");
 }
 
 static int32_t getElementSizes(Type type) {
