@@ -202,11 +202,18 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
             mlir::DictionaryAttr argAttrs = funcOp.getArgAttrDict(i);
             mlir::Attribute dimsAttr = argAttrs.get(DIMS_ATTR_NAME);
             if (auto arrayAttr = mlir::dyn_cast_or_null<mlir::ArrayAttr>(dimsAttr)) {
-                for (mlir::Attribute dimAttr : arrayAttr) {
-                    if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(dimAttr)) {
+                // only the last dimension of multi-dimensional parameters represents the packed batch size. 
+                if (!arrayAttr.empty()) {
+                    mlir::Attribute lastDimAttr = arrayAttr[arrayAttr.size() - 1];
+                    if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(lastDimAttr)) {
                         max_size = std::max(max_size, intAttr.getInt());
                     }
                 }
+                // for (mlir::Attribute dimAttr : arrayAttr) {
+                //     if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(dimAttr)) {
+                //         max_size = std::max(max_size, intAttr.getInt());
+                //     }
+                // }
             }
         }
     });
