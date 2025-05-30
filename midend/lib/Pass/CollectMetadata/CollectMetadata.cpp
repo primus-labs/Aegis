@@ -20,19 +20,19 @@ void CollectMetadataPass::collectAllMetadata(func::FuncOp funcOp) {
   for (unsigned i = 0; i < funcOp.getNumArguments(); ++i) {
     // Get name attribute and value
     llvm::StringRef nameAttrVal;
-    if (auto nameAttr = funcOp.getArgAttr(i, PARAM_ATTR_NAME)) {
+    if (auto nameAttr = funcOp.getArgAttr(i, ARG_OR_RET_ATTR_NAME)) {
       if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
         nameAttrVal = strAttr.getValue();
         // llvm::outs() << funcOp.getName() << " function argument " << i <<
-        // "'th (" << PARAM_ATTR_NAME << "," << nameAttrVal << ")\n";
+        // "'th (" << ARG_OR_RET_ATTR_NAME << "," << nameAttrVal << ")\n";
       }
     }
 
     // Get type attribute and value then save
-    if (auto typeAttr = funcOp.getArgAttr(i, PARAM_ATTR_TYPE)) {
+    if (auto typeAttr = funcOp.getArgAttr(i, ARG_OR_RET_ATTR_TYPE)) {
       if (auto strAttr = mlir::dyn_cast<StringAttr>(typeAttr)) {
         // llvm::outs() << funcOp.getName() << " function argument " << i <<
-        // "'th (" << PARAM_ATTR_TYPE << "," << strAttr.getValue() << ")\n";
+        // "'th (" << ARG_OR_RET_ATTR_TYPE << "," << strAttr.getValue() << ")\n";
         metaMgr.addMetadata(nameAttrVal, strAttr.getValue());
       }
     }

@@ -79,7 +79,7 @@ bool isArgEncrypted(Value value) {
 
         const MetadataMgr &metaMgr = MetadataMgr::getInstance();
         unsigned idx = arg.getArgNumber();
-        if (auto nameAttr = funcOp.getArgAttr(idx, PARAM_ATTR_NAME)) {
+        if (auto nameAttr = funcOp.getArgAttr(idx, ARG_OR_RET_ATTR_NAME)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
                 bool bClear = (metaMgr.getMetadata(strAttr.getValue()) == CLEAR);
                 return !bClear;
@@ -109,7 +109,7 @@ bool isEncrypted(Value value, llvm::DenseMap<Value, bool> &cache) {
 
         const MetadataMgr &metaMgr = MetadataMgr::getInstance();
         unsigned idx = arg.getArgNumber();
-        if (auto nameAttr = funcOp.getArgAttr(idx, PARAM_ATTR_NAME)) {
+        if (auto nameAttr = funcOp.getArgAttr(idx, ARG_OR_RET_ATTR_NAME)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
                 bool bClear = (metaMgr.getMetadata(strAttr.getValue()) == CLEAR);
                 cache[value] = !bClear;

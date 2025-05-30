@@ -9,28 +9,11 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/include/llvm/ADT/ArrayRef.h"
 #include "llvm/include/llvm/ADT/SmallVector.h"
+#include "Common/FheDefines.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
 
-#define PARAM_ATTR_NAME "onnx.name"
-#define PARAM_ATTR_TYPE "onnx.type"
-#define ENCRYPTED "encrypted"
-#define CLEAR "clear"
-#define DIMS_ATTR_NAME  "onnx.dims"
-#define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
-#define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
-
-#define FHE_MAX_MUL_DEPTH_WITH_CMP   18
-#define FHE_MAX_MUL_DEPTH_NO_CMP     8
-#define FHE_FIRST_MOD_SIZE  60
-#define FHE_SCALE_MOD_SIZE  59
-inline bool enableFheBoostrapFlag = false;
-
-// In OpenFHE and other FHE libraries, the implementation of ​​homomorphic rotation​​ differs, 
-// particularly in terms of ​​rotation direction​​ and ​​parameter definitions​​, which require special attention. 
-// In OpenFHE, ​​positive numbers​​ represent a ​​left cyclic shift​​, while ​​negative numbers​​ correspond to a ​​right cyclic shift​​.
-inline constexpr bool kNegativeShiftRight = true;    //default for OpenFHE
 
 namespace mlir {
 namespace aegis {

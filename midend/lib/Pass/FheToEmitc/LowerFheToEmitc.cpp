@@ -64,7 +64,7 @@ template <typename OpType> class FheArithUnaryPattern final : public OpConversio
         // Build a series of calls to our custom function.
         std::string opName;
         if (std::is_same<OpType, fhe::LWENegOp>() || std::is_same<OpType, fhe::RLWENegOp>()) {
-            opName = "Neg";
+            opName = EMITC_NEG_NAME;
         } else {
             LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
             return failure();
@@ -121,27 +121,27 @@ public:
         std::string opName;
         if (std::is_same<OpType, LWEAddOp>() || 
             std::is_same<OpType, RLWEAddOp>()) {
-            opName = "Add";
+            opName = EMITC_ADD_NAME;
         }
         else if (std::is_same<OpType, LWEAddPlainOp>() ||
                  std::is_same<OpType, RLWEAddPlainOp>()) {
-            opName = "AddPlain";
+            opName = EMITC_ADDPLAIN_NAME;
         }
         else if (std::is_same<OpType, LWESubOp>() ||
                  std::is_same<OpType, RLWESubOp>()) {
-            opName = "Sub";
+            opName = EMITC_SUB_NAME;
         }
         else if (std::is_same<OpType, LWESubPlainOp>() ||
                  std::is_same<OpType, RLWESubPlainOp>()) {
-            opName = "SubPlain";
+            opName = EMITC_SUBPLAIN_NAME;
         }
         else if (std::is_same<OpType, LWEMulOp>() ||
                  std::is_same<OpType, RLWEMulOp>()) {
-            opName = "Mul";
+            opName = EMITC_MUL_NAME;
         }
         else if (std::is_same<OpType, LWEMulPlainOp>() ||
                  std::is_same<OpType, RLWEMulPlainOp>()) {
-            opName = "MulPlain";
+            opName = EMITC_MULPLAIN_NAME;
         }
         else {
             llvm::errs() << "[FhetoEmitcPass] ERROR: Unhandled operation detected\n"
@@ -196,7 +196,7 @@ class FheRotatePattern final : public OpConversionPattern<fhe::RotateOp> {
         auto rotIdxAttr = ArrayAttr::get(
             getContext(), {IntegerAttr::get(IndexType::get(getContext()), 0), rewriter.getSI32IntegerAttr(op.getI())});
 
-        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "Rotate", rotIdxAttr, ArrayAttr(), newOperand);
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, EMITC_ROTATE_NAME, rotIdxAttr, ArrayAttr(), newOperand);
 
         return success();
     }
@@ -234,7 +234,7 @@ class FheBootstrapPattern final : public OpConversionPattern<fhe::BootstrapOp> {
             newOperand = input;
         }
 
-        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Bootstrap", ArrayAttr(), ArrayAttr(),
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), EMITC_BOOT_NAME, ArrayAttr(), ArrayAttr(),
                                                          newOperand);
         return success();
     }
@@ -317,7 +317,7 @@ class FheCmpPattern final : public OpConversionPattern<fhe::CmpOp> {
                 llvm_unreachable("Unexpected predicate!");
         }
 
-        std::string funcName = "Cmp_" + suffix;
+        std::string funcName = EMITC_CMP_PREFIX_NAME + suffix;
         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), funcName, ArrayAttr(), ArrayAttr(),
                                                          ValueRange({newLhsOperand, newRhsOperand}));
         return success();
@@ -385,7 +385,7 @@ class FheSelectPattern final : public OpConversionPattern<fhe::SelectOp> {
             newFalseValOperand = falseValOperand;
         }
 
-        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Select", ArrayAttr(), ArrayAttr(),
+        rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), EMITC_SELECT_NAME, ArrayAttr(), ArrayAttr(),
                                                          ValueRange({newCondOperand, newTrueValOperand, newFalseValOperand}));
         return success();
     }
@@ -1058,42 +1058,42 @@ void LowerFheToEmitcPass::runOnOperation() {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
             if (mlir::dyn_cast_or_null<fhe::LWECipherType>(srcTy)) {
-                if (destTy.getValue().str() == "LWECipher") {
+                if (destTy.getValue().str() == LWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::LWECipherVectorType>(srcTy)) {
-                if (destTy.getValue().str() == "std::vector<LWECipher>") {
+                if (destTy.getValue().str() == VECT_LWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>(srcTy)) {
-                if (destTy.getValue().str() == "std::vector<std::vector<LWECipher>>") {
+                if (destTy.getValue().str() == MAT_LWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::RLWECipherType>(srcTy)) {
-                if (destTy.getValue().str() == "RLWECipher") {
+                if (destTy.getValue().str() == RLWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::RLWECipherGridType>(srcTy)) {
-                if (destTy.getValue().str() == "std::vector<RLWECipher>") {
+                if (destTy.getValue().str() == VECT_RLWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::PlainType>(srcTy)) {
-                if (destTy.getValue().str() == "Plain") {
+                if (destTy.getValue().str() == PLAIN_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::PlainVectorType>(srcTy)) {
-                if (destTy.getValue().str() == "PlainVector") {
+                if (destTy.getValue().str() == VECT_PLAIN_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
             else if (mlir::dyn_cast_or_null<fhe::PlainMatrixType>(srcTy)) {
-                if (destTy.getValue().str() == "PlainMatrix") {
+                if (destTy.getValue().str() == MAT_PLAIN_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
                 }
             }
@@ -1129,28 +1129,28 @@ void LowerFheToEmitcPass::runOnOperation() {
 
     type_converter.addConversion([&](Type t) {
         if (mlir::isa<fhe::LWECipherType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "LWECipher"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), LWECIPHER_TYPE_NAME));
         }
         else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<LWECipher>"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), VECT_LWECIPHER_TYPE_NAME));
         }
         else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<std::vector<LWECipher>>"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), MAT_LWECIPHER_TYPE_NAME));
         }
         else if (mlir::isa<fhe::RLWECipherType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "RLWECipher"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), RLWECIPHER_TYPE_NAME));
         }
         else if (mlir::isa<fhe::RLWECipherGridType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "std::vector<RLWECipher>"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), VECT_RLWECIPHER_TYPE_NAME));
         }
         else if (mlir::isa<fhe::PlainType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), PLAIN_TYPE_NAME));
         }
         else if (mlir::isa<fhe::PlainVectorType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), VECT_PLAIN_TYPE_NAME));
         }
         else if (mlir::isa<fhe::PlainMatrixType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainMatrix"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), MAT_PLAIN_TYPE_NAME));
         }
         else if (mlir::isa<fhe::IntType>(t)) {
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "int"));
@@ -1159,13 +1159,13 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<MemRefType>(t)) {
             auto newTy = mlir::cast<MemRefType>(t);
             if (newTy.hasStaticShape() && newTy.getShape().size() == 0) {
-                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector")); // rank:0
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), VECT_PLAIN_TYPE_NAME)); // rank:0
             }
             else if (newTy.hasStaticShape() && newTy.getShape().size() == 1) {
-                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector"));
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), VECT_PLAIN_TYPE_NAME));
             }
             else if (newTy.hasStaticShape() && newTy.getShape().size() == 2) {
-                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainMatrix"));
+                return std::optional<Type>(emitc::OpaqueType::get(&getContext(), MAT_PLAIN_TYPE_NAME));
             }
             else {
                 llvm::errs() << "Unknow support rank is:" << newTy.getShape().size() << ".\n";
@@ -1174,10 +1174,10 @@ void LowerFheToEmitcPass::runOnOperation() {
         }
         else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
                  mlir::isa<mlir::IndexType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "Plain"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), PLAIN_TYPE_NAME));
         }
         else if (mlir::isa<mlir::VectorType>(t)) {
-            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), "PlainVector"));
+            return std::optional<Type>(emitc::OpaqueType::get(&getContext(), VECT_PLAIN_TYPE_NAME));
         }
 
         LLVM_DEBUG(llvm::dbgs() << "Warning: No conver type:(" << t << ")[at FheToEmitcPass addConversion].\n");
@@ -1197,7 +1197,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         if (mlir::isa<fhe::LWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "LWECipher") {
+                if (srcTy.getValue().str() == LWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1205,7 +1205,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "std::vector<LWECipher>") {
+                if (srcTy.getValue().str() == VECT_LWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1213,7 +1213,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "std::vector<std::vector<LWECipher>>") {
+                if (srcTy.getValue().str() == MAT_LWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1221,7 +1221,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::RLWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "RLWECipher") {
+                if (srcTy.getValue().str() == RLWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1229,7 +1229,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::RLWECipherGridType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "std::vector<RLWECipher>") {
+                if (srcTy.getValue().str() == VECT_RLWECIPHER_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1237,7 +1237,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::PlainType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "Plain") {
+                if (srcTy.getValue().str() == PLAIN_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1245,7 +1245,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::PlainVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "PlainVector") {
+                if (srcTy.getValue().str() == VECT_PLAIN_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }
@@ -1253,7 +1253,7 @@ void LowerFheToEmitcPass::runOnOperation() {
         else if (mlir::isa<fhe::PlainMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             if (auto srcTy = mlir::dyn_cast_or_null<emitc::OpaqueType>(vs.front().getType())) {
-                if (srcTy.getValue().str() == "PlainMatrix") {
+                if (srcTy.getValue().str() == MAT_PLAIN_TYPE_NAME) {
                     return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
                 }
             }

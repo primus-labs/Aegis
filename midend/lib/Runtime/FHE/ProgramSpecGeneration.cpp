@@ -92,7 +92,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
 
         // get param name
         llvm::StringRef nameVal;
-        if (auto nameAttr = funcOp.getArgAttr(i, PARAM_ATTR_NAME)) {
+        if (auto nameAttr = funcOp.getArgAttr(i, ARG_OR_RET_ATTR_NAME)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
                 nameVal = strAttr.getValue();
             }
@@ -123,7 +123,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::Function>> getUnitFunctionInfo(mlir::
 
         // get result name
         llvm::StringRef nameVal;
-        if (auto nameAttr = funcOp.getResultAttr(i, PARAM_ATTR_NAME)) {
+        if (auto nameAttr = funcOp.getResultAttr(i, ARG_OR_RET_ATTR_NAME)) {
             if (auto strAttr = mlir::dyn_cast<StringAttr>(nameAttr)) {
                 nameVal = strAttr.getValue();
             }
@@ -148,11 +148,11 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
         funcParam.asBuilder().setName(paramName);
         funcParam.asBuilder().setType(false);
-        if (mlir::cast<emitc::OpaqueType>(ty).getValue() == "RLWECipher" ||
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "std::vector<RLWECipher>" || 
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "LWECipher" ||
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "std::vector<LWECipher>" ||
-            mlir::cast<emitc::OpaqueType>(ty).getValue() == "std::vector<std::vector<LWECipher>>") {
+        if (mlir::cast<emitc::OpaqueType>(ty).getValue() == RLWECIPHER_TYPE_NAME ||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == VECT_RLWECIPHER_TYPE_NAME || 
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == LWECIPHER_TYPE_NAME||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == VECT_LWECIPHER_TYPE_NAME ||
+            mlir::cast<emitc::OpaqueType>(ty).getValue() == MAT_LWECIPHER_TYPE_NAME) {
             funcParam.asBuilder().setType(true);
             auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
             for (size_t i = 0; i < dims.size(); ++i) {
@@ -242,7 +242,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
         if (mlir::isa<emitc::CallOpaqueOp>(op)) {
             if (auto callOp = mlir::dyn_cast_or_null<emitc::CallOpaqueOp>(op)) {
                 StringRef calleeName = callOp.getCallee();
-                if (calleeName.starts_with("Cmp_")) {
+                if (calleeName.starts_with(EMITC_CMP_PREFIX_NAME)) {
                     maxMulDepth = FHE_MAX_MUL_DEPTH_WITH_CMP;
                     return mlir::WalkResult::interrupt();
                 }
@@ -308,15 +308,15 @@ llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::Module
             if (mlir::isa<emitc::CallOpaqueOp>(op)) {
                 if (auto callOp = mlir::dyn_cast_or_null<emitc::CallOpaqueOp>(op)) {
                     StringRef calleeName = callOp.getCallee();
-                    if (calleeName == "Mul" || calleeName == "MulPlain") {
+                    if (calleeName == EMITC_MUL_NAME || calleeName == EMITC_MULPLAIN_NAME) {
                         mulCnt++;
-                    } else if (calleeName == "Rotate") {
+                    } else if (calleeName == EMITC_ROTATE_NAME) {
                         rotateCnt++;
-                    } else if (calleeName == "Bootstrap") {
+                    } else if (calleeName == EMITC_BOOT_NAME) {
                         bootstrapCnt++;
-                    } else if (calleeName == "Select") {
+                    } else if (calleeName == EMITC_SELECT_NAME) {
                         selectCnt++;
-                    } else if (calleeName.starts_with("Cmp_")) {
+                    } else if (calleeName.starts_with(EMITC_CMP_PREFIX_NAME)) {
                         cmpCnt++;
                     }
                 }

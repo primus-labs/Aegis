@@ -15,6 +15,7 @@
 #include "Dialect/Secret/SecretDialect.h"
 #include "Dialect/Secret/SecretOps.h"
 #include "Dialect/Secret/SecretTypes.h"
+#include "Common/FheDefines.h"
 #include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
 
 #define DEBUG_TYPE "cast-to-emitc-stub"
@@ -27,8 +28,8 @@ using namespace aegis::secret;
 
 static bool isOpaqueRLWE(Type type) {
     return mlir::isa<emitc::OpaqueType>(type) && 
-                (mlir::cast<emitc::OpaqueType>(type).getValue() == "RLWECipher" ||
-                 mlir::cast<emitc::OpaqueType>(type).getValue() == "std::vector<RLWECipher>");
+                (mlir::cast<emitc::OpaqueType>(type).getValue() == RLWECIPHER_TYPE_NAME||
+                 mlir::cast<emitc::OpaqueType>(type).getValue() == VECT_RLWECIPHER_TYPE_NAME);
 }
 
 static int32_t getElementSizes(Type type) {
@@ -64,7 +65,8 @@ public:
                                         ArrayAttr(), ArrayAttr(), operand);
                         return success();
                     // plain to cipher
-                    } else if (mlir::isa<emitc::OpaqueType>(destTy) && mlir::cast<emitc::OpaqueType>(destTy).getValue() == "RLWECipher") {
+                    } else if (mlir::isa<emitc::OpaqueType>(destTy) && 
+                               mlir::cast<emitc::OpaqueType>(destTy).getValue() == RLWECIPHER_TYPE_NAME) {
                         rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, TypeRange(destTy), "Cast_Plain_To_Cipher", 
                                         ArrayAttr(), ArrayAttr(), operand);
                         return success();
