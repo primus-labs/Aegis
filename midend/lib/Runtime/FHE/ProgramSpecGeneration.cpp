@@ -310,7 +310,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::Module
                     StringRef calleeName = callOp.getCallee();
                     if (calleeName == "Mul" || calleeName == "MulPlain") {
                         mulCnt++;
-                    } else if (calleeName == "RotateOp") {
+                    } else if (calleeName == "Rotate") {
                         rotateCnt++;
                     } else if (calleeName == "Bootstrap") {
                         bootstrapCnt++;
