@@ -69,6 +69,22 @@ module {
 }
 )mlir";
 
+constexpr std::string_view prog_content_5 = R"mlir(
+module {
+  func.func @main_graph(%arg0: memref<6xf32>, %arg1: memref<6xf32>) -> f32 {
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = affine.for %arg2 = 0 to 6 iter_args(%arg3 = %cst) -> (f32) {
+      %1 = affine.load %arg0[%arg2] : memref<6xf32>
+      %2 = affine.load %arg1[%arg2] : memref<6xf32>
+      %3 = arith.addf %1, %2 : f32
+      %4 = arith.addf %arg3, %3 : f32
+      affine.yield %4 : f32
+    }
+    return %0 : f32
+  }
+}
+)mlir";
+
 
 bool compileMlir(std::string_view mlirContent) {
     auto compile_context =  CompileContext::createContext();
@@ -146,6 +162,10 @@ int main() {
     }
 
     if (run_case(prog_content_4)) {
+        return -1;
+    }
+
+    if (run_case(prog_content_5)) {
         return -1;
     }
 
