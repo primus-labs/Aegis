@@ -493,6 +493,66 @@ bool case_5_3() {
 }
 
 
+/**********************************
+***********    case 6    **********
+***********************************/
+constexpr std::string_view mlirCase6 = R"mlir(
+module {
+  func.func @main_graph(%arg0: memref<6xf32>, %arg1: memref<6xf32>) -> memref<6xf32> {
+    affine.for %arg2 = 0 to 6 {
+      %0 = affine.load %arg0[%arg2] : memref<6xf32>
+      %1 = affine.load %arg1[%arg2] : memref<6xf32>
+      %2 = arith.addf %0, %1 : f32
+      affine.store %2, %arg0[%arg2] : memref<6xf32>
+    }
+    return %arg0 : memref<6xf32>
+  }
+}
+)mlir";
+
+bool case_6() {
+    std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
+    std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
+    std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
+    if (!mlirUnitTest_2(mlirCase6, a1, b1, expect_output)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+/**********************************
+***********    case 7    **********
+***********************************/
+constexpr std::string_view mlirCase7 = R"mlir(
+module {
+  func.func @main_graph(%arg0: memref<6xf32>, %arg1: memref<6xf32>) -> f32 {
+    %cst = arith.constant 0.000000e+00 : f32
+    %0 = affine.for %arg2 = 0 to 6 iter_args(%arg3 = %cst) -> (f32) {
+      %1 = affine.load %arg0[%arg2] : memref<6xf32>
+      %2 = affine.load %arg1[%arg2] : memref<6xf32>
+      %3 = arith.addf %1, %2 : f32
+      %4 = arith.addf %arg3, %3 : f32
+      affine.yield %4 : f32
+    }
+    return %0 : f32
+  }
+}
+)mlir";
+
+bool case_7() {
+    std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
+    std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
+    std::vector<double> expect_output = {78};      
+    if (!mlirUnitTest_2(mlirCase7, a1, b1, expect_output)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 //----------------------------------------------------------------
 int main() {
     {
@@ -527,6 +587,16 @@ int main() {
         }
 
         if (!case_5_3()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_6()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_7()) {
             std::cout << "Test fail" << std::endl;
             return -1;
         }
