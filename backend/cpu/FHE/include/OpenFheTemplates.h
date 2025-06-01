@@ -216,6 +216,40 @@ constexpr std::string_view kDeserisBufToMultiCipher = R"cpp(
 // clang-format on
 
 // clang-format off
+constexpr std::string_view kDeserisBufToSingleDouble = R"cpp(
+    double v{0};
+    memcpy(&v{0}, buf{0}.data(), buf{0}.size());
+)cpp";
+// clang-format on
+
+// clang-format off
+constexpr std::string_view kDeserisBufToVectDouble = R"cpp(
+    std::vector<double> v{0};
+    size_t count{0} = buf{0}.size() / sizeof(double);
+    v{0}.resize(count{0});
+    memcpy(v{0}.data(), buf{0}.data(), buf{0}.size());
+)cpp";
+// clang-format on
+
+// clang-format off
+constexpr std::string_view kDeserisBufToMatDouble = R"cpp(
+    std::vector<double> v{0};
+    size_t count{0} = buf{0}.size() / sizeof(double);
+    v{0}.resize(count{0});
+    memcpy(v{0}.data(), buf{0}.data(), buf{0}.size());
+
+    std::vector<std::vector<double>> v{0};
+    for (auto i = 0; i < buf{0}.size(); i++) {{
+        std::vector<double> item;
+        size_t count = buf{0}[i].size() / sizeof(double);
+        item.resize(count);
+        memcpy(item.data(), buf{0}[i].data(), buf{0}[i].size());
+        v{0}.emplace_back(item);
+    }
+)cpp";
+// clang-format on
+
+// clang-format off
 constexpr std::string_view kAllocFunc = R"cpp(
 RLWECipher Alloc(size_t size) {
     std::vector<double> constVec({0}, 0.0);

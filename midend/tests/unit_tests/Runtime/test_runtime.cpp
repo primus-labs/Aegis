@@ -105,6 +105,62 @@ std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std
     return aegiscpu::openfhe::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
 }
 
+std::vector<double> encryptRunDecrypt_2_Ex(std::shared_ptr<FHERuntime> runtime, 
+                                           std::vector<double> a, bool a_is_cipher,
+                                           std::vector<double> b, bool b_is_cipher) {
+    assert(runtime);
+    //Encrypt
+    std::vector<uint8_t> buf_a, buf_b;
+    size_t dims_a, dims_b;
+    if (a_is_cipher) {
+        buf_a = aegiscpu::openfhe::encrypt(a);
+        dims_a = 1;
+    } else {
+        size_t byte_size = a.size() * sizeof(double);
+        buf_a.resize(byte_size);
+        memcpy(buf_a.data(), a.data(), byte_size);
+        dims_a = a.size();
+    }
+
+    if (b_is_cipher) {
+        buf_b = aegiscpu::openfhe::encrypt(b);
+        dims_b = 1;
+    } else {
+        size_t byte_size = b.size() * sizeof(double);
+        buf_b.resize(byte_size);
+        memcpy(buf_b.data(), b.data(), byte_size);
+        dims_b = b.size();
+    }
+
+    // Run
+    mlir::aegis::Value value_a(Tensor<uint8_t>(buf_a, std::vector<size_t>{dims_a}));
+    mlir::aegis::Value value_b(Tensor<uint8_t>(buf_b, std::vector<size_t>{dims_b}));
+    std::vector<mlir::aegis::Value> params;
+    params.push_back(value_a);
+    params.push_back(value_b);
+
+    auto resOrErr = runtime->call(params);
+    if (!resOrErr) {
+        std::cout << "call FHERuntime::call fail," << llvm::toString(resOrErr.takeError()) << std::endl;
+        exit(-1);
+    }
+    std::vector<double> res_db;
+    std::vector<mlir::aegis::Value> res = *resOrErr;
+    for (auto i = 0; i < res.size(); i++) {
+        size_t resSizes = 1;
+        std::vector<size_t> res_dims = res[i].getDims();
+        for (auto j = 0; j < res_dims.size(); j++) {
+            resSizes *= res_dims[j];
+        }
+
+        // Decrypte data
+        auto item_res = aegiscpu::openfhe::decrypt(res[i].getTensor<uint8_t>().value().values, resSizes);
+        res_db.insert(res_db.end(), item_res.begin(), item_res.end());
+    }
+
+    return res_db;
+}
+
 std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirStr, const std::string &funcName) {
     auto compile_context =  CompileContext::createContext();
     CompilerEngine engine(compile_context);
@@ -232,6 +288,25 @@ bool mlirUnitTest_2(const std::string_view & mlirStr, const std::vector<double> 
     return true;
 }
 
+bool mlirUnitTest_2_Ex(const std::string_view & mlirStr, const std::vector<double> &input_a, bool a_is_cipher,
+                       const std::vector<double> &input_b, bool b_is_cipher,
+                       const std::vector<double> &expect_output, const std::string &funcName = "main_graph") {
+    auto runtime = CompileAndOpenSymbol(mlirStr, funcName);
+    if (runtime == nullptr) {
+        return false;
+    }
+
+    std::vector<double> output = encryptRunDecrypt_2_Ex(runtime, input_a, a_is_cipher,
+                                                        input_b, b_is_cipher);
+    for (auto i = 0; i < output.size(); i++) {
+        if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /**********************************
 ***********    case 1    **********
 ***********************************/
@@ -245,11 +320,24 @@ module {
 }
 )mlir";
 
+constexpr std::string_view mlirCase1_1 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "clear"}) -> f32 {
+        %5 = arith.mulf %arg0, %arg1 :  f32
+        return %5 : f32
+    }
+}
+)mlir";
+
 bool case_1() {
     double a = 3.0;
     double b = 4.0;
     std::vector<double> expect_output(1, a*b);
     if (!mlirUnitTest_2(mlirCase1, {a}, {b}, expect_output)) {
+        return false;
+    }
+    if (!mlirUnitTest_2_Ex(mlirCase1_1, {a}, true, {b}, false, expect_output)) {
         return false;
     }
 

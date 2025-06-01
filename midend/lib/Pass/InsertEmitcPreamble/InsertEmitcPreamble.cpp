@@ -1,3 +1,4 @@
+#include <tuple>
 #include "mlir/include/mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "mlir/Conversion/MemRefToEmitC/MemRefToEmitC.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
@@ -46,15 +47,16 @@ void InsertEmitcPreamblePass::runOnOperation() {
     }
     ProtoMessage<aegisprotocol::Function> theFunc = progSpec.getFuncInfo()[0];
     std::string mainFuncName = theFunc.asReader().getName();
-    std::vector<std::pair<bool, int>> paramsInfo;
+    std::vector<std::tuple<bool, int, int>> paramsInfo;
     for (auto param : theFunc.asReader().getInputs()) {
         int inputDims = param.getShape().getDimensions().size() ? 
                         param.getShape().getDimensions().size() : 1;
+        int lastDim = param.getShape().getDimensions()[inputDims - 1];
 
         if (param.getType()) {
-            paramsInfo.push_back({true, inputDims});  //cryptext type
+            paramsInfo.push_back({true, inputDims, lastDim});  //cryptext type
         } else {
-            paramsInfo.push_back({false, inputDims}); //plaintext type
+            paramsInfo.push_back({false, inputDims, lastDim}); //plaintext type
         }
     }
 
@@ -63,7 +65,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
     // the arguments passed to it might be of different types.
     std::string allParamsStr;
     for (auto i = 0; i < paramsInfo.size(); i++) {
-        if (paramsInfo[i].second > 1) {
+        if (std::get<1>(paramsInfo[i]) > 1) {
             if (i == (paramsInfo.size()-1)) {
                 allParamsStr += ("const std::vector<std::vector<uint8_t>> &buf" + std::to_string(i+1));
             } else {
@@ -81,8 +83,8 @@ void InsertEmitcPreamblePass::runOnOperation() {
     // Assemble the parameter transformation code.
     std::string allTransStr;
     for (auto i = 0; i < paramsInfo.size(); i++) {
-        if (paramsInfo[i].first) {
-            if (paramsInfo[i].second > 1) {
+        if (std::get<0>(paramsInfo[i])) {
+            if (std::get<1>(paramsInfo[i]) > 1) {
                 auto idx = std::to_string(i+1);
                 auto toCipher = std::string(llvm::formatv(kDeserisBufToMultiCipher.data(), idx));
                 allTransStr += toCipher;
@@ -91,24 +93,32 @@ void InsertEmitcPreamblePass::runOnOperation() {
                 auto toCipher = std::string(llvm::formatv(kDeserisBufToSingleCipher.data(), idx));
                 allTransStr += toCipher;
             }
+        } else {
+            if (std::get<1>(paramsInfo[i]) > 1) {
+                auto idx = std::to_string(i+1);
+                auto toMatDouble = std::string(llvm::formatv(kDeserisBufToMatDouble.data(), idx));
+                allTransStr += toMatDouble;
+            } else {
+                if (std::get<2>(paramsInfo[i]) == 1) {
+                    auto idx = std::to_string(i+1);
+                    auto toSingleDouble = std::string(llvm::formatv(kDeserisBufToSingleDouble.data(), idx));
+                    allTransStr += toSingleDouble;
+                } else {
+                    auto idx = std::to_string(i+1);
+                    auto toVectDouble = std::string(llvm::formatv(kDeserisBufToVectDouble.data(), idx));
+                    allTransStr += toVectDouble;
+                }
+            }
         }
     }
 
     // Assmble the main function all argument string
     std::string allArgumentsStr;
     for (auto i = 0; i < paramsInfo.size(); i++) {
-        if (paramsInfo[i].first) {
-            if (i == (paramsInfo.size()-1)) {
-                allArgumentsStr += ("v" + std::to_string(i+1));
-            } else {
-                allArgumentsStr += ("v" + std::to_string(i+1) + + ", ");
-            }
+        if (i == (paramsInfo.size()-1)) {
+            allArgumentsStr += ("v" + std::to_string(i+1));
         } else {
-            if (i == (paramsInfo.size()-1)) {
-                allArgumentsStr += ("buf" + std::to_string(i+1));
-            } else {
-                allArgumentsStr += ("buf" + std::to_string(i+1) + + ", ");
-            }
+            allArgumentsStr += ("v" + std::to_string(i+1) + ", ");
         }
     }
 
