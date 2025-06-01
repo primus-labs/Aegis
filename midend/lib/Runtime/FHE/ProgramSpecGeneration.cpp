@@ -154,10 +154,12 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
             mlir::cast<emitc::OpaqueType>(ty).getValue() == VECT_LWECIPHER_TYPE_NAME ||
             mlir::cast<emitc::OpaqueType>(ty).getValue() == MAT_LWECIPHER_TYPE_NAME) {
             funcParam.asBuilder().setType(true);
-            auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
-            for (size_t i = 0; i < dims.size(); ++i) {
-                dimensions.set(i, dims[i]);
-            }
+        }
+
+        // Whether it's ciphertext or plaintext parameters, the parameters need to have dimensions set.
+        auto dimensions = funcParam.asBuilder().getShape().initDimensions(dims.size());
+        for (size_t i = 0; i < dims.size(); ++i) {
+            dimensions.set(i, dims[i]);
         }
         return std::move(funcParam);
     }
