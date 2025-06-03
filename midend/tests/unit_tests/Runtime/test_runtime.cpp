@@ -161,6 +161,76 @@ std::vector<double> encryptRunDecrypt_2_Ex(std::shared_ptr<FHERuntime> runtime,
     return res_db;
 }
 
+std::vector<double> encryptRunDecrypt_2_Ex_2(std::shared_ptr<FHERuntime> runtime, 
+                                             std::vector<std::vector<double>> a, bool a_is_cipher,
+                                             std::vector<std::vector<double>> b, bool b_is_cipher) {
+    assert(runtime);
+    std::vector<mlir::aegis::Value> params;
+
+    //Encrypt
+    std::vector<uint8_t> buf_a, buf_b;
+    size_t dims_a, dims_b;
+    if (a_is_cipher) {
+        for (auto i = 0; i < a.size(); i++) {
+            buf_a = aegiscpu::openfhe::encrypt(a[i]);
+            dims_a = 1;
+            mlir::aegis::Value value_a(Tensor<uint8_t>(buf_a, std::vector<size_t>{dims_a}));
+            params.push_back(value_a);
+        }
+    } else {
+        for (auto i = 0; i < a.size(); i++) {
+            size_t byte_size = a[i].size() * sizeof(double);
+            buf_a.resize(byte_size);
+            memcpy(buf_a.data(), a[i].data(), byte_size);
+            dims_a = a[i].size();
+            mlir::aegis::Value value_a(Tensor<uint8_t>(buf_a, std::vector<size_t>{dims_a}));
+            params.push_back(value_a);
+        }
+    }
+
+    if (b_is_cipher) {
+        for (auto i = 0; i < b.size(); i++) {
+            buf_b = aegiscpu::openfhe::encrypt(b[i]);
+            dims_b = 1;
+            mlir::aegis::Value value_b(Tensor<uint8_t>(buf_b, std::vector<size_t>{dims_b}));
+            params.push_back(value_b);
+        }
+    } else {
+        for (auto i = 0; i < b.size(); i++) {
+            size_t byte_size = b[i].size() * sizeof(double);
+            buf_b.resize(byte_size);
+            memcpy(buf_b.data(), b[i].data(), byte_size);
+            dims_b = b[i].size();
+            mlir::aegis::Value value_b(Tensor<uint8_t>(buf_b, std::vector<size_t>{dims_b}));
+            params.push_back(value_b);
+        }
+    }
+
+    // Run
+    auto resOrErr = runtime->call(params);
+    if (!resOrErr) {
+        std::cout << "call FHERuntime::call fail," << llvm::toString(resOrErr.takeError()) << std::endl;
+        exit(-1);
+    }
+    std::vector<double> res_db;
+    std::vector<mlir::aegis::Value> res = *resOrErr;
+
+    // package data
+    for (auto i = 0; i < res.size(); i++) {
+        std::vector<size_t> res_dims = res[i].getDims();
+        assert(res_dims.size() == 2);
+
+        // Decrypte data
+        auto dec_res = aegiscpu::openfhe::decryptBatch(res[i].getTensor<uint8_t>().value().values, res_dims[0], res_dims[1]);
+
+        for (auto j = 0; j < dec_res.size(); j++) {
+            res_db.insert(res_db.end(), dec_res[j].begin(), dec_res[j].end());
+        }
+    }
+
+    return res_db;
+}
+
 std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirStr, const std::string &funcName) {
     auto compile_context =  CompileContext::createContext();
     CompilerEngine engine(compile_context);
@@ -306,6 +376,27 @@ bool mlirUnitTest_2_Ex(const std::string_view & mlirStr, const std::vector<doubl
 
     return true;
 }
+
+bool mlirUnitTest_2_Ex_2(const std::string_view & mlirStr, 
+                         const std::vector<std::vector<double>> &input_a, bool a_is_cipher,
+                         const std::vector<std::vector<double>> &input_b, bool b_is_cipher,
+                         const std::vector<double> &expect_output, const std::string &funcName = "main_graph") {
+    auto runtime = CompileAndOpenSymbol(mlirStr, funcName);
+    if (runtime == nullptr) {
+        return false;
+    }
+
+    std::vector<double> output = encryptRunDecrypt_2_Ex_2(runtime, input_a, a_is_cipher,
+                                                          input_b, b_is_cipher);
+    for (auto i = 0; i < output.size(); i++) {
+        if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 
 /**********************************
 ***********    case 1    **********
@@ -598,11 +689,37 @@ module {
 }
 )mlir";
 
+constexpr std::string_view mlirCase6_2 = R"mlir(
+module {
+  func.func @main_graph(%arg0: memref<6xf32> {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                        %arg1: memref<6xf32> {onnx.name = "input_y", onnx.type = "clear"}) -> memref<6xf32> {
+    affine.for %arg2 = 0 to 6 {
+      %0 = affine.load %arg0[%arg2] : memref<6xf32>
+      %1 = affine.load %arg1[%arg2] : memref<6xf32>
+      %2 = arith.addf %0, %1 : f32
+      affine.store %2, %arg0[%arg2] : memref<6xf32>
+    }
+    return %arg0 : memref<6xf32>
+  }
+}
+)mlir";
+
 bool case_6() {
     std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
     std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
     std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
     if (!mlirUnitTest_2(mlirCase6, a1, b1, expect_output)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool case_6_2() {
+    std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
+    std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
+    std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
+    if (!mlirUnitTest_2_Ex(mlirCase6_2, a1, true, b1, false, expect_output)) {
         return false;
     }
 
@@ -638,6 +755,70 @@ bool case_7() {
     }
 
     return true;
+}
+
+
+/**********************************
+***********    case 8    **********
+***********************************/
+constexpr std::string_view mlirCase8 = R"mlir(
+module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128", llvm.target_triple = "x86_64-unknown-linux-gnu", "onnx-mlir.symbol-postfix" = "add"} {
+  func.func @main_graph(%arg0: memref<3x2xf32> {onnx.name = "X1", onnx.type = "encrypted"}, 
+                        %arg1: memref<3x2xf32> {onnx.name = "X2", onnx.type = "encrypted"}) 
+                        -> (memref<3x2xf32> {onnx.name = "Y"}) attributes {llvm.emit_c_interface} {
+    %alloc = memref.alloc() {alignment = 16 : i64} : memref<3x2xf32>
+    affine.for %arg2 = 0 to 3 {
+      affine.for %arg3 = 0 to 2 {
+        %0 = affine.load %arg0[%arg2, %arg3] : memref<3x2xf32>
+        %1 = affine.load %arg1[%arg2, %arg3] : memref<3x2xf32>
+        %2 = arith.addf %0, %1 : f32
+        affine.store %2, %alloc[%arg2, %arg3] : memref<3x2xf32>
+      }
+    }
+    return %alloc : memref<3x2xf32>
+  }
+}
+)mlir";
+
+constexpr std::string_view mlirCase8_2 = R"mlir(
+module attributes {llvm.data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128", llvm.target_triple = "x86_64-unknown-linux-gnu", "onnx-mlir.symbol-postfix" = "add"} {
+  func.func @main_graph(%arg0: memref<3x2xf32> {onnx.name = "X1", onnx.type = "encrypted"}, 
+                        %arg1: memref<3x2xf32> {onnx.name = "X2", onnx.type = "clear"}) 
+                        -> (memref<3x2xf32> {onnx.name = "Y"}) attributes {llvm.emit_c_interface} {
+    %alloc = memref.alloc() {alignment = 16 : i64} : memref<3x2xf32>
+    affine.for %arg2 = 0 to 3 {
+      affine.for %arg3 = 0 to 2 {
+        %0 = affine.load %arg0[%arg2, %arg3] : memref<3x2xf32>
+        %1 = affine.load %arg1[%arg2, %arg3] : memref<3x2xf32>
+        %2 = arith.addf %0, %1 : f32
+        affine.store %2, %alloc[%arg2, %arg3] : memref<3x2xf32>
+      }
+    }
+    return %alloc : memref<3x2xf32>
+  }
+}
+)mlir";
+
+bool case_8() {
+    std::vector<std::vector<double>> a1 = {{1, 3}, {5, 7}, {9,  11}};
+    std::vector<std::vector<double>> b1 = {{2, 4}, {6, 8}, {10, 12}};
+    std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
+    if (!mlirUnitTest_2_Ex_2(mlirCase8, a1, true, b1, true, expect_output)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool case_8_2() {
+    std::vector<std::vector<double>> a1 = {{1, 3}, {5, 7}, {9,  11}};
+    std::vector<std::vector<double>> b1 = {{2, 4}, {6, 8}, {10, 12}};
+    std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
+    if (!mlirUnitTest_2_Ex_2(mlirCase8_2, a1, true, b1, false, expect_output)) {
+        return false;
+    }
+
+    return true;    
 }
 
 
@@ -684,7 +865,22 @@ int main() {
             return -1;
         }
 
+        if (!case_6_2()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
         if (!case_7()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_8()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_8_2()) {
             std::cout << "Test fail" << std::endl;
             return -1;
         }
