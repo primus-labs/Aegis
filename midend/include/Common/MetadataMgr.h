@@ -21,6 +21,9 @@ public:
   // Get metadata
   llvm::StringRef getMetadata(llvm::StringRef key) const;
 
+  // Checks existence of metadata associated with a given key
+  bool hasMetadata(llvm::StringRef key) const;
+
   // Remove metadata
   void removeMetadata(llvm::StringRef key);
 
