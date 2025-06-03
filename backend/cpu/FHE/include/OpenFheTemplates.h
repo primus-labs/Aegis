@@ -48,6 +48,7 @@ constexpr std::string_view kMacroStmts = R"cpp(
 #define MakePlain(a)  double(a)
 #define MakeMultPlain(...) std::vector<double>{__VA_ARGS__}
 #define LoadPlainWithIndex(v, idx) v[idx]
+#define LoadPlainWithTwoIndex(v, row, col) v[row][col]
 #define LoadPlainWithoutIndex(v) v[0]
 #define ConstantArray_to_PlainVector(ary) std::vector<double>(ary, ary + std::size(ary))
 #define Cast_Plain_To_Index(clr) size_t(clr)
@@ -233,11 +234,6 @@ constexpr std::string_view kDeserisBufToVectDouble = R"cpp(
 
 // clang-format off
 constexpr std::string_view kDeserisBufToMatDouble = R"cpp(
-    std::vector<double> v{0};
-    size_t count{0} = buf{0}.size() / sizeof(double);
-    v{0}.resize(count{0});
-    memcpy(v{0}.data(), buf{0}.data(), buf{0}.size());
-
     std::vector<std::vector<double>> v{0};
     for (auto i = 0; i < buf{0}.size(); i++) {{
         std::vector<double> item;

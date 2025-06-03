@@ -739,7 +739,13 @@ class NativeMemrefLoadPattern final : public OpConversionPattern<memref::LoadOp>
         operands.push_back(newOperand);
         operands.append(indices.begin(), indices.end());
         if (indices.size() > 0) {
-            rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "LoadPlainWithIndex", operands);
+            if (indices.size() == 1) {
+                rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "LoadPlainWithIndex", operands);
+            } else if (indices.size() == 2) {
+                rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "LoadPlainWithTwoIndex", operands);
+            } else {
+                llvm::errs() << "Unsupported multidimensional array detected\n";
+            }
         } else {
             rewriter.replaceOpWithNewOp<emitc::CallOpaqueOp>(op, resTy, "LoadPlainWithoutIndex", operands);
         }
