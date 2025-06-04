@@ -69,7 +69,7 @@ class ArithSelectPattern final : public OpConversionPattern<arith::SelectOp> {
     };
 };
 
-// Transform arith::AddFOp/MulFOp/SubFOp into corresponding secret ops(SecretMulOp/SecretAddOp/SecretSubOp)
+// Transform arith::AddFOp/MulFOp/SubFOp/DivFOp into corresponding secret ops(SecretMulOp/SecretAddOp/SecretSubOp/SecretDivOp)
 // and convert the data type of input/output of the ops.
 template <typename OpType> class ArithGeneralPattern final : public OpConversionPattern<OpType> {
   protected:
@@ -131,7 +131,7 @@ template <typename OpType> class ArithGeneralPattern final : public OpConversion
         }
 
         // Deal with multiplications
-        if (std::is_same<OpType, arith::MulFOp>()) {
+        if (mlir::isa<arith::MulFOp>(op)) {
             Value lhs = materialized_ops[0];
             Value rhs = materialized_ops[1];
             if (isOneValue(lhs)) {
@@ -161,8 +161,42 @@ template <typename OpType> class ArithGeneralPattern final : public OpConversion
             }
         }
 
+        // Deal with division
+        if (mlir::isa<arith::DivFOp>(op)) {
+            Value lhs = materialized_ops[0];
+            Value rhs = materialized_ops[1];
+            if (isOneValue(lhs)) {
+                auto reciprocal = rewriter.create<secret::ReciprocalOp>(op.getLoc(), destType, rhs);
+                rewriter.replaceOp(op, reciprocal);
+                if (lhs.use_empty()) {
+                    rewriter.eraseOp(lhs.getDefiningOp());
+                }
+                return success();
+            } else if (isOneValue(rhs)) {
+                rewriter.replaceOp(op, lhs);
+                if (rhs.use_empty()) {
+                    rewriter.eraseOp(rhs.getDefiningOp());
+                }
+                return success();
+            } else {
+                llvm::DenseMap<Value, bool> cache;
+                bool bEncLhs = isEncrypted(lhs, cache);
+                bool bEncRhs = isEncrypted(rhs, cache);
+                if (bEncLhs && bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::DivOp>(op, TypeRange(destType), materialized_ops);
+                } else if (bEncLhs && !bEncRhs) {
+                    rewriter.replaceOpWithNewOp<secret::DivPlainOp>(op, TypeRange(destType), lhs, op.getOperand(1));
+                } else if (!bEncLhs && bEncRhs) {
+                    // plain_a / b => plain_a * (1/b)
+                    auto reciOp = rewriter.create<secret::ReciprocalOp>(op.getLoc(), destType, rhs);
+                    rewriter.replaceOpWithNewOp<secret::MulPlainOp>(op, TypeRange(destType), reciOp, op.getOperand(0));
+                }
+                return success();
+            }
+        }
+
         // Deal with additions
-        else if (std::is_same<OpType, arith::AddFOp>()) {
+        else if (mlir::isa<arith::AddFOp>(op)) {
             Value lhs = materialized_ops[0];
             Value rhs = materialized_ops[1];
             if (isZeroValue(lhs)) {
@@ -201,7 +235,7 @@ template <typename OpType> class ArithGeneralPattern final : public OpConversion
         }
 
         // Deal with substractions
-        else if (std::is_same<OpType, arith::SubFOp>()) {
+        else if (mlir::isa<arith::SubFOp>(op)) {
             Value lhs = materialized_ops[0];
             Value rhs = materialized_ops[1];
             if (isZeroValue(rhs)) {
@@ -406,6 +440,7 @@ void LowerArithToSecretPass::runOnOperation() {
     target.addLegalDialect<SecretDialect>();
     target.addLegalOp<ModuleOp>();
     target.addIllegalOp<arith::MulFOp>();
+    target.addIllegalOp<arith::DivFOp>();
     target.addIllegalOp<arith::AddFOp>();
     target.addIllegalOp<arith::SubFOp>();
     target.addIllegalOp<arith::CmpFOp>();
@@ -414,9 +449,9 @@ void LowerArithToSecretPass::runOnOperation() {
 
     // Convert arith::mulf,addf,subf... to secret::mul,addf,subf...
     mlir::RewritePatternSet arithPatSet(&getContext());
-    arithPatSet.add<ArithGeneralPattern<arith::MulFOp>, ArithGeneralPattern<arith::AddFOp>,
-                    ArithGeneralPattern<arith::SubFOp>, ArithCmpPattern, ArithSelectPattern>(type_converter,
-                                                                                             arithPatSet.getContext());
+    arithPatSet.add<ArithGeneralPattern<arith::MulFOp>, ArithGeneralPattern<arith::DivFOp>,
+                    ArithGeneralPattern<arith::AddFOp>, ArithGeneralPattern<arith::SubFOp>, 
+                    ArithCmpPattern, ArithSelectPattern>(type_converter, arithPatSet.getContext());
     if (mlir::failed(mlir::applyPartialConversion(getOperation(), target, std::move(arithPatSet)))) {
         signalPassFailure();
     }
