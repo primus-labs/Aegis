@@ -50,23 +50,29 @@ LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, Op
         }
     }
 
-    // Deal with binary ops(mul/add/sub...)
-    if (std::is_same<OpType, fhe::LWEMulOp>()) {
+    // Deal with binary ops(mul/div/add/sub...)
+    if (mlir::isa<fhe::LWEMulOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWEMulOp>(op, destTy, castOps);
         return success();
-    } else if (std::is_same<OpType, fhe::LWEMulPlainOp>()) {
+    } else if (mlir::isa<fhe::LWEMulPlainOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWEMulPlainOp>(op, destTy, castOps);
         return success();
-    } else if (std::is_same<OpType, fhe::LWEAddOp>()) {
+    } else if (mlir::isa<fhe::LWEDivOp>(op)) {
+        rewriter.replaceOpWithNewOp<fhe::RLWEDivOp>(op, destTy, castOps);
+        return success();
+    } else if (mlir::isa<fhe::LWEDivPlainOp>(op)) {
+        rewriter.replaceOpWithNewOp<fhe::RLWEDivPlainOp>(op, destTy, castOps);
+        return success();
+    } else if (mlir::isa<fhe::LWEAddOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWEAddOp>(op, destTy, castOps);
         return success();
-    } else if (std::is_same<OpType, fhe::LWEAddPlainOp>()) {
+    } else if (mlir::isa<fhe::LWEAddPlainOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWEAddPlainOp>(op, destTy, castOps);
         return success();
-    } else if (std::is_same<OpType, fhe::LWESubOp>()) {
+    } else if (mlir::isa<fhe::LWESubOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWESubOp>(op, destTy, castOps);
         return success();
-    } else if (std::is_same<OpType, fhe::LWESubPlainOp>()) {
+    } else if (mlir::isa<fhe::LWESubPlainOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWESubPlainOp>(op, destTy, castOps);
         return success();
     }
@@ -102,8 +108,11 @@ LogicalResult LweUnaryOpToRlweUnaryOp(IRRewriter &rewriter, MLIRContext *context
     }
 
     // Deal with unary ops(neg...)
-    if (std::is_same<OpType, fhe::LWENegOp>()) {
+    if (mlir::isa<fhe::LWENegOp>(op)) {
         rewriter.replaceOpWithNewOp<fhe::RLWENegOp>(op, opDestTy, newOpVal);
+        return success();
+    } else if (mlir::isa<fhe::LWEReciprocalOp>(op)) {
+        rewriter.replaceOpWithNewOp<fhe::RLWEReciprocalOp>(op, opDestTy, newOpVal);
         return success();
     }
 
@@ -404,6 +413,8 @@ SPECIALIZE_BINARY_OP(fhe::LWEAddOp);
 SPECIALIZE_BINARY_OP(fhe::LWEAddPlainOp); 
 SPECIALIZE_BINARY_OP(fhe::LWEMulOp);
 SPECIALIZE_BINARY_OP(fhe::LWEMulPlainOp);
+SPECIALIZE_BINARY_OP(fhe::LWEDivOp);
+SPECIALIZE_BINARY_OP(fhe::LWEDivPlainOp);
 
 // Specialization unary operations
 #define SPECIALIZE_UNARY_OP(OpT)           \
@@ -414,6 +425,7 @@ struct FheOpTraits<OpT> { \
 };
 
 SPECIALIZE_UNARY_OP(fhe::LWENegOp);
+SPECIALIZE_UNARY_OP(fhe::LWEReciprocalOp);
 
 // Specialization memory operations
 #define SPECIALIZE_MEMORY_OP(OpT) \
@@ -472,7 +484,11 @@ static const std::unordered_map<std::string, LweConverterFunc>& getDispatchTable
     REGISTER_OP(fhe::LWEAddPlainOp);
     REGISTER_OP(fhe::LWEMulOp);
     REGISTER_OP(fhe::LWEMulPlainOp);
+    REGISTER_OP(fhe::LWEDivOp);
+    REGISTER_OP(fhe::LWEDivPlainOp);
+
     REGISTER_OP(fhe::LWENegOp);
+    REGISTER_OP(fhe::LWEReciprocalOp);
     
     REGISTER_OP(fhe::LoadOp);
     REGISTER_OP(fhe::VloadOp);
