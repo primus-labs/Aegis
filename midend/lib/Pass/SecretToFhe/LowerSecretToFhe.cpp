@@ -30,14 +30,15 @@ using namespace aegis;
 // using namespace mlir::aegis::secret;
 // using namespace mlir::aegis::fhe;
 
-class ArithNegPattern final : public OpConversionPattern<secret::NegOp> {
+template <typename OpType> 
+class ArithUnaryPattern final : public OpConversionPattern<OpType> {
   protected:
-    using OpConversionPattern<secret::NegOp>::typeConverter;
+    using OpConversionPattern<OpType>::typeConverter;
 
   public:
-    using OpConversionPattern<secret::NegOp>::OpConversionPattern;
+    using OpConversionPattern<OpType>::OpConversionPattern;
 
-    LogicalResult matchAndRewrite(secret::NegOp op, typename secret::NegOp::Adaptor adaptor,
+    LogicalResult matchAndRewrite(OpType op, typename OpType::Adaptor adaptor,
                                   ConversionPatternRewriter &rewriter) const override {
         rewriter.setInsertionPoint(op);
 
@@ -62,14 +63,20 @@ class ArithNegPattern final : public OpConversionPattern<secret::NegOp> {
             LLVM_DEBUG(llvm::dbgs() << "after call materializeTargetConversion, new ops " << new_operand << "\n");
         }
 
-        rewriter.replaceOpWithNewOp<fhe::LWENegOp>(op, destType, newOpVal);
+        // Deal with neg
+        if (mlir::isa<secret::NegOp>(op)) {
+            rewriter.replaceOpWithNewOp<fhe::LWENegOp>(op, destType, newOpVal);
+        } else if (mlir::isa<secret::ReciprocalOp>(op)) {
+            rewriter.replaceOpWithNewOp<fhe::LWEReciprocalOp>(op, destType, newOpVal);
+        }
         return success();
     }
 };
 
 // Transform secret::AddOp/AddPlainOp/MulOp/MulPlain/SubOp/SubPlain into corresponding fhe
 // ops(FHEMulOp/FHEAddOp/FHESubOp...) and convert the data type of input/output of the ops.
-template <typename OpType> class ArithBasicPattern final : public OpConversionPattern<OpType> {
+template <typename OpType> 
+class ArithBasicPattern final : public OpConversionPattern<OpType> {
   protected:
     using OpConversionPattern<OpType>::typeConverter;
 
@@ -107,21 +114,32 @@ template <typename OpType> class ArithBasicPattern final : public OpConversionPa
         }
 
         // Deal with multiplications
-        if (std::is_same<OpType, secret::MulOp>()) {
+        if (mlir::isa<secret::MulOp>(op)) {
             rewriter.replaceOpWithNewOp<fhe::LWEMulOp>(op, TypeRange(destType), materialized_ops);
             return success();
-        } else if (std::is_same<OpType, secret::MulPlainOp>()) {
+        } else if (mlir::isa<secret::MulPlainOp>(op)) {
             llvm::SmallVector<Value> params;
             params.push_back(materialized_ops[0]);
             params.push_back(op.getOperand(1));
             rewriter.replaceOpWithNewOp<fhe::LWEMulPlainOp>(op, TypeRange(destType), params);
             return success();
         }
+        // Deal with division
+        else if (mlir::isa<secret::DivOp>(op)) {
+            rewriter.replaceOpWithNewOp<fhe::LWEDivOp>(op, TypeRange(destType), materialized_ops);
+            return success();
+        } else if (mlir::isa<secret::DivPlainOp>(op)) {
+            llvm::SmallVector<Value> params;
+            params.push_back(materialized_ops[0]);
+            params.push_back(op.getOperand(1));
+            rewriter.replaceOpWithNewOp<fhe::LWEDivPlainOp>(op, TypeRange(destType), params);
+            return success();
+        }
         // Deal with additions
-        else if (std::is_same<OpType, secret::AddOp>()) {
+        else if (mlir::isa<secret::AddOp>(op)) {
             rewriter.replaceOpWithNewOp<fhe::LWEAddOp>(op, TypeRange(destType), materialized_ops);
             return success();
-        } else if (std::is_same<OpType, secret::AddPlainOp>()) {
+        } else if (mlir::isa<secret::AddPlainOp>(op)) {
             llvm::SmallVector<Value> params;
             params.push_back(materialized_ops[0]);
             params.push_back(op.getOperand(1));
@@ -129,10 +147,10 @@ template <typename OpType> class ArithBasicPattern final : public OpConversionPa
             return success();
         }
         // Deal with substractions
-        else if (std::is_same<OpType, secret::SubOp>()) {
+        else if (mlir::isa<secret::SubOp>(op)) {
             rewriter.replaceOpWithNewOp<fhe::LWESubOp>(op, TypeRange(destType), materialized_ops);
             return success();
-        } else if (std::is_same<OpType, secret::SubPlainOp>()) {
+        } else if (mlir::isa<secret::SubPlainOp>(op)) {
             llvm::SmallVector<Value> params;
             params.push_back(materialized_ops[0]);
             params.push_back(op.getOperand(1));
@@ -758,6 +776,7 @@ void LowerSecretToFhePass::runOnOperation() {
     target.addLegalDialect<fhe::FHEDialect>();
     target.addLegalOp<ModuleOp>();
     target.addIllegalOp<secret::MulOp, secret::MulPlainOp>();
+    target.addIllegalOp<secret::DivOp, secret::DivPlainOp, secret::ReciprocalOp>();
     target.addIllegalOp<secret::AddOp, secret::AddPlainOp>();
     target.addIllegalOp<secret::SubOp, secret::SubPlainOp, secret::NegOp>();
     target.addIllegalOp<secret::LoadOp, secret::StoreOp, secret::CopyOp>();
@@ -787,9 +806,11 @@ void LowerSecretToFhePass::runOnOperation() {
     mlir::RewritePatternSet secretPatSet(&getContext());
     secretPatSet
         .add<ArithBasicPattern<secret::MulOp>, ArithBasicPattern<secret::MulPlainOp>, 
+             ArithBasicPattern<secret::DivOp>, ArithBasicPattern<secret::DivPlainOp>, 
              ArithBasicPattern<secret::AddOp>, ArithBasicPattern<secret::AddPlainOp>, 
              ArithBasicPattern<secret::SubOp>, ArithBasicPattern<secret::SubPlainOp>, 
-             ArithNegPattern, SecretCmpPattern, SecretSelectPattern,
+             ArithUnaryPattern<secret::NegOp>, ArithUnaryPattern<secret::ReciprocalOp>,
+             SecretCmpPattern, SecretSelectPattern,
              SecretFuncPattern, SecretRetPattern, SecretFuncCallPattern,
              SecretLoadPattern, SecretStorePattern, SecretCopyPattern,
              SecretAllocaPattern, SecretAllocPattern, SecretDeallocPattern, SecretRevealPattern>(
