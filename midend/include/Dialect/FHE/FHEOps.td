@@ -234,6 +234,38 @@ def FHE_LWEMulPlainOp : FHE_Op<"lwemul_plain", [Pure]> {
   let results = (outs AnyType:$output);
 }
 
+def FHE_LWEDivOp : FHE_Op<"lwediv", [Pure]> {
+  let summary = "LWECipher division operation";
+  let description = [{
+    The "lwediv" operation performs element-wise division between two lweciphers.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_LWEDivPlainOp : FHE_Op<"lwediv_plain", [Pure]> {
+  let summary = "LWECipher division operation(lwecipher vs plain)";
+  let description = [{
+    The "lwediv_plain" operation performs element-wise division between lwecipher and plain.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_LWEReciprocalOp : FHE_Op<"lwereciprocal", [Pure]> {
+  let summary = "LWECipher reciprocal operation";
+  let description = [{
+    The "lwereciprocal" operation applies element-wise reciprocal for lweciphers.
+  }];
+
+  let arguments = (ins AnyType:$x);
+  let results = (outs AnyType:$output);
+}
+
 def FHE_RLWEAddOp : FHE_Op<"rlweadd", [Pure]> {
   let summary = "RLWECipher addition operation";
   let description = [{
@@ -306,6 +338,38 @@ def FHE_RLWEMulPlainOp : FHE_Op<"rlwemul_plain", [Pure]> {
 
   let arguments = (ins Variadic<AnyType>:$x);
 
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEDivOp : FHE_Op<"rlwediv", [Pure]> {
+  let summary = "RLWECipher division operation";
+  let description = [{
+    The "rlwediv" operation performs element-wise division between two rlweciphers.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEDivPlainOp : FHE_Op<"rlwediv_plain", [Pure]> {
+  let summary = "RLWECipher division operation(rlwecipher vs plain)";
+  let description = [{
+    The "rlwediv_plain" operation performs element-wise division between rlwecipher and plain.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$x);
+
+  let results = (outs AnyType:$output);
+}
+
+def FHE_RLWEReciprocalOp : FHE_Op<"rlwereciprocal", [Pure]> {
+  let summary = "RLWECipher reciprocal operation";
+  let description = [{
+    The "rlwereciprocal" operation applies element-wise reciprocal for rlweciphers.
+  }];
+
+  let arguments = (ins AnyType:$x);
   let results = (outs AnyType:$output);
 }
 

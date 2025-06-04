@@ -259,6 +259,22 @@ def Secret_DivPlainOp : Secret_Op<"div_plain", [Pure]> {
     //let hasFolder = 1;
 }
 
+def Secret_ReciprocalOp : Secret_Op<"reciprocal", [Pure]> {
+    let summary = "​​Reciprocal of a secret value​";
+
+    let description = [{
+        Example:
+        ```mlir
+        "secret.reciprocal"(%a): (!Secete.Secret<i32>) -> (!Secete.Secret<i32>)
+        ```
+    }];
+
+    let arguments = (ins AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$a);
+    let results = (outs
+        AnyTypeOf<[Secret,SecretVector,SecretMatrix]>:$output
+    );
+}
+
 def Secret_EqOp : Secret_Op<"eq", [Pure, Commutative]> {
     let summary = "Checking the equality of two secret values";
 
