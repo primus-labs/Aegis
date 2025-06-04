@@ -129,6 +129,9 @@ LogicalResult batchArithOperation(IRRewriter &rewriter, MLIRContext *context, Op
             }
         }
 
+        // ​Obtain the appropriate max size based on the batch size.
+        max_size = adjustAndGetBatchSize(max_size);
+
         // convert the new op all operands from scalar to batched
         for (auto it = new_op->operand_begin(); it != new_op->operand_end(); ++it) {
             if (auto operandTy = mlir::dyn_cast_or_null<fhe::LWECipherMatrixType>((*it).getType())) {

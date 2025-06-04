@@ -270,33 +270,8 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                 }
             }
 
-            /*
-            // Create rotation amount (bring element to position 0)
-            auto rotateAmount = ((-target_slot + max_size) % max_size);
-            if (kNegativeShiftRight) {
-                rotateAmount = -rotateAmount;
-            }
-            LLVM_DEBUG(llvm::dbgs() << "target slot=" << target_slot << ", max size=" << max_size << ", (shift right to 0 slot)real rotate value=" << rotateAmount << "\n");
-
-            // Apply rotation operation
-            auto rotateOp = rewriter.create<fhe::RotateOp>(op.getLoc(), op.getMemref().getType(),
-                                                        op.getMemref(), rotateAmount);
-
-            // Create selection mask [1,0,0,...]
-            mlir::Type elementType = rewriter.getI32Type();
-            auto arrayType = mlir::VectorType::get({max_size}, elementType);
-            SmallVector<int32_t> maskValues(max_size, 0);
-            maskValues[target_slot] = 1;
-            llvm::ArrayRef<int32_t> valuesRef(maskValues); 
-            mlir::DenseElementsAttr denseAttr = mlir::DenseElementsAttr::get(arrayType, valuesRef);
-            auto maskOp = rewriter.create<arith::ConstantOp>(op.getLoc(), denseAttr);
-
-            // Apply element-wise multiplication to select the first element
-            llvm::SmallVector<Value> operands;
-            operands.push_back(rotateOp);
-            operands.push_back(maskOp);
-            rewriter.replaceOpWithNewOp<fhe::LWEMulPlainOp>(op, rotateOp.getType(), operands);
-            */
+            // ​Obtain the appropriate max size based on the batch size.
+            max_size = adjustAndGetBatchSize(max_size);
 
             // Create selection mask [0..,1[target_slot],...,0]
             mlir::Type elementType = rewriter.getI32Type();
@@ -358,6 +333,9 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                     max_size = std::max(max_size, operandTy.getCol());
                 }
             }
+
+            // ​Obtain the appropriate max size based on the batch size.
+            max_size = adjustAndGetBatchSize(max_size);
 
             // Create fhe.vload op
             mlir::Value rowVal = rewriter.create<arith::ConstantOp>(op.getLoc(), rewriter.getIndexAttr(target_row));
@@ -426,6 +404,9 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                     max_size = std::max(max_size, operandTy.getSize());
                 }
             }
+
+            // ​Obtain the appropriate max size based on the batch size.
+            max_size = adjustAndGetBatchSize(max_size);
 
             for (auto curOperand : storeOp->getOperands()) {
                 if (fhe::LWEMulPlainOp mulplainOp = curOperand.template getDefiningOp<fhe::LWEMulPlainOp>()) {
@@ -518,6 +499,9 @@ LogicalResult batchLoadStoreOperation(IRRewriter &rewriter, MLIRContext *context
                     max_size = std::max(max_size, operandTy.getCol());
                 }
             }
+
+            // ​Obtain the appropriate max size based on the batch size.
+            max_size = adjustAndGetBatchSize(max_size);
 
             for (auto curOperand : storeOp->getOperands()) {
                 if (fhe::LWEMulPlainOp mulplainOp = curOperand.template getDefiningOp<fhe::LWEMulPlainOp>()) {
