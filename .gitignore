@@ -4,6 +4,7 @@
 # temp build
 build/
 debug_build/
+midend/tests/bincheck/
 
 # third party
 third_party/

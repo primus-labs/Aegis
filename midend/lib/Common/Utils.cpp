@@ -203,5 +203,33 @@ llvm::SmallVector<int32_t> getAllGaloisIndexs(mlir::ModuleOp module) {
     return results;
 }
 
+int64_t adjustAndGetBatchSize(int64_t batchSize) {
+    if (isBatchSizeAdjusted) {
+        return globalFheBatchSize;
+    } else {
+        if (batchSize <= 1) {
+            batchSize = FHE_DEFAULT_BATCH_SIZE;
+        } else {
+            batchSize -= 1;
+            batchSize |= (batchSize >> 1);
+            batchSize |= (batchSize >> 2);
+            batchSize |= (batchSize >> 4);
+            batchSize |= (batchSize >> 8);
+            batchSize |= (batchSize >> 16);
+            batchSize |= (batchSize >> 32);
+            batchSize += 1;     
+        }
+
+        if (batchSize < FHE_DEFAULT_BATCH_SIZE) {
+            globalFheBatchSize = FHE_DEFAULT_BATCH_SIZE;
+        } else {
+            globalFheBatchSize = batchSize;
+        }
+
+        isBatchSizeAdjusted = true;
+        return globalFheBatchSize;
+    }
+}
+
 } // namespace aegis
 } // namespace mlir

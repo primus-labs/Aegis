@@ -211,32 +211,12 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
                         max_size = std::max(max_size, intAttr.getInt());
                     }
                 }
-                // for (mlir::Attribute dimAttr : arrayAttr) {
-                //     if (auto intAttr = mlir::dyn_cast<mlir::IntegerAttr>(dimAttr)) {
-                //         max_size = std::max(max_size, intAttr.getInt());
-                //     }
-                // }
             }
         }
     });
 
     // Adjust batch size to power of 2
-    auto adjustBatchSize = [](int64_t batchSize) -> int64_t {
-        if (batchSize <= 1) {
-            return 1;
-        } else {
-            batchSize -= 1;
-            batchSize |= (batchSize >> 1);
-            batchSize |= (batchSize >> 2);
-            batchSize |= (batchSize >> 4);
-            batchSize |= (batchSize >> 8);
-            batchSize |= (batchSize >> 16);
-            batchSize |= (batchSize >> 32);
-            batchSize += 1;     
-            return batchSize;
-        }
-    };
-    auto batchSize = adjustBatchSize(max_size);
+    auto batchSize = adjustAndGetBatchSize(max_size);
 
     // Retrieve the correct multiplication depth value.
     unsigned maxMulDepth = FHE_MAX_MUL_DEPTH_NO_CMP;

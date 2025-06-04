@@ -52,6 +52,9 @@ void addGaloisIndex(mlir::ModuleOp module, int32_t newVal);
 //  Retrieves all elements from GaloisIndex metadata attribute
 llvm::SmallVector<int32_t> getAllGaloisIndexs(mlir::ModuleOp module);
 
+// Adjusts batch size based on the batchSize parameter, adjust batch size to power of 2
+int64_t adjustAndGetBatchSize(int64_t batchSize);
+
 } // namespace aegis
 } // namespace mlir
 

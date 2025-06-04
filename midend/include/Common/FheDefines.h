@@ -31,11 +31,14 @@
 #define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
 
 
+#define FHE_DEFAULT_BATCH_SIZE       256
 #define FHE_MAX_MUL_DEPTH_WITH_CMP   18
 #define FHE_MAX_MUL_DEPTH_NO_CMP     8
 #define FHE_FIRST_MOD_SIZE  60
 #define FHE_SCALE_MOD_SIZE  59
 inline bool enableFheBoostrapFlag = false;
+inline bool isBatchSizeAdjusted = false;
+inline int64_t globalFheBatchSize = FHE_DEFAULT_BATCH_SIZE;
 
 // In OpenFHE and other FHE libraries, the implementation of ​​homomorphic rotation​​ differs, 
 // particularly in terms of ​​rotation direction​​ and ​​parameter definitions​​, which require special attention. 
