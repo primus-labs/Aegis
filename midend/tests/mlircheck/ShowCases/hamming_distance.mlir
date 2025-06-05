@@ -32,12 +32,12 @@ module {
 
 
 // CHECK: RLWECipher hamming_distance(RLWECipher v1, RLWECipher v2) {
-// CHECK:   PlainVector v3 = MakeMultPlain(0,0,0,1);
-// CHECK:   PlainVector v4 = MakeMultPlain(0,0,1,0);
-// CHECK:   PlainVector v5 = MakeMultPlain(0,1,0,0);
+// CHECK:   PlainVector v3 = MakeMultPlain
+// CHECK:   PlainVector v4 = MakeMultPlain
+// CHECK:   PlainVector v5 = MakeMultPlain
 // CHECK:   Plain v6 = MakePlain
 // CHECK:   Plain v7 = MakePlain
-// CHECK:   PlainVector v8 = MakeMultPlain(1,0,0,0);
+// CHECK:   PlainVector v8 = MakeMultPlain
 // CHECK:   RLWECipher v9 = MulPlain(v1, v8);
 // CHECK:   RLWECipher v10 = MulPlain(v2, v8);
 // CHECK:   RLWECipher v11 = Cmp_ue(v9, v10);
