@@ -76,12 +76,14 @@ struct FuncParam {
 
 
 struct StatsInfo {
-  mulCount @0 :UInt32;  # multiply counts.
-  rotCount @1 :UInt32;  # rotate counts.
-  bsCount @2  :UInt32;  # boostraping counts.
-  cmpCount @3 :UInt32;  # compare counts.
-  selCount @4 :UInt32;  # select counts.
-  level @5    :UInt32;  # encrypted levels.
+  mulCount   @0 :UInt32;  # multiply counts.
+  divCount   @1 :UInt32;  # division counts.
+  recipCount @2 :UInt32;  # reciprocal counts.
+  rotCount   @3 :UInt32;  # rotate counts.
+  bsCount    @4 :UInt32;  # boostraping counts.
+  cmpCount   @5 :UInt32;  # compare counts.
+  selCount   @6 :UInt32;  # select counts.
+  level      @7 :UInt32;  # encrypted levels.
 }
 
 

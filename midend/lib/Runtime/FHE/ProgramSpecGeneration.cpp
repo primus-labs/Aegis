@@ -266,25 +266,12 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
 
 llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::ModuleOp module) {
     unsigned int mulCnt = 0;
+    unsigned int divCnt = 0;
+    unsigned int recipCnt = 0;
     unsigned int rotateCnt = 0;
     unsigned int bootstrapCnt = 0;
     unsigned int cmpCnt = 0;
     unsigned int selectCnt = 0;
-    // module.walk([&](mlir::func::FuncOp funcOp) {
-    //     funcOp.walk([&](Operation *op) {
-    //     if (mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
-    //         mulCnt++;
-    //     } else if (mlir::isa<fhe::RotateOp>(op)) {
-    //         rotateCnt++;
-    //     } else if (mlir::isa<fhe::BootstrapOp>(op)) {
-    //         bootstrapCnt++;
-    //     } else if (mlir::isa<fhe::CmpOp>(op)) {
-    //         cmpCnt++;
-    //     } else if (mlir::isa<fhe::SelectOp>(op)) {
-    //         selectCnt++;
-    //     }
-    //     });
-    // });
     
     module.walk([&](mlir::func::FuncOp funcOp) {
         funcOp.walk([&](Operation *op) {
@@ -293,6 +280,12 @@ llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::Module
                     StringRef calleeName = callOp.getCallee();
                     if (calleeName == EMITC_MUL_NAME || calleeName == EMITC_MULPLAIN_NAME) {
                         mulCnt++;
+                    } else if (calleeName == EMITC_DIVPLAIN_NAME) {
+                        mulCnt++;   // In fact, the divplain is equivalent to the mulplain.​
+                    } else if (calleeName == EMITC_DIV_NAME) {
+                        divCnt++;
+                    } else if (calleeName == EMITC_RECIPROCAL_NAME) {
+                        recipCnt++;
                     } else if (calleeName == EMITC_ROTATE_NAME) {
                         rotateCnt++;
                     } else if (calleeName == EMITC_BOOT_NAME) {
@@ -309,6 +302,8 @@ llvm::Expected<ProtoMessage<aegisprotocol::StatsInfo>> getStatsInfo(mlir::Module
     
     auto statsInfo = ProtoMessage<aegisprotocol::StatsInfo>();
     statsInfo.asBuilder().setMulCount(mulCnt);
+    statsInfo.asBuilder().setDivCount(divCnt);
+    statsInfo.asBuilder().setRecipCount(recipCnt);
     statsInfo.asBuilder().setRotCount(rotateCnt);
     statsInfo.asBuilder().setBsCount(bootstrapCnt);
     statsInfo.asBuilder().setCmpCount(cmpCnt);
