@@ -224,7 +224,8 @@ llvm::Expected<ProtoMessage<aegisprotocol::KeyInfo>> getKeyInfo(mlir::ModuleOp m
         if (mlir::isa<emitc::CallOpaqueOp>(op)) {
             if (auto callOp = mlir::dyn_cast_or_null<emitc::CallOpaqueOp>(op)) {
                 StringRef calleeName = callOp.getCallee();
-                if (calleeName.starts_with(EMITC_CMP_PREFIX_NAME)) {
+                if (calleeName.starts_with(EMITC_CMP_PREFIX_NAME) ||
+                    calleeName == EMITC_DIV_NAME || calleeName == EMITC_RECIPROCAL_NAME) {
                     maxMulDepth = FHE_MAX_MUL_DEPTH_WITH_CMP;
                     return mlir::WalkResult::interrupt();
                 }

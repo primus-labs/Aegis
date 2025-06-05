@@ -36,6 +36,13 @@ private:
     // Identify fhe multiplication operations
     bool isMulOp(Operation *op);
 
+    // Identify fhe division operations
+    bool isDivOp(Operation *op);
+    bool isDivPlainOp(Operation *op);
+
+    // Identify fhe reciprocal operations
+    bool isRecipOp(Operation *op);
+
     // Identify fhe comparison operations
     bool isCmpOp(Operation *op);
 

@@ -10,8 +10,6 @@
 #include "Common/Utils.h"
 
 #define DEBUG_TYPE "auto-bootstrap"
-#define CMP_OP_MULT_DEPTH 14
-#define SELECT_OP_MULT_DEPTH 2
 
 using namespace mlir;
 using namespace aegis;
@@ -27,7 +25,7 @@ void AutoBootstrapPass::runOnOperation() {
     // otherwise, set maxMulDepth = FHE_MAX_MUL_DEPTH_NO_CMP.
     maxMulDepth = FHE_MAX_MUL_DEPTH_NO_CMP;
     module.walk([&](mlir::Operation *op) {
-        if (mlir::isa<fhe::CmpOp>(op)) {
+        if (isCmpOp(op) || isDivOp(op) || isRecipOp(op)) {
             maxMulDepth = FHE_MAX_MUL_DEPTH_WITH_CMP;
             return mlir::WalkResult::interrupt();
         }
@@ -83,6 +81,12 @@ unsigned AutoBootstrapPass::getChainDepth(Value val) {
             return CMP_OP_MULT_DEPTH;
         } else if (isSelectOp(theOp)) {
             return SELECT_OP_MULT_DEPTH;
+        } else if (isDivOp(theOp)) {
+            return DIV_OP_MULT_DEPTH;
+        } else if (isDivPlainOp(theOp)) {
+            return 1;
+        } else if (isRecipOp(theOp)) {
+            return RECIP_OP_MULT_DEPTH;
         }
     }
 
@@ -113,6 +117,30 @@ void AutoBootstrapPass::insertBootstrapOp(Operation *insertAfter, Value val) {
 bool AutoBootstrapPass::isMulOp(Operation *op) {
     if (mlir::isa<fhe::LWEMulOp>(op)  || mlir::isa<fhe::LWEMulPlainOp>(op) ||
         mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AutoBootstrapPass::isDivOp(Operation *op) {
+    if (mlir::isa<fhe::LWEDivOp>(op) || mlir::isa<fhe::RLWEDivOp>(op) ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AutoBootstrapPass::isDivPlainOp(Operation *op) {
+    if (mlir::isa<fhe::LWEDivPlainOp>(op) || mlir::isa<fhe::RLWEDivPlainOp>(op) ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AutoBootstrapPass::isRecipOp(Operation *op) {
+    if (mlir::isa<fhe::LWEReciprocalOp>(op)  || mlir::isa<fhe::RLWEReciprocalOp>(op)) {
         return true;
     } else {
         return false;

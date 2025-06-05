@@ -33,6 +33,10 @@
 #define GALOIS_KEY_INDEX    "fhe.GaloisKeyIndex"
 #define EXPORT_FUNCNAME_PRIFIX  "aegis_mlir_"
 
+#define CMP_OP_MULT_DEPTH 14
+#define SELECT_OP_MULT_DEPTH 2
+#define RECIP_OP_MULT_DEPTH 9
+#define DIV_OP_MULT_DEPTH   (RECIP_OP_MULT_DEPTH + 1)
 
 #define FHE_DEFAULT_BATCH_SIZE       256
 #define FHE_MAX_MUL_DEPTH_WITH_CMP   18
