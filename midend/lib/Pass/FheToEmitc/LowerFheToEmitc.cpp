@@ -25,7 +25,7 @@ using namespace aegis;
 using namespace fhe;
 
 
-// Convert FHE arith unary op(neg/abs/...) operations into emitc::CallOp.
+// Convert FHE arith unary op(neg/abs/reciprocal/...) operations into emitc::CallOp.
 template <typename OpType> class FheArithUnaryPattern final : public OpConversionPattern<OpType> {
   protected:
     using OpConversionPattern<OpType>::typeConverter;
@@ -63,8 +63,10 @@ template <typename OpType> class FheArithUnaryPattern final : public OpConversio
 
         // Build a series of calls to our custom function.
         std::string opName;
-        if (std::is_same<OpType, fhe::LWENegOp>() || std::is_same<OpType, fhe::RLWENegOp>()) {
+        if (mlir::isa<fhe::LWENegOp>(op) || mlir::isa<fhe::RLWENegOp>(op)) {
             opName = EMITC_NEG_NAME;
+        } else if (mlir::isa<fhe::LWEReciprocalOp>(op) || mlir::isa<fhe::RLWEReciprocalOp>(op)) {
+            opName = EMITC_RECIPROCAL_NAME;
         } else {
             LLVM_DEBUG(llvm::dbgs() << "Unkown the Op:" << OpType::getOperationName() << "not handle.\n");
             return failure();
@@ -119,31 +121,23 @@ public:
 
         // Build a series of calls to our custom function.
         std::string opName;
-        if (std::is_same<OpType, LWEAddOp>() || 
-            std::is_same<OpType, RLWEAddOp>()) {
+        if (mlir::isa<LWEAddOp>(op) || mlir::isa<RLWEAddOp>(op)) {
             opName = EMITC_ADD_NAME;
-        }
-        else if (std::is_same<OpType, LWEAddPlainOp>() ||
-                 std::is_same<OpType, RLWEAddPlainOp>()) {
+        } else if (mlir::isa<LWEAddPlainOp>(op) || mlir::isa<RLWEAddPlainOp>(op)) {
             opName = EMITC_ADDPLAIN_NAME;
-        }
-        else if (std::is_same<OpType, LWESubOp>() ||
-                 std::is_same<OpType, RLWESubOp>()) {
+        } else if (mlir::isa<LWESubOp>(op) || mlir::isa<RLWESubOp>(op)) {
             opName = EMITC_SUB_NAME;
-        }
-        else if (std::is_same<OpType, LWESubPlainOp>() ||
-                 std::is_same<OpType, RLWESubPlainOp>()) {
+        } else if (mlir::isa<LWESubPlainOp>(op) || mlir::isa<RLWESubPlainOp>(op)) {
             opName = EMITC_SUBPLAIN_NAME;
-        }
-        else if (std::is_same<OpType, LWEMulOp>() ||
-                 std::is_same<OpType, RLWEMulOp>()) {
+        } else if (mlir::isa<LWEMulOp>(op) || mlir::isa<RLWEMulOp>(op)) {
             opName = EMITC_MUL_NAME;
-        }
-        else if (std::is_same<OpType, LWEMulPlainOp>() ||
-                 std::is_same<OpType, RLWEMulPlainOp>()) {
+        } else if (mlir::isa<LWEMulPlainOp>(op) || mlir::isa<RLWEMulPlainOp>(op)) {
             opName = EMITC_MULPLAIN_NAME;
-        }
-        else {
+        } else if (mlir::isa<LWEDivOp>(op) || mlir::isa<RLWEDivOp>(op)) {
+            opName = EMITC_DIV_NAME;
+        } else if (mlir::isa<LWEDivPlainOp>(op) || mlir::isa<RLWEDivPlainOp>(op)) {
+            opName = EMITC_DIVPLAIN_NAME;
+        } else {
             llvm::errs() << "[FhetoEmitcPass] ERROR: Unhandled operation detected\n"
                          << "   Operation: " << op << "\n"
                          << "   Location:  " << op.getLoc() << "\n";
@@ -1328,12 +1322,15 @@ void LowerFheToEmitcPass::runOnOperation() {
     mlir::RewritePatternSet fhePats(&getContext());
     fhePats.add<FheConstantPattern,
             FheArithUnaryPattern<fhe::LWENegOp>, FheArithUnaryPattern<fhe::RLWENegOp>,
+            FheArithUnaryPattern<fhe::LWEReciprocalOp>, FheArithUnaryPattern<fhe::RLWEReciprocalOp>,
             FheArithBinaryPattern<fhe::LWEAddOp>, FheArithBinaryPattern<fhe::LWEAddPlainOp>,
             FheArithBinaryPattern<fhe::RLWEAddOp>, FheArithBinaryPattern<fhe::RLWEAddPlainOp>,
             FheArithBinaryPattern<fhe::LWESubOp>, FheArithBinaryPattern<fhe::LWESubPlainOp>,
             FheArithBinaryPattern<fhe::RLWESubOp>, FheArithBinaryPattern<fhe::RLWESubPlainOp>,
             FheArithBinaryPattern<fhe::LWEMulOp>, FheArithBinaryPattern<fhe::LWEMulPlainOp>, 
             FheArithBinaryPattern<fhe::RLWEMulOp>, FheArithBinaryPattern<fhe::RLWEMulPlainOp>,
+            FheArithBinaryPattern<fhe::LWEDivOp>, FheArithBinaryPattern<fhe::LWEDivPlainOp>,
+            FheArithBinaryPattern<fhe::RLWEDivOp>, FheArithBinaryPattern<fhe::RLWEDivPlainOp>,
             FheRotatePattern, FheBootstrapPattern,
             FheCmpPattern, FheSelectPattern,
             FheFuncPattern, FheRetPattern, FheCallPattern,
