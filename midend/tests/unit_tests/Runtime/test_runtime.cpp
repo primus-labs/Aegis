@@ -821,6 +821,58 @@ bool case_8_2() {
     return true;    
 }
 
+/**********************************
+***********    case 9    **********
+***********************************/
+constexpr std::string_view mlirCase9 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
+        %5 = arith.divf %arg0, %arg1 :  f32
+        return %5 : f32
+    }
+}
+)mlir";
+
+constexpr std::string_view mlirCase9_2 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "clear"}) -> f32 {
+        %5 = arith.divf %arg0, %arg1 :  f32
+        return %5 : f32
+    }
+}
+)mlir";
+
+constexpr std::string_view mlirCase9_3 = R"mlir(
+module {
+    func.func @main_graph(%arg0: f32 {onnx.name = "input_x", onnx.type = "clear"}, 
+                          %arg1: f32 {onnx.name = "input_y", onnx.type = "encrypted"}) -> f32 {
+        %5 = arith.divf %arg0, %arg1 :  f32
+        return %5 : f32
+    }
+}
+)mlir";
+
+bool case_9() {
+    std::vector<double> a1 = {1.1};
+    std::vector<double> b1 = {3.1};
+    std::vector<double> expect_output = {0.3548};      
+    if (!mlirUnitTest_2_Ex(mlirCase9, a1, true, b1, true, expect_output)) {
+        return false;
+    }
+
+    if (!mlirUnitTest_2_Ex(mlirCase9_2, a1, true, b1, false, expect_output)) {
+        return false;
+    }
+
+    if (!mlirUnitTest_2_Ex(mlirCase9_3, a1, false, b1, true, expect_output)) {
+        return false;
+    }
+
+    return true;
+}
+
 
 //----------------------------------------------------------------
 int main() {
@@ -881,6 +933,11 @@ int main() {
         }
 
         if (!case_8_2()) {
+            std::cout << "Test fail" << std::endl;
+            return -1;
+        }
+
+        if (!case_9()) {
             std::cout << "Test fail" << std::endl;
             return -1;
         }
