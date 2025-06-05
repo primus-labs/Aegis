@@ -169,6 +169,11 @@ void InsertEmitcPreamblePass::runOnOperation() {
             builder.create<emitc::VerbatimOp>(op->getLoc(), cmpFuncs);
         }
 
+        // Insert division related implementation functions
+        if (statsInfos.asReader().getDivCount() || statsInfos.asReader().getRecipCount()) {
+            builder.create<emitc::VerbatimOp>(op->getLoc(), kDivFuncsTemplate);
+        }
+
         // Insert alloc implementation functions
         auto allocFunc = std::string(llvm::formatv(kAllocFunc.data(), batchSize));
         builder.create<emitc::VerbatimOp>(op->getLoc(), allocFunc);

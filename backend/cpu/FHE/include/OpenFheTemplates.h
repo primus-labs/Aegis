@@ -43,6 +43,9 @@ constexpr std::string_view kMacroStmts = R"cpp(
 #define SubPlain(c, p) SubPlainImpl((c), (p))
 #define Mul(a, b) clientCC->EvalMult((a), (b))
 #define MulPlain(c, p) MulPlainImpl((c), (p))
+#define Div(a, b) DivImpl((a), (b))
+#define DivPlain(c, p)  DivPlainImpl((c), (p)) 
+#define Reciprocal(c)   ReciprocalImpl((c), -5, 5, 156)  
 #define Rotate(c, idx) clientCC->EvalRotate((c), (idx))
 #define Bootstrap(a) clientCC->EvalBootstrap(a)
 #define MakePlain(a)  double(a)
@@ -62,7 +65,7 @@ constexpr std::string_view kMacroStmts = R"cpp(
 // clang-format off
 constexpr std::string_view kFheUtilFuncs = R"cpp(
 inline RLWECipher AddPlainImpl(RLWECipher a, Plain b) {
-            return clientCC->EvalAdd(a, b);
+    return clientCC->EvalAdd(a, b);
 }
 inline RLWECipher AddPlainImpl(RLWECipher a, PlainVector b) {
     return clientCC->EvalAdd(a, clientCC->MakeCKKSPackedPlaintext(b));
@@ -91,10 +94,20 @@ template <typename T1, typename T2>
 auto Sub(T1&& a, T2&& b) -> decltype(auto) {
     return clientCC->EvalSub(std::forward<T1>(a), std::forward<T2>(b));
 }
-
 template <typename T1, typename T2, typename... Ts>
 auto Sub(T1&& a, T2&& b, Ts&&... rest) {
     return Sub(clientCC->EvalSub(std::forward<T1>(a), std::forward<T2>(b)), std::forward<Ts>(rest)...);
+}
+inline RLWECipher DivPlainImpl(RLWECipher cipherA, Plain plainB) {
+    return clientCC->EvalMult(cipherA, 1.0/plainB);
+}
+RLWECipher DivPlainImpl(RLWECipher cipherA, PlainVector plainB) {
+    PlainVector recipPlainB;
+    for (auto i = 0; i < plainB.size(); i++) {
+        recipPlainB.push_back(1.0/plainB[i]);
+    }
+    Plaintext plainRecipB  = clientCC->MakeCKKSPackedPlaintext(recipPlainB);
+    return clientCC->EvalMult(cipherA, plainRecipB);
 }
 )cpp";
 // clang-format on
@@ -398,6 +411,25 @@ inline Ciphertext<DCRTPoly> Select(const Ciphertext<DCRTPoly> &cond, const Ciphe
 }
 )cpp";
 // clang-format on
+
+// clang-format off
+constexpr std::string_view kDivFuncsTemplate = R"cpp(
+RLWECipher ReciprocalImpl(RLWECipher cipher, double lower, double upper, uint32_t degree) {
+     return clientCC->EvalChebyshevFunction([](double x) -> double { 
+                if (x >= 0.0001) {
+                    return 1/x; 
+                } else if (x <= -0.0001) {
+                    return 1/x;
+                } else {
+                    return 0;
+                }
+            }, cipher, lower, upper, degree);
+}
+
+RLWECipher DivImpl(RLWECipher cipherA, RLWECipher cipherB) {
+    return clientCC->EvalMult(cipherA, ReciprocalImpl(cipherB, -5, 5, 156));
+}
+)cpp";
 
 } // namespace openfhe
 } // namespace aegiscpu
