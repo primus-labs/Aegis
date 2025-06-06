@@ -25,8 +25,6 @@ add_llvm_executable(emitc-translate
 
 llvm_update_compile_flags(emitc-translate)
 target_link_libraries(emitc-translate PUBLIC ${LIBS})
-if(NOT APPLE)
 target_link_options(emitc-translate PRIVATE -fuse-ld=gold)
-endif()
 
 mlir_check_all_link_libraries(emitc-translate)
