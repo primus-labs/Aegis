@@ -28,16 +28,16 @@ module {
 
 
 
-// CHECKE: RLWECipher euclidean_distance(RLWECipher v1, RLWECipher v2) {
-// CHECKE:   PlainVector v3 = MakeMultPlain
-// CHECKE:   RLWECipher v4 = Sub(v1, v2);
-// CHECKE:   RLWECipher v5 = Mul(v4, v4);
-// CHECKE:   RLWECipher v6 = Rotate(v5, -255);
-// CHECKE:   RLWECipher v7 = Add(v5, v6);
-// CHECKE:   RLWECipher v8 = Rotate(v5, -254);
-// CHECKE:   RLWECipher v9 = Add(v7, v8);
-// CHECKE:   RLWECipher v10 = Rotate(v5, -253);
-// CHECKE:   RLWECipher v11 = Add(v9, v10);
-// CHECKE:   RLWECipher v12 = MulPlain(v11, v3);
-// CHECKE:   return v12;
-// CHECKE: }
+// CHECK: RLWECipher euclidean_distance(RLWECipher v1, RLWECipher v2) {
+// CHECK:   PlainVector v3 = MakeMultPlain
+// CHECK:   RLWECipher v4 = Sub(v1, v2);
+// CHECK:   RLWECipher v5 = Mul(v4, v4);
+// CHECK:   RLWECipher v6 = Rotate(v5, -255);
+// CHECK:   RLWECipher v7 = Add(v5, v6);
+// CHECK:   RLWECipher v8 = Rotate(v5, -254);
+// CHECK:   RLWECipher v9 = Add(v7, v8);
+// CHECK:   RLWECipher v10 = Rotate(v5, -253);
+// CHECK:   RLWECipher v11 = Add(v9, v10);
+// CHECK:   RLWECipher v12 = MulPlain(v11, v3);
+// CHECK:   return v12;
+// CHECK: }
