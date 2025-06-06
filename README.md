@@ -114,13 +114,13 @@ Here is the full examples:
     compile_result = server.compile(py_function = add_1d_6elements)
 
     # key gen
-    private_data_1 = np.array([1, 3, 5, 7, 9, 11])
-    private_data_2 = np.array([2, 4, 6, 8, 10, 12])
     client = Client()
     client.keygen(compile_result.prog_spec_path)
     client.dump_pub_keys(pub_keys_path)
 
     # encrypte
+    private_data_1 = np.array([1, 3, 5, 7, 9, 11])
+    private_data_2 = np.array([2, 4, 6, 8, 10, 12])
     enc_val1, enc_val2 = client.encrypt([private_data_1, private_data_2], True)
 
     # run
@@ -129,6 +129,7 @@ Here is the full examples:
 
     # decrypte
     output = client.decrypt(enc_output)
+    print(output)
   ```
 
 ## Resources
