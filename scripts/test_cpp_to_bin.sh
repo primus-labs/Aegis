@@ -32,7 +32,7 @@ OPENFHE_LIB2="$SCRIPT_DIR/../third_party/openfhe/build/lib"
 
 # Compilation command with optimization flags
 #set -x
-$COMPILER -g  -shared -fPIC -std=c++17 -O2 \
+$COMPILER -fuse-ld=gold -shared -fPIC -std=c++17 -O2 \
     -I"$OPENFHE_INCLUDE" \
     -I"$OPENFHE_INCLUDE2" \
     -I"$OPENFHE_INCLUDE3" \
@@ -50,7 +50,7 @@ $COMPILER -g  -shared -fPIC -std=c++17 -O2 \
 # Check build status and display results
 if [ $? -eq 0 ]; then
     echo "\033[1;34mPass\033[0m"
-    #rm libtest.so
+    rm libtest.so
     #file libtest.so | grep -E 'shared object|ELF'
     #echo -e "\nLibrary dependencies:"
     #ldd libtest.so | grep OpenFHE
