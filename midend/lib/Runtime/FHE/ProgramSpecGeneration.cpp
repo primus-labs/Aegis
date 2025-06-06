@@ -33,14 +33,23 @@ llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::Mo
 
     // Get all functions infos from the module.
     auto funcsInfo = getAllFunctionsInfo(module);
+    if (!funcsInfo) {
+        return funcsInfo.takeError();
+    }
     progSpes.asBuilder().setFuncsInfo(funcsInfo.get().asReader());
 
     // Get fhe key infos from the module.
     auto keyInfo = getKeyInfo(module, options);
+    if (!keyInfo) {
+        return keyInfo.takeError();
+    }
     progSpes.asBuilder().setKeyInfo(keyInfo.get().asReader());
 
     // Get statistic infos from the module.
     auto statsInfo = getStatsInfo(module);
+    if (!statsInfo) {
+        return statsInfo.takeError();
+    }
     progSpes.asBuilder().setStatsInfo(statsInfo.get().asReader());
 
     return progSpes;
@@ -48,9 +57,28 @@ llvm::Expected<ProtoMessage<aegisprotocol::ProgSpec>> createProgramSpec(mlir::Mo
 
 
 llvm::Expected<ProtoMessage<aegisprotocol::Functions>> getAllFunctionsInfo(mlir::ModuleOp module) {
+    auto pubFuncCnt = 0;
     auto funcs = module.getOps<mlir::func::FuncOp>();
+    for (auto func : funcs) {
+        SymbolTable::Visibility visibility = SymbolTable::getSymbolVisibility(func);
+        if (visibility == SymbolTable::Visibility::Public) {
+            pubFuncCnt++;
+        }
+    }
+    if (!pubFuncCnt) {
+        return ErrorMsg("Module must contain exactly one public function, but found none.");
+    }
+    if (pubFuncCnt > 1) {
+        return ErrorMsg("Module must contain exactly one public function, but found ") << pubFuncCnt;
+    }
+
     auto vectFuncsInfo = std::vector<ProtoMessage<aegisprotocol::Function>>();
     for (auto func : funcs) {
+        SymbolTable::Visibility visibility = SymbolTable::getSymbolVisibility(func);
+        if (visibility != SymbolTable::Visibility::Public) {
+            continue;
+        }
+
         auto unitFuncInfosOrErr = getUnitFunctionInfo(func);
         if (!unitFuncInfosOrErr) {
             return unitFuncInfosOrErr.takeError();
