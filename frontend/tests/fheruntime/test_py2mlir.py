@@ -1,4 +1,5 @@
 from primus.aegis.fheruntime import Py2MLIRConverter
+import tempfile
 
 def test_case_add(x1: float, x2: float):
     return x1 + x2
@@ -55,8 +56,9 @@ def test_case_sum(x: list[float, 10]):
         s += x[i]
     return s
 
-if __name__ == '__main__':
-    converter = Py2MLIRConverter('./test_cases')
+def test_all(tmp_dir):
+    print('create tmpdir:', tmp_dir)
+    converter = Py2MLIRConverter(tmp_dir)
     converter.convert(test_case_add)
     converter.convert(test_case_sub)
     converter.convert(test_case_mul)
@@ -74,3 +76,12 @@ if __name__ == '__main__':
     converter.convert(test_case_min)
 
     converter.convert(test_case_sum)
+
+if __name__ == '__main__':
+    # If use the following code, you temporary directory will not be deleted automatically
+    # tmp_dir = tempfile.mkdtemp()
+    # test_all(tmp_dir)
+
+    # The temporay directory will be deleted automatically
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        test_all(tmp_dir)
