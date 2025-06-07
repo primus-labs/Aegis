@@ -4,30 +4,32 @@ project(aegis LANGUAGES CXX C)
 
 
 find_program(GOLD_LINKER ld.gold)
-if(NOT GOLD_LINKER)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        if(EXISTS "/etc/debian_version")
-            set(INSTALL_CMD "sudo apt-get install binutils")
-        elseif(EXISTS "/etc/redhat-release" OR EXISTS "/etc/centos-release")
-            set(INSTALL_CMD "sudo yum install binutils")
-        elseif(EXISTS "/etc/arch-release")
-            set(INSTALL_CMD "sudo pacman -S binutils")
+if(NOT APPLE)
+    if(NOT GOLD_LINKER)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            if(EXISTS "/etc/debian_version")
+                set(INSTALL_CMD "sudo apt-get install binutils")
+            elseif(EXISTS "/etc/redhat-release" OR EXISTS "/etc/centos-release")
+                set(INSTALL_CMD "sudo yum install binutils")
+            elseif(EXISTS "/etc/arch-release")
+                set(INSTALL_CMD "sudo pacman -S binutils")
+            else()
+                set(INSTALL_CMD "install the 'binutils' package")
+            endif()
         else()
-            set(INSTALL_CMD "install the 'binutils' package")
+            set(INSTALL_CMD "install binutils package for your system")
         endif()
-    else()
-        set(INSTALL_CMD "install binutils package for your system")
-    endif()
 
-    message(FATAL_ERROR "\n"
-        "ld.gold linker not found but is required for this project.\n"
-        "Please install the GNU binutils package:\n"
-        "  ${INSTALL_CMD}\n")
-else()
-    message(STATUS "Found gold linker: ${GOLD_LINKER}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold" CACHE STRING "Use gold linker" FORCE)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=gold" CACHE STRING "Use gold linker" FORCE)
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fuse-ld=gold" CACHE STRING "Use gold linker" FORCE)
+        message(FATAL_ERROR "\n"
+            "ld.gold linker not found but is required for this project.\n"
+            "Please install the GNU binutils package:\n"
+            "  ${INSTALL_CMD}\n")
+    else()
+        message(STATUS "Found gold linker: ${GOLD_LINKER}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold" CACHE STRING "Use gold linker" FORCE)
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=gold" CACHE STRING "Use gold linker" FORCE)
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fuse-ld=gold" CACHE STRING "Use gold linker" FORCE)
+    endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)

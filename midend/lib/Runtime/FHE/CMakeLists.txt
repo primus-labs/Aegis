@@ -66,7 +66,6 @@ set(RT_DEP_LIBS
 
 set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 target_link_libraries(AegisRuntime PUBLIC ${RT_DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore OPENFHEpke OPENFHEbinfhe)
-target_link_options(AegisRuntime PUBLIC -fuse-ld=gold)
 #target_link_options(AegisRuntime PUBLIC "-Wl,--verbose")
 
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/include)
