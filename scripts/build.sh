@@ -34,12 +34,8 @@ cmake -G Ninja ../llvm \
   -DLLVM_INSTALL_UTILS=ON \
   -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
   -DMLIR_INCLUDE_TESTS=OFF
-
 ninja -j8
 
-# we use ninja to build mlir, so we not make componet
-#cmake --build .
-#make -j8
 
 echo "****************************************************"
 echo "**************     build onnx-mlir     *************"
@@ -50,11 +46,12 @@ mkdir -p build
 cd build
 cmake -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
-  -DLLVM_ENABLE_ASSERTIONS=ON \
+  -DLLVM_ENABLE_ASSERTIONS=OFF \
   -DONNX_MLIR_ENABLE_JAVA=OFF \
   -DMLIR_DIR=${MLIR_DIR} \
   ..
 ninja -j8
+
 
 echo "****************************************************"
 echo "**************      build OpenFHE      *************"
@@ -65,6 +62,7 @@ cd build
 cmake .. -DRUN_HAVE_POSIX_REGEX=0
 make -j8
 
+
 echo "****************************************************"
 echo "**************       build aegis       *************"
 echo "****************************************************"
@@ -73,7 +71,7 @@ mkdir -p build
 cd build
 cmake ../midend/ -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/
 make -j8
-#ISSUE: need execute multi-times to generate FHETypes.h.inc
+
 
 echo "****************************************************"
 echo "**************       test aegis        *************"

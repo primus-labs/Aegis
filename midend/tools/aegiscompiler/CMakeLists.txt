@@ -14,7 +14,7 @@ set(DEP_LIBS
         MLIRAnalysis
         MLIRCallInterfaces
         MLIRCastInterfaces
-        MLIRExecutionEngine
+        #MLIRExecutionEngine
         MLIRIR
         MLIRLLVMCommonConversion
         MLIRLLVMToLLVMIRTranslation
