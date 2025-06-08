@@ -362,7 +362,7 @@ void LowerArithToSecretPass::runOnOperation() {
         if (mlir::isa<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy)) {
+            if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
         } else if (mlir::isa<SecretVectorType>(t)) {
@@ -387,7 +387,7 @@ void LowerArithToSecretPass::runOnOperation() {
         if (mlir::isa<SecretType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy)) {
+            if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
         } else if (mlir::isa<SecretVectorType>(t)) {
@@ -424,7 +424,7 @@ void LowerArithToSecretPass::runOnOperation() {
         } else if (mlir::isa<MemRefType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<SecretVectorType>(srcTy) || mlir::isa<SecretMatrixType>(srcTy)) {
+            if (mlir::isa<SecretVectorType, SecretMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<secret::CastOp>(loc, t, vs));
             }
         }

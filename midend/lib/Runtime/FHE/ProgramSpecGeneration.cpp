@@ -191,9 +191,8 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
         }
         return std::move(funcParam);
     }
-    else if (mlir::isa<fhe::LWECipherType>(ty) || mlir::isa<fhe::LWECipherVectorType>(ty) ||
-        mlir::isa<fhe::LWECipherMatrixType>(ty) || mlir::isa<fhe::RLWECipherType>(ty) ||
-        mlir::isa<fhe::RLWECipherGridType>(ty)) {
+    else if (mlir::isa<fhe::LWECipherType, fhe::LWECipherVectorType, fhe::LWECipherMatrixType>(ty) || 
+             mlir::isa<fhe::RLWECipherType, fhe::RLWECipherGridType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
         funcParam.asBuilder().setName(paramName);
         funcParam.asBuilder().setType(true);
@@ -202,8 +201,7 @@ llvm::Expected<ProtoMessage<aegisprotocol::FuncParam>> getFuncParamFromType(mlir
             dimensions.set(i, dims[i]);
         }
         return std::move(funcParam);
-    } else if (mlir::isa<mlir::IntegerType>(ty) || mlir::isa<mlir::FloatType>(ty) ||
-               mlir::isa<mlir::IndexType>(ty) ) {
+    } else if (mlir::isa<mlir::IntegerType, mlir::FloatType, mlir::IndexType>(ty)) {
         auto funcParam = ProtoMessage<aegisprotocol::FuncParam>();
         funcParam.asBuilder().setName(paramName);
         funcParam.asBuilder().setType(false);

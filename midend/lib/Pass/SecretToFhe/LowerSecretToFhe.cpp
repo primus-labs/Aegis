@@ -276,8 +276,7 @@ class SecretFuncPattern final : public OpConversionPattern<func::FuncOp> {
         for (auto [index, arg] : llvm::enumerate(op.getRegion().getArguments())) {
             Type originalType = op.getFunctionType().getInput(index);
 
-            if (mlir::isa<secret::SecretType>(originalType) || mlir::isa<secret::SecretVectorType>(originalType) ||
-                mlir::isa<secret::SecretMatrixType>(originalType)) {
+            if (mlir::isa<secret::SecretType, secret::SecretVectorType, secret::SecretMatrixType>(originalType)) {
                 SmallVector<Type> destTypes;
                 if (failed(typeConverter->convertType(originalType, destTypes))) {
                     LLVM_DEBUG(llvm::dbgs() << "all convertType fail for type(" << originalType << " )\n");
@@ -293,8 +292,7 @@ class SecretFuncPattern final : public OpConversionPattern<func::FuncOp> {
         rewriter.startOpModification(op);
         op.setType(newFuncTy);
         for (BlockArgument arg : op.getRegion().getArguments()) {
-            if (!(mlir::isa<secret::SecretType>(arg.getType()) || mlir::isa<secret::SecretVectorType>(arg.getType()) ||
-                  mlir::isa<secret::SecretMatrixType>(arg.getType()))) {
+            if (!(mlir::isa<secret::SecretType, secret::SecretVectorType, secret::SecretMatrixType>(arg.getType()))) {
                 continue;
             }
 
@@ -408,8 +406,7 @@ class SecretLoadPattern final : public OpConversionPattern<secret::LoadOp> {
     LogicalResult matchAndRewrite(secret::LoadOp op, typename secret::LoadOp::Adaptor adaptor,
                                   ConversionPatternRewriter &rewriter) const override {
         auto srcTy = op.getMemref().getType();
-        if (!(mlir::isa<secret::SecretType>(srcTy) || mlir::isa<secret::SecretVectorType>(srcTy) ||
-              mlir::isa<secret::SecretMatrixType>(srcTy))) {
+        if (!(mlir::isa<secret::SecretType, secret::SecretVectorType, secret::SecretMatrixType>(srcTy))) {
             return success();
         }
 
@@ -448,8 +445,7 @@ class SecretStorePattern final : public OpConversionPattern<secret::StoreOp> {
     LogicalResult matchAndRewrite(secret::StoreOp op, typename secret::StoreOp::Adaptor adaptor,
                                   ConversionPatternRewriter &rewriter) const override {
         auto srcTy = op.getMemref().getType();
-        if (!(mlir::isa<secret::SecretType>(srcTy) || mlir::isa<secret::SecretVectorType>(srcTy) ||
-              mlir::isa<secret::SecretMatrixType>(srcTy))) {
+        if (!(mlir::isa<secret::SecretType, secret::SecretVectorType, secret::SecretMatrixType>(srcTy))) {
             return success();
         }
 
@@ -484,8 +480,7 @@ class SecretCopyPattern final : public OpConversionPattern<secret::CopyOp> {
     LogicalResult matchAndRewrite(secret::CopyOp op, typename secret::CopyOp::Adaptor adaptor,
                                   ConversionPatternRewriter &rewriter) const override {
         auto srcTy = op.getSource().getType();
-        if (!(mlir::isa<secret::SecretType>(srcTy) || mlir::isa<secret::SecretVectorType>(srcTy) ||
-              mlir::isa<secret::SecretMatrixType>(srcTy))) {
+        if (!(mlir::isa<secret::SecretType, secret::SecretVectorType, secret::SecretMatrixType>(srcTy))) {
             return success();
         }
 
@@ -688,7 +683,7 @@ void LowerSecretToFhePass::runOnOperation() {
         if (mlir::isa<fhe::LWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<FloatType>(srcTy) || mlir::isa<IntegerType>(srcTy) || mlir::isa<secret::SecretType>(srcTy)) {
+            if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType, secret::SecretType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
             llvm::outs() << "dest type:" << t << "\n";
@@ -699,7 +694,7 @@ void LowerSecretToFhePass::runOnOperation() {
         } else if (mlir::isa<fhe::LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<MemRefType>(srcTy) || mlir::isa<secret::SecretVectorType>(srcTy)) {
+            if (mlir::isa<MemRefType, secret::SecretVectorType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
             llvm::errs() << "[SecretToFhePass] Unsupported type detected, mybe don't handle this type " 
@@ -707,7 +702,7 @@ void LowerSecretToFhePass::runOnOperation() {
         } else if (mlir::isa<fhe::LWECipherMatrixType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<MemRefType>(srcTy) || mlir::isa<secret::SecretMatrixType>(srcTy)) {
+            if (mlir::isa<MemRefType, secret::SecretMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
             llvm::errs() << "[SecretToFhePass] Unsupported type detected, mybe don't handle this type " 
@@ -742,7 +737,7 @@ void LowerSecretToFhePass::runOnOperation() {
         } else if (mlir::isa<MemRefType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<fhe::LWECipherVectorType>(srcTy) || mlir::isa<fhe::LWECipherMatrixType>(srcTy)) {
+            if (mlir::isa<fhe::LWECipherVectorType, fhe::LWECipherMatrixType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         } else if (mlir::isa<secret::SecretType>(t)) {

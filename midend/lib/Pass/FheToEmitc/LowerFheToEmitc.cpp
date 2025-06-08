@@ -1106,7 +1106,7 @@ void LowerFheToEmitcPass::runOnOperation() {
             else if (mlir::isa<MemRefType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
             }
-            else if (mlir::isa<mlir::FloatType>(srcTy) || mlir::isa<mlir::IntegerType>(srcTy) || mlir::isa<mlir::IndexType>(srcTy)) {
+            else if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, destTy, vs));
             }
             else if (mlir::isa<mlir::VectorType>(srcTy)) {
@@ -1172,8 +1172,7 @@ void LowerFheToEmitcPass::runOnOperation() {
                 return std::optional<Type>(std::nullopt);
             }
         }
-        else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
-                 mlir::isa<mlir::IndexType>(t)) {
+        else if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType>(t)) {
             return std::optional<Type>(emitc::OpaqueType::get(&getContext(), PLAIN_TYPE_NAME));
         }
         else if (mlir::isa<mlir::VectorType>(t)) {
@@ -1271,8 +1270,7 @@ void LowerFheToEmitcPass::runOnOperation() {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }
-        else if (mlir::isa<mlir::FloatType>(t) || mlir::isa<mlir::IntegerType>(t) ||
-                 mlir::isa<mlir::IndexType>(t)) {
+        else if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
         }

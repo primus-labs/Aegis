@@ -115,8 +115,7 @@ void AutoBootstrapPass::insertBootstrapOp(Operation *insertAfter, Value val) {
 }
 
 bool AutoBootstrapPass::isMulOp(Operation *op) {
-    if (mlir::isa<fhe::LWEMulOp>(op)  || mlir::isa<fhe::LWEMulPlainOp>(op) ||
-        mlir::isa<fhe::RLWEMulOp>(op) || mlir::isa<fhe::RLWEMulPlainOp>(op)) {
+    if (mlir::isa<fhe::LWEMulOp, fhe::LWEMulPlainOp, fhe::RLWEMulOp, fhe::RLWEMulPlainOp>(op)) {
         return true;
     } else {
         return false;
@@ -124,7 +123,7 @@ bool AutoBootstrapPass::isMulOp(Operation *op) {
 }
 
 bool AutoBootstrapPass::isDivOp(Operation *op) {
-    if (mlir::isa<fhe::LWEDivOp>(op) || mlir::isa<fhe::RLWEDivOp>(op) ) {
+    if (mlir::isa<fhe::LWEDivOp, fhe::RLWEDivOp>(op)) {
         return true;
     } else {
         return false;
@@ -132,7 +131,7 @@ bool AutoBootstrapPass::isDivOp(Operation *op) {
 }
 
 bool AutoBootstrapPass::isDivPlainOp(Operation *op) {
-    if (mlir::isa<fhe::LWEDivPlainOp>(op) || mlir::isa<fhe::RLWEDivPlainOp>(op) ) {
+    if (mlir::isa<fhe::LWEDivPlainOp, fhe::RLWEDivPlainOp>(op)) {
         return true;
     } else {
         return false;
@@ -140,7 +139,7 @@ bool AutoBootstrapPass::isDivPlainOp(Operation *op) {
 }
 
 bool AutoBootstrapPass::isRecipOp(Operation *op) {
-    if (mlir::isa<fhe::LWEReciprocalOp>(op)  || mlir::isa<fhe::RLWEReciprocalOp>(op)) {
+    if (mlir::isa<fhe::LWEReciprocalOp, fhe::RLWEReciprocalOp>(op)) {
         return true;
     } else {
         return false;

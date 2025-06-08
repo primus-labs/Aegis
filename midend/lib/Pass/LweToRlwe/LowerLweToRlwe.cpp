@@ -541,7 +541,7 @@ void LweToRlwePass::runOnOperation() {
         if (mlir::isa<RLWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<LWECipherType>(srcTy) || mlir::isa<LWECipherVectorType>(srcTy)) {
+            if (mlir::isa<LWECipherType, LWECipherVectorType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         } else if (mlir::isa<RLWECipherGridType>(t)) {
@@ -560,7 +560,7 @@ void LweToRlwePass::runOnOperation() {
         if (mlir::isa<RLWECipherType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materalize single values");
             auto srcTy = vs.front().getType();
-            if (mlir::isa<LWECipherType>(srcTy) || mlir::isa<LWECipherVectorType>(srcTy)) {
+            if (mlir::isa<LWECipherType, LWECipherVectorType>(srcTy)) {
                 return std::optional<Value>(builder.create<fhe::CastOp>(loc, t, vs));
             }
         } else if (mlir::isa<RLWECipherGridType>(t)) {
@@ -576,7 +576,7 @@ void LweToRlwePass::runOnOperation() {
     });
 
     type_converter.addSourceMaterialization([&](OpBuilder &builder, Type t, ValueRange vs, Location loc) {
-        if (mlir::isa<LWECipherType>(t) || mlir::isa<LWECipherVectorType>(t)) {
+        if (mlir::isa<LWECipherType, LWECipherVectorType>(t)) {
             assert(!vs.empty() && ++vs.begin() == vs.end() && "currently can only materialize single values");
             auto srcTy = vs.front().getType();
             if (mlir::isa<RLWECipherType>(srcTy))
@@ -632,9 +632,7 @@ void LweToRlwePass::runOnOperation() {
         TypeConverter::SignatureConversion signatureConversion(op.getFunctionType().getNumInputs());
         for (auto [index, arg] : llvm::enumerate(op.getRegion().getArguments())) {
             Type originalType = op.getFunctionType().getInput(index);
-            if (mlir::isa<fhe::LWECipherType>(originalType) || 
-                mlir::isa<fhe::LWECipherVectorType>(originalType) ||
-                mlir::isa<fhe::LWECipherMatrixType>(originalType)) {
+            if (mlir::isa<LWECipherType, LWECipherVectorType, LWECipherMatrixType>(originalType)) {
                 SmallVector<Type> destTypes;
                 if (failed(type_converter.convertType(originalType, destTypes))) {
                     signalPassFailure();
@@ -649,9 +647,7 @@ void LweToRlwePass::runOnOperation() {
         rewriter.startOpModification(op);
         op.setType(newFuncTy);
         for (BlockArgument arg : op.getRegion().getArguments()) {
-            if (!(mlir::isa<fhe::LWECipherType>(arg.getType()) || 
-                  mlir::isa<fhe::LWECipherVectorType>(arg.getType()) ||
-                  mlir::isa<fhe::LWECipherMatrixType>(arg.getType()))) {
+            if (!(mlir::isa<LWECipherType, LWECipherVectorType, LWECipherMatrixType>(arg.getType()))) {
                 continue;
             }
 

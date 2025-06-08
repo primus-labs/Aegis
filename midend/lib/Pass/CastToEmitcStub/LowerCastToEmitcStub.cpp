@@ -74,7 +74,7 @@ public:
                         llvm::errs() << "The conversion of plaintext to the type(" << destTy << ")has not been processed yet." << "\n";
                         return failure();
                     }
-                } else if (mlir::isa<mlir::FloatType>(destTy) || mlir::isa<mlir::IntegerType>(destTy)) {
+                } else if (mlir::isa<mlir::FloatType, mlir::IntegerType, mlir::IndexType>(destTy)) {
                     // maybe from plain to cipher, eg:select x, 1, 0, At this point, 
                     // we cannot replace it and should simply return.
                     return success(); 
