@@ -11,70 +11,71 @@ namespace mlir {
 namespace aegis {
 
 class ProgramSpec {
-private:
-  ProtoMessage<aegisprotocol::ProgSpec> progSpec;
-  ProtoMessage<aegisprotocol::KeyInfo> keyInfo;
-  std::vector<ProtoMessage<aegisprotocol::Function>> funcsInfo;
-  ProtoMessage<aegisprotocol::StatsInfo> statsInfo;
+  private:
+    ProtoMessage<aegisprotocol::ProgSpec> progSpec;
+    ProtoMessage<aegisprotocol::KeyInfo> keyInfo;
+    std::vector<ProtoMessage<aegisprotocol::Function>> funcsInfo;
+    ProtoMessage<aegisprotocol::StatsInfo> statsInfo;
 
-private:
-  ProgramSpec() = default;
-  ProgramSpec(const ProgramSpec &) = delete;
-  ProgramSpec &operator=(const ProgramSpec &) = delete;
+  private:
+    ProgramSpec() = default;
+    ProgramSpec(const ProgramSpec &) = delete;
+    ProgramSpec &operator=(const ProgramSpec &) = delete;
 
-public:
-  static ProgramSpec &getInstance() {
-    static ProgramSpec instance;
-    return instance;
-  }
-
-  bool initialize(const std::string &progSpecFile) {
-    if (progSpecFile.empty()) {
-      return false;
+  public:
+    static ProgramSpec &getInstance() {
+        static ProgramSpec instance;
+        return instance;
     }
-    static std::once_flag flag;
-    static bool initSuccess = true;
 
-    std::call_once(flag, [&]() {
-      std::ifstream specFile(progSpecFile);
-      std::string content((std::istreambuf_iterator<char>(specFile)),
-                          (std::istreambuf_iterator<char>()));
+    bool initialize(const std::string &progSpecFile) {
+        if (progSpecFile.empty()) {
+            return false;
+        }
+        static std::once_flag flag;
+        static bool initSuccess = true;
 
-      if (specFile.fail()) {
-        ErrorMsg err;
-        err << "Cannot read program spec info file...";
-        initSuccess = false;
-        return;
-      }
+        std::call_once(flag, [&]() {
+            std::ifstream specFile(progSpecFile);
+            if (!specFile) {
+                return;
+            }
 
-      progSpec.readJsonFromString(content);
-      keyInfo = progSpec.asReader().getKeyInfo();
-      statsInfo = progSpec.asReader().getStatsInfo();
-      auto funcs = progSpec.asReader().getFuncsInfo();
-      for (auto func : funcs.getFunctions()) {
-        funcsInfo.push_back((ProtoMessage<aegisprotocol::Function>)func);
-      }
-    });
+            std::string content;
+            try {
+                content = std::string(std::istreambuf_iterator<char>(specFile), std::istreambuf_iterator<char>());
+            } catch (...) {
+                return;
+            }
 
-    return initSuccess;
-  }
+            progSpec.readJsonFromString(content);
+            keyInfo = progSpec.asReader().getKeyInfo();
+            statsInfo = progSpec.asReader().getStatsInfo();
+            auto funcs = progSpec.asReader().getFuncsInfo();
+            for (auto func : funcs.getFunctions()) {
+                funcsInfo.push_back((ProtoMessage<aegisprotocol::Function>)func);
+            }
+        });
 
-public:
-  ProtoMessage<aegisprotocol::ProgSpec> getProgSpec() const { 
-      return progSpec; 
-  }
+        return initSuccess;
+    }
 
-  ProtoMessage<aegisprotocol::KeyInfo> getKeyInfo() const { 
-      return keyInfo; 
-  }
+  public:
+    ProtoMessage<aegisprotocol::ProgSpec> getProgSpec() const { 
+        return progSpec; 
+    }
 
-  std::vector<ProtoMessage<aegisprotocol::Function>> getFuncInfo() const {
-      return funcsInfo;
-  }
+    ProtoMessage<aegisprotocol::KeyInfo> getKeyInfo() const {
+        return keyInfo; 
+    }
 
-  ProtoMessage<aegisprotocol::StatsInfo> getStatsInfo() const {
-      return statsInfo;
-  }
+    std::vector<ProtoMessage<aegisprotocol::Function>> getFuncInfo() const {
+        return funcsInfo; 
+    }
+
+    ProtoMessage<aegisprotocol::StatsInfo> getStatsInfo() const { 
+        return statsInfo; 
+    }
 };
 
 } // namespace aegis
