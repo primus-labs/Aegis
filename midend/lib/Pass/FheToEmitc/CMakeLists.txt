@@ -11,6 +11,7 @@ add_mlir_library(
     DEPENDS
     fhe2emitc
     AegisSecretIncGen
+    AegisFHEIncGen
 )
 
 target_include_directories(AegisLowerFheToEmitc PUBLIC ${PROJECT_SOURCE_DIR}/include)
