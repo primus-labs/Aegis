@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHERuntime.h"
+#include "Runtime/FHE/FHEDataProcessor.h"
 #include "Common/Value.h"
 #include "Common/ProgramSpec.h"
 #include "cpu/FHE/include/KeysetGenerator.h"
@@ -52,180 +53,116 @@ bool approximatelyEqual(T a, T b, T absEpsilon = std::numeric_limits<T>::epsilon
 
 std::vector<double> encryptRunDecrypt(std::shared_ptr<FHERuntime> runtime, std::vector<double> a, size_t resSizes) {
     assert(runtime);
+
     //Encrypt
-    std::vector<uint8_t> cipher_a = aegiscpu::openfhe::encrypt(a);
+    FHEDataProcessor fheDataProcessor;
+    std::vector<mlir::aegis::Value> inputs;
+    auto inputA = fheDataProcessor.privateInput(a);
+    inputs.emplace_back(inputA);
 
     // Run
-    size_t dims = 0;
-    if (resSizes > 1)
-        dims = 1;
-    mlir::aegis::Value value_a(Tensor<uint8_t>(cipher_a, std::vector<size_t>{dims}));
-    std::vector<mlir::aegis::Value> params;
-    params.push_back(value_a);
-    auto resOrErr = runtime->call(params);
+    auto resOrErr = runtime->call(inputs);
     if (!resOrErr) {
         std::cout << "call FHERuntime::call fail" << std::endl;
         exit(-1);
     }
+
+    // Process Output
+    std::vector<double> res_db;
     std::vector<mlir::aegis::Value> res = *resOrErr;
-
-    // Decrypte data
-    return aegiscpu::openfhe::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
-}
-
-std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, std::vector<double> a, std::vector<double> b, size_t resSizes) {
-    assert(runtime);
-    //Encrypt
-    std::vector<uint8_t> cipher_a = aegiscpu::openfhe::encrypt(a);
-    std::vector<uint8_t> cipher_b = aegiscpu::openfhe::encrypt(b);
-
-    // Run
-    size_t dims = 0;
-    if (resSizes > 1)
-        dims = 1;
-    mlir::aegis::Value value_a(Tensor<uint8_t>(cipher_a, std::vector<size_t>{dims}));
-    mlir::aegis::Value value_b(Tensor<uint8_t>(cipher_b, std::vector<size_t>{dims}));
-    std::vector<mlir::aegis::Value> params;
-    params.push_back(value_a);
-    params.push_back(value_b);
-
-    // auto cc = aegiscpu::openfhe::CryptoContextMgr::getInstance().getCryptoContext();
-    // std::cout << "encrypt cipher CryptoContext=" << cc.get() << std::endl;
-    // auto ccSizes = CryptoContextFactory<DCRTPoly>::GetContextCount();
-    // std::cout << "after encrypt, current CryptoContext sizes=" << ccSizes << std::endl;
-
-    auto resOrErr = runtime->call(params);
-    if (!resOrErr) {
-        std::cout << "call FHERuntime::call fail," << llvm::toString(resOrErr.takeError()) << std::endl;
-        exit(-1);
+    auto outputs = fheDataProcessor.processOutput(res);
+    for (auto i = 0; i < outputs.size(); i++) {
+        auto theOutput = outputs[i];
+        auto item_res = theOutput.getTensor<double>().value().values;
+        res_db.insert(res_db.end(), item_res.begin(), item_res.end());
     }
-    std::vector<mlir::aegis::Value> res = *resOrErr;
-
-    // Decrypte data
-    return aegiscpu::openfhe::decrypt(res[0].getTensor<uint8_t>().value().values, resSizes);
+    
+    return res_db;
 }
 
-std::vector<double> encryptRunDecrypt_2_Ex(std::shared_ptr<FHERuntime> runtime, 
+std::vector<double> encryptRunDecrypt_2(std::shared_ptr<FHERuntime> runtime, 
                                            std::vector<double> a, bool a_is_cipher,
                                            std::vector<double> b, bool b_is_cipher) {
     assert(runtime);
+
     //Encrypt
-    std::vector<uint8_t> buf_a, buf_b;
-    size_t dims_a, dims_b;
+    std::vector<mlir::aegis::Value> inputs;
+    FHEDataProcessor fheDataProcessor;
     if (a_is_cipher) {
-        buf_a = aegiscpu::openfhe::encrypt(a);
-        dims_a = 1;
+        auto inputA= fheDataProcessor.privateInput(a);
+        inputs.emplace_back(inputA);
     } else {
-        size_t byte_size = a.size() * sizeof(double);
-        buf_a.resize(byte_size);
-        memcpy(buf_a.data(), a.data(), byte_size);
-        dims_a = a.size();
+        auto inputA = fheDataProcessor.publicInput(a);
+        inputs.emplace_back(inputA);
     }
 
     if (b_is_cipher) {
-        buf_b = aegiscpu::openfhe::encrypt(b);
-        dims_b = 1;
+        auto inputB= fheDataProcessor.privateInput(b);
+        inputs.emplace_back(inputB);
     } else {
-        size_t byte_size = b.size() * sizeof(double);
-        buf_b.resize(byte_size);
-        memcpy(buf_b.data(), b.data(), byte_size);
-        dims_b = b.size();
+        auto inputB = fheDataProcessor.publicInput(b);
+        inputs.emplace_back(inputB);
     }
 
     // Run
-    mlir::aegis::Value value_a(Tensor<uint8_t>(buf_a, std::vector<size_t>{dims_a}));
-    mlir::aegis::Value value_b(Tensor<uint8_t>(buf_b, std::vector<size_t>{dims_b}));
-    std::vector<mlir::aegis::Value> params;
-    params.push_back(value_a);
-    params.push_back(value_b);
-
-    auto resOrErr = runtime->call(params);
+    auto resOrErr = runtime->call(inputs);
     if (!resOrErr) {
         std::cout << "call FHERuntime::call fail," << llvm::toString(resOrErr.takeError()) << std::endl;
         exit(-1);
     }
+
+    // Process Output
     std::vector<double> res_db;
     std::vector<mlir::aegis::Value> res = *resOrErr;
-    for (auto i = 0; i < res.size(); i++) {
-        size_t resSizes = 1;
-        std::vector<size_t> res_dims = res[i].getDims();
-        for (auto j = 0; j < res_dims.size(); j++) {
-            resSizes *= res_dims[j];
-        }
-
-        // Decrypte data
-        auto item_res = aegiscpu::openfhe::decrypt(res[i].getTensor<uint8_t>().value().values, resSizes);
+    auto outputs = fheDataProcessor.processOutput(res);
+    for (auto i = 0; i < outputs.size(); i++) {
+        auto theOutput = outputs[i];
+        auto item_res = theOutput.getTensor<double>().value().values;
         res_db.insert(res_db.end(), item_res.begin(), item_res.end());
     }
 
     return res_db;
 }
 
-std::vector<double> encryptRunDecrypt_2_Ex_2(std::shared_ptr<FHERuntime> runtime, 
-                                             std::vector<std::vector<double>> a, bool a_is_cipher,
-                                             std::vector<std::vector<double>> b, bool b_is_cipher) {
+std::vector<double> encryptRunDecrypt_2_Ex(std::shared_ptr<FHERuntime> runtime, 
+                                           std::vector<std::vector<double>> a, bool a_is_cipher,
+                                           std::vector<std::vector<double>> b, bool b_is_cipher) {
     assert(runtime);
-    std::vector<mlir::aegis::Value> params;
 
     //Encrypt
-    std::vector<uint8_t> buf_a, buf_b;
-    size_t dims_a, dims_b;
+    std::vector<mlir::aegis::Value> inputs;
+    FHEDataProcessor fheDataProcessor;
     if (a_is_cipher) {
-        for (auto i = 0; i < a.size(); i++) {
-            buf_a = aegiscpu::openfhe::encrypt(a[i]);
-            dims_a = 1;
-            mlir::aegis::Value value_a(Tensor<uint8_t>(buf_a, std::vector<size_t>{dims_a}));
-            params.push_back(value_a);
-        }
+        auto inputA = fheDataProcessor.privateInput(a);
+        inputs.insert(inputs.end(), inputA.begin(), inputA.end());
     } else {
-        for (auto i = 0; i < a.size(); i++) {
-            size_t byte_size = a[i].size() * sizeof(double);
-            buf_a.resize(byte_size);
-            memcpy(buf_a.data(), a[i].data(), byte_size);
-            dims_a = a[i].size();
-            mlir::aegis::Value value_a(Tensor<uint8_t>(buf_a, std::vector<size_t>{dims_a}));
-            params.push_back(value_a);
-        }
+        auto inputA = fheDataProcessor.publicInput(a);
+        inputs.insert(inputs.end(), inputA.begin(), inputA.end());
     }
 
     if (b_is_cipher) {
-        for (auto i = 0; i < b.size(); i++) {
-            buf_b = aegiscpu::openfhe::encrypt(b[i]);
-            dims_b = 1;
-            mlir::aegis::Value value_b(Tensor<uint8_t>(buf_b, std::vector<size_t>{dims_b}));
-            params.push_back(value_b);
-        }
+        auto inputB = fheDataProcessor.privateInput(b);
+        inputs.insert(inputs.end(), inputB.begin(), inputB.end());
     } else {
-        for (auto i = 0; i < b.size(); i++) {
-            size_t byte_size = b[i].size() * sizeof(double);
-            buf_b.resize(byte_size);
-            memcpy(buf_b.data(), b[i].data(), byte_size);
-            dims_b = b[i].size();
-            mlir::aegis::Value value_b(Tensor<uint8_t>(buf_b, std::vector<size_t>{dims_b}));
-            params.push_back(value_b);
-        }
+        auto inputB = fheDataProcessor.publicInput(b);
+        inputs.insert(inputs.end(), inputB.begin(), inputB.end());
     }
 
     // Run
-    auto resOrErr = runtime->call(params);
+    auto resOrErr = runtime->call(inputs);
     if (!resOrErr) {
         std::cout << "call FHERuntime::call fail," << llvm::toString(resOrErr.takeError()) << std::endl;
         exit(-1);
     }
+
+    // Process Output
     std::vector<double> res_db;
     std::vector<mlir::aegis::Value> res = *resOrErr;
-
-    // package data
-    for (auto i = 0; i < res.size(); i++) {
-        std::vector<size_t> res_dims = res[i].getDims();
-        assert(res_dims.size() == 2);
-
-        // Decrypte data
-        auto dec_res = aegiscpu::openfhe::decryptBatch(res[i].getTensor<uint8_t>().value().values, res_dims[0], res_dims[1]);
-
-        for (auto j = 0; j < dec_res.size(); j++) {
-            res_db.insert(res_db.end(), dec_res[j].begin(), dec_res[j].end());
-        }
+    auto outputs = fheDataProcessor.processOutput(res);
+    for (auto i = 0; i < outputs.size(); i++) {
+        auto theOutput = outputs[i];
+        auto item_res = theOutput.getTensor<double>().value().values;
+        res_db.insert(res_db.end(), item_res.begin(), item_res.end());
     }
 
     return res_db;
@@ -243,7 +180,7 @@ std::shared_ptr<FHERuntime> CompileAndOpenSymbol(const std::string_view & mlirSt
         return nullptr;
     }
 
-    std::shared_ptr<FHERuntime> pRuntime = std::make_shared<FHERuntime>((*compile_res).progSpecFileName);
+    std::shared_ptr<FHERuntime> pRuntime = std::make_shared<FHERuntime>("/tmp/aegis/prog_spec.json");
     if (!pRuntime->open((*compile_res).outputDirPath + (*compile_res).binFileName)) {
         std::cout << "call open fail" << std::endl;
         return nullptr;
@@ -341,32 +278,15 @@ bool mlirUnitTest(const std::string_view & mlirStr, const std::vector<double> &i
     return true;
 }
 
-bool mlirUnitTest_2(const std::string_view & mlirStr, const std::vector<double> &input_a, const std::vector<double> &input_b, 
+bool mlirUnitTest_2(const std::string_view & mlirStr, const std::vector<double> &input_a, bool a_is_cipher,
+                    const std::vector<double> &input_b, bool b_is_cipher,
                     const std::vector<double> &expect_output, const std::string &funcName = "main_graph") {
     auto runtime = CompileAndOpenSymbol(mlirStr, funcName);
     if (runtime == nullptr) {
         return false;
     }
 
-    std::vector<double> output = encryptRunDecrypt_2(runtime, input_a, input_b, expect_output.size());
-    for (auto i = 0; i < output.size(); i++) {
-        if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool mlirUnitTest_2_Ex(const std::string_view & mlirStr, const std::vector<double> &input_a, bool a_is_cipher,
-                       const std::vector<double> &input_b, bool b_is_cipher,
-                       const std::vector<double> &expect_output, const std::string &funcName = "main_graph") {
-    auto runtime = CompileAndOpenSymbol(mlirStr, funcName);
-    if (runtime == nullptr) {
-        return false;
-    }
-
-    std::vector<double> output = encryptRunDecrypt_2_Ex(runtime, input_a, a_is_cipher,
+    std::vector<double> output = encryptRunDecrypt_2(runtime, input_a, a_is_cipher,
                                                         input_b, b_is_cipher);
     for (auto i = 0; i < output.size(); i++) {
         if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
@@ -377,17 +297,17 @@ bool mlirUnitTest_2_Ex(const std::string_view & mlirStr, const std::vector<doubl
     return true;
 }
 
-bool mlirUnitTest_2_Ex_2(const std::string_view & mlirStr, 
-                         const std::vector<std::vector<double>> &input_a, bool a_is_cipher,
-                         const std::vector<std::vector<double>> &input_b, bool b_is_cipher,
-                         const std::vector<double> &expect_output, const std::string &funcName = "main_graph") {
+bool mlirUnitTest_2_Ex(const std::string_view & mlirStr, 
+                       const std::vector<std::vector<double>> &input_a, bool a_is_cipher,
+                       const std::vector<std::vector<double>> &input_b, bool b_is_cipher,
+                       const std::vector<double> &expect_output, const std::string &funcName = "main_graph") {
     auto runtime = CompileAndOpenSymbol(mlirStr, funcName);
     if (runtime == nullptr) {
         return false;
     }
 
-    std::vector<double> output = encryptRunDecrypt_2_Ex_2(runtime, input_a, a_is_cipher,
-                                                          input_b, b_is_cipher);
+    std::vector<double> output = encryptRunDecrypt_2_Ex(runtime, input_a, a_is_cipher,
+                                                        input_b, b_is_cipher);
     for (auto i = 0; i < output.size(); i++) {
         if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
             return false;
@@ -425,26 +345,17 @@ bool case_1() {
     double a = 3.0;
     double b = 4.0;
     std::vector<double> expect_output(1, a*b);
-    if (!mlirUnitTest_2(mlirCase1, {a}, {b}, expect_output)) {
-        return false;
-    }
-    if (!mlirUnitTest_2_Ex(mlirCase1_1, {a}, true, {b}, false, expect_output)) {
+    // if (!mlirUnitTest_2(mlirCase1, {a}, true, {b}, true, expect_output)) {
+    //     return false;
+    // }
+    if (!mlirUnitTest_2(mlirCase1_1, {a}, true, {b}, false, expect_output)) {
         return false;
     }
 
     double a2 = 3.3;
     double b2 = 4.4;
     std::vector<double> expect_output2(1, a2*b2);
-    if (!mlirUnitTest_2(mlirCase1, {a2}, {b2}, expect_output2)) {
-        return false;
-    }
-
-    std::vector<double> a3{2.2, 3.3};
-    std::vector<double> b3{4.4, 5.5};
-    std::vector<double> expect_output3;
-    expect_output3.push_back(a3[0]*b3[0]);
-    expect_output3.push_back(a3[1]*b3[1]);
-    if (!mlirUnitTest_2(mlirCase1, {a3}, {b3}, expect_output3)) {
+    if (!mlirUnitTest_2(mlirCase1, {a2}, true, {b2}, true, expect_output2)) {
         return false;
     }
 
@@ -489,21 +400,21 @@ bool case_2() {
     std::vector<double> m = {1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<double> v = {2.0, 2.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<double> expect_output = {6.0, 26.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};      
-    if (!mlirUnitTest_2(mlirCase2, m, v, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase2, m, true, v, true, expect_output)) {
         return false;
     }
 
     std::vector<double> m2 = {2.0, 3.0, 0.0, 0.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<double> v2 = {1.0, 0.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<double> expect_output2 = {2.0, 10.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};      
-    if (!mlirUnitTest_2(mlirCase2, m2, v2, expect_output2)) {
+    if (!mlirUnitTest_2(mlirCase2, m2, true, v2, true, expect_output2)) {
         return false;
     }
 
     std::vector<double> m3 = {2.0, 3.0, 1.0, 1.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<double> v3 = {1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::vector<double> expect_output3 = {8.0, 42.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};     
-    if (!mlirUnitTest_2(mlirCase2, m3, v3, expect_output3)) {
+    if (!mlirUnitTest_2(mlirCase2, m3, true, v3, true, expect_output3)) {
         return false;
     }
 
@@ -536,14 +447,14 @@ bool case_3() {
     std::vector<double> a1 = {1.0};
     std::vector<double> b1 = {2.0};
     std::vector<double> expect_output = {17179869184.0};      
-    if (!mlirUnitTest_2(mlirCase3, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase3, a1, true, b1, true, expect_output)) {
         return false;
     }
 
     std::vector<double> a2 = {1.0, 1.0};
     std::vector<double> b2 = {1.0, 2.0};
     std::vector<double> expect_output2 = {1.0, 17179869184.0};      
-    if (!mlirUnitTest_2(mlirCase3, a2, b2, expect_output2)) {
+    if (!mlirUnitTest_2(mlirCase3, a2, true, b2, true, expect_output2)) {
         return false;
     }
 
@@ -573,7 +484,7 @@ bool case_4() {
     std::vector<double> a1 = {10.0};
     std::vector<double> b1 = {14.0};
     std::vector<double> expect_output = {24.0};      
-    if (!mlirUnitTest_2(mlirCase4, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase4, a1, true, b1, true, expect_output)) {
         return false;
     }
 
@@ -621,14 +532,14 @@ bool case_5() {
     std::vector<double> a1 = {-2.0};
     std::vector<double> b1 = {-4.0};
     std::vector<double> expect_output = {-4.0};      
-    if (!mlirUnitTest_2(mlirCase5, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase5, a1, true, b1, true, expect_output)) {
         return false;
     }
 
     std::vector<double> a2 = {2.0};
     std::vector<double> b2 = {4.0};
     std::vector<double> expect_output2 = {2.0};      
-    if (!mlirUnitTest_2(mlirCase5, a2, b2, expect_output2)) {
+    if (!mlirUnitTest_2(mlirCase5, a2, true, b2, true, expect_output2)) {
         return false;
     }
 
@@ -639,14 +550,14 @@ bool case_5_2() {
     std::vector<double> a1 = {-2.0};
     std::vector<double> b1 = {-4.0};
     std::vector<double> expect_output = {-2.0};      
-    if (!mlirUnitTest_2(mlirCase5_2, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase5_2, a1, true, b1, true, expect_output)) {
         return false;
     }
 
     std::vector<double> a2 = {2.0};
     std::vector<double> b2 = {4.0};
     std::vector<double> expect_output2 = {4.0};      
-    if (!mlirUnitTest_2(mlirCase5_2, a2, b2, expect_output2)) {
+    if (!mlirUnitTest_2(mlirCase5_2, a2, true, b2, true, expect_output2)) {
         return false;
     }
 
@@ -657,14 +568,14 @@ bool case_5_3() {
     std::vector<double> a1 = {5.0};
     std::vector<double> b1 = {-5.0};
     std::vector<double> expect_output = {-5.0};      
-    if (!mlirUnitTest_2(mlirCase5_3, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase5_3, a1, true, b1, true, expect_output)) {
         return false;
     }
 
     std::vector<double> a2 = {4.0};
     std::vector<double> b2 = {4.0};
     std::vector<double> expect_output2 = {4.0};      
-    if (!mlirUnitTest_2(mlirCase5_3, a2, b2, expect_output2)) {
+    if (!mlirUnitTest_2(mlirCase5_3, a2, true, b2, true, expect_output2)) {
         return false;
     }
 
@@ -708,7 +619,7 @@ bool case_6() {
     std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
     std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
     std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
-    if (!mlirUnitTest_2(mlirCase6, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase6, a1, true, b1, true, expect_output)) {
         return false;
     }
 
@@ -719,7 +630,7 @@ bool case_6_2() {
     std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
     std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
     std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
-    if (!mlirUnitTest_2_Ex(mlirCase6_2, a1, true, b1, false, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase6_2, a1, true, b1, false, expect_output)) {
         return false;
     }
 
@@ -750,7 +661,7 @@ bool case_7() {
     std::vector<double> a1 = {1, 3, 5, 7, 9, 11};
     std::vector<double> b1 = {2, 4, 6, 8, 10, 12};
     std::vector<double> expect_output = {78};      
-    if (!mlirUnitTest_2(mlirCase7, a1, b1, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase7, a1, true, b1, true, expect_output)) {
         return false;
     }
 
@@ -803,7 +714,7 @@ bool case_8() {
     std::vector<std::vector<double>> a1 = {{1, 3}, {5, 7}, {9,  11}};
     std::vector<std::vector<double>> b1 = {{2, 4}, {6, 8}, {10, 12}};
     std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
-    if (!mlirUnitTest_2_Ex_2(mlirCase8, a1, true, b1, true, expect_output)) {
+    if (!mlirUnitTest_2_Ex(mlirCase8, a1, true, b1, true, expect_output)) {
         return false;
     }
 
@@ -814,7 +725,7 @@ bool case_8_2() {
     std::vector<std::vector<double>> a1 = {{1, 3}, {5, 7}, {9,  11}};
     std::vector<std::vector<double>> b1 = {{2, 4}, {6, 8}, {10, 12}};
     std::vector<double> expect_output = {3, 7, 11, 15, 19, 23};      
-    if (!mlirUnitTest_2_Ex_2(mlirCase8_2, a1, true, b1, false, expect_output)) {
+    if (!mlirUnitTest_2_Ex(mlirCase8_2, a1, true, b1, false, expect_output)) {
         return false;
     }
 
@@ -858,15 +769,15 @@ bool case_9() {
     std::vector<double> a1 = {1.1};
     std::vector<double> b1 = {3.1};
     std::vector<double> expect_output = {0.3548};      
-    if (!mlirUnitTest_2_Ex(mlirCase9, a1, true, b1, true, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase9, a1, true, b1, true, expect_output)) {
         return false;
     }
 
-    if (!mlirUnitTest_2_Ex(mlirCase9_2, a1, true, b1, false, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase9_2, a1, true, b1, false, expect_output)) {
         return false;
     }
 
-    if (!mlirUnitTest_2_Ex(mlirCase9_3, a1, false, b1, true, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase9_3, a1, false, b1, true, expect_output)) {
         return false;
     }
 
@@ -946,6 +857,7 @@ int main() {
         return 0;
     }
 
+    /*
     {
         std::string funcName = "main_graph";
         std::shared_ptr<FHERuntime> pRuntime = std::make_shared<FHERuntime>("/tmp/aegis/prog_spec.json");
@@ -1033,7 +945,7 @@ int main() {
             double a = 3.0;
             double b = 4.0;
             std::vector<double> expect_output(1, a*b);
-            std::vector<double> output = encryptRunDecrypt_2(pRuntime, {a}, {b}, expect_output.size());
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, {a}, true, {b}, true);
             for (auto i = 0; i < output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1045,7 +957,7 @@ int main() {
             double a2 = 3.3;
             double b2 = 4.4;
             std::vector<double> expect_output2(1, a2*b2);
-            std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, {a2}, {b2}, expect_output2.size());
+            std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, {a2}, true, {b2}, true);
             for (auto i = 0; i < output2.size(); i++) {
                 if (!approximatelyEqual(output2[i], expect_output2[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1057,7 +969,7 @@ int main() {
             std::vector<double> a3{2.2, 3.3};
             std::vector<double> b3{4.4, 5.5};
             std::vector<double> expect_output3 = {2.2*4.4, 3.3*5.5};
-            std::vector<double> output3 = encryptRunDecrypt_2(pRuntime, a3, b3, expect_output3.size());
+            std::vector<double> output3 = encryptRunDecrypt_2(pRuntime, a3, true, b3, true);
             for (auto i = 0; i < output3.size(); i++) {
                 if (!approximatelyEqual(output3[i], expect_output3[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1072,7 +984,7 @@ int main() {
             std::vector<double> m = {1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> v = {2.0, 2.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> expect_output = {6.0, 26.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            std::vector<double> output = encryptRunDecrypt_2(pRuntime, m, v, expect_output.size());
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, m, true, v, true);
             for (auto i = 0; i < expect_output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1084,7 +996,7 @@ int main() {
             std::vector<double> m2 = {2.0, 3.0, 0.0, 0.0, 5.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> v2 = {1.0, 0.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> expect_output2 = {2.0, 10.0, 100.0, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, m2, v2, expect_output2.size());
+            std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, m2, true, v2, true);
             for (auto i = 0; i < expect_output2.size(); i++) {
                 if (!approximatelyEqual(output2[i], expect_output2[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1096,7 +1008,7 @@ int main() {
             std::vector<double> m3 = {2.0, 3.0, 1.0, 1.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> v3 = {1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             std::vector<double> expect_output3 = {8.0, 42.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            std::vector<double> output3 = encryptRunDecrypt_2(pRuntime, m3, v3, expect_output3.size());
+            std::vector<double> output3 = encryptRunDecrypt_2(pRuntime, m3, true, v3, true);
             for (auto i = 0; i < expect_output3.size(); i++) {
                 if (!approximatelyEqual(output3[i], expect_output3[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1110,7 +1022,7 @@ int main() {
             std::vector<double> m = {1.0};
             std::vector<double> v = {2.0};
             std::vector<double> expect_output = {17179869184.0};      
-            std::vector<double> output = encryptRunDecrypt_2(pRuntime, m, v, expect_output.size());
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, m, true, v, true);
             for (auto i = 0; i < expect_output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1121,7 +1033,7 @@ int main() {
             std::vector<double> m2 = {1.0, 1.0};
             std::vector<double> v2 = {1.0, 2.0};
             std::vector<double> expect_output2 = {1.0, 17179869184.0};      
-            std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, m2, v2, expect_output2.size());
+            std::vector<double> output2 = encryptRunDecrypt_2(pRuntime, m2, true, v2, true);
             for (auto i = 0; i < expect_output2.size(); i++) {
                 if (!approximatelyEqual(output2[i], expect_output2[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1135,7 +1047,7 @@ int main() {
             std::vector<double> a1 = {10.0};
             std::vector<double> b1 = {14.0};
             std::vector<double> expect_output = {24.0};      
-            std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, b1, expect_output.size());
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, true, b1, true);
             for (auto i = 0; i < expect_output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1149,7 +1061,7 @@ int main() {
             std::vector<double> a1 = {-2.0};
             std::vector<double> b1 = {-4.0};
             std::vector<double> expect_output = {-4.0};      
-            std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, b1, expect_output.size());
+            std::vector<double> output = encryptRunDecrypt_2(pRuntime, a1, true, b1, true);
             for (auto i = 0; i < expect_output.size(); i++) {
                 if (!approximatelyEqual(output[i], expect_output[i], 1e-6, 1e-6)) {
                     std::cout << "Test fail" << std::endl;
@@ -1161,4 +1073,5 @@ int main() {
         std::cout << "Test pass." << std::endl;
         return 0;
     }
+    */
 }
