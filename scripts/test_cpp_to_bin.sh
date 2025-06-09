@@ -32,7 +32,7 @@ OPENFHE_LIB2="$SCRIPT_DIR/../third_party/openfhe/build/lib"
 
 # Compilation command with optimization flags
 #set -x
-$COMPILER -fuse-ld=gold -shared -fPIC -std=c++17 -O2 \
+$COMPILER -g -shared -fPIC -std=c++17 -O2 \
     -I"$OPENFHE_INCLUDE" \
     -I"$OPENFHE_INCLUDE2" \
     -I"$OPENFHE_INCLUDE3" \
