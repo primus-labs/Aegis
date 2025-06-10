@@ -10,8 +10,8 @@ namespace aegiscpu {
 namespace openfhe {
 
 class KeysetGenerator {
-public:
-  static void generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo);
+  public:
+    static void generate(ProtoMessage<aegisprotocol::KeyInfo> &keyInfo);
 };
 
 } // namespace openfhe {
