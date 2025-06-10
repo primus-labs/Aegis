@@ -19,7 +19,7 @@ mkdir -p build
 cd build
 
 cmake -G Ninja ../llvm \
-  -DLLVM_ENABLE_PROJECTS="mlir;clang;openmp" \
+  -DLLVM_ENABLE_PROJECTS="mlir" \
   -DLLVM_BUILD_EXAMPLES=OFF \
   -DLLVM_TARGETS_TO_BUILD="${llvm_targets_to_build}" \
   -DCMAKE_BUILD_TYPE=Release \
@@ -35,6 +35,7 @@ cmake -G Ninja ../llvm \
   -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
   -DMLIR_INCLUDE_TESTS=OFF
 ninja -j8
+sudo ninja install
 
 
 echo "****************************************************"
@@ -61,6 +62,7 @@ mkdir -p build
 cd build
 cmake .. -DRUN_HAVE_POSIX_REGEX=0
 make -j8
+sudo make install
 
 
 echo "****************************************************"
