@@ -5,7 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "primus"
 version = "0.1.0"
-description = "Aegis"
+license = "Apache-2.0"
+urls = { home-page = "https://fhe.primuslabs.xyz/docs/intro/" }
+description = "Aegis is an open-source framework based on MLIR that simplifies the use of Fully Homomorphic Encryption (FHE)."
 authors = [{ name = "Primus", email = "a@primus.com" }]
 readme = "README.md"
 dependencies = []
