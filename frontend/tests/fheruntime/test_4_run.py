@@ -19,11 +19,12 @@ if __name__ == '__main__':
     if test_server_api:
         server = Server()
         server.load_pub_keys(pub_keys_path)
-        compile_result = server.load(archive_path)
-        output = server.run([private_data_1, private_data_2], compile_result)
+        server.load(archive_path)
+        output = server.run([private_data_1, private_data_2])
     else:
         inference_session = InferenceSession()
         inference_session.get_server().load_pub_keys(pub_keys_path)
-        output = inference_session.run(['Y'], {'X1': private_data_1, 'X2': private_data_2}, archive_path)
+        inference_session.get_server().load(archive_path)
+        output = inference_session.run(['Y'], {'X1': private_data_1, 'X2': private_data_2})
 
     save_data_array(output, data_dir + '/output.bin')

@@ -19,7 +19,7 @@ def test_compile() -> str:
         server = Server()
         # compile_result = server.compile(onnx_file = onnx_file_path)
         compile_result = server.compile(py_function = add_1d_6elements)
-        archive_path = server.save(compile_result, compile_result.outputDirPath)
+        archive_path = server.save(compile_result, compile_result.get_output_dir_path())
     else:
         inference_session = InferenceSession(path_or_bytes = onnx_file_path)
         archive_path = inference_session.get_archive_path()

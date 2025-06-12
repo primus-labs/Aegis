@@ -1,5 +1,6 @@
 from .data_processor import FHEDataProcessor
 from .keyset_manager import FHEKeysetManager
+from .compiler import FHECompileResult
 from primus_aegis import Value
 import numpy as np
 from typing import List
@@ -22,7 +23,29 @@ class FHEClient:
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
 
-    def keygen(self, prog_spec_file: str):
+    def load(self, archive_path: str) -> FHECompileResult:
+        tmp_dir = tempfile.mkdtemp()
+        print('unpack dir', tmp_dir)
+        print(archive_path)
+        shutil.unpack_archive(archive_path, tmp_dir, 'zip')
+        with open(tmp_dir + '/' + 'compile_result.json', 'r') as f:
+            content = f.read()
+        self._compile_result = FHECompileResult.from_json(content)
+        self._compile_result.set_output_dir_path(tmp_dir)
+        print(self._compile_result.to_json())
+        return self._compile_result
+
+    def keygen(self, compile_result_or_file: FHECompileResult | str):
+        if isinstance(compile_result_or_file, str):
+            if compile_result_or_file.endswith('.zip'):
+                compile_result_or_file = self.load(compile_result_or_file) 
+            elif compile_result_or_file.endswith('.json'):
+                prog_spec_file = compile_result_or_file
+            else:
+                raise RuntimeError('not supported keygen parameter')
+
+        if isinstance(compile_result_or_file, FHECompileResult):
+            prog_spec_file = compile_result_or_file.get_prog_spec_file_path()
         self._keyset_manager.keygen(prog_spec_file)
         self._are_keys_loaded = True
 
