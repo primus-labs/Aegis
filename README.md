@@ -17,6 +17,7 @@ sudo apt update
 sudo apt install clang
 sudo apt install python3
 sudo apt install python3-pip
+sudo pip install setuptools
 sudo pip install build 
 sudo pip install torch          
 sudo pip install tensorflow     # (Optional)
@@ -30,6 +31,7 @@ sudo yum update
 sudo yum install clang
 sudo yum install python3
 sudo yum install python3-pip
+sudo pip install setuptools
 sudo pip install build
 sudo pip install torch          
 sudo pip install tensorflow     # (Optional)
@@ -45,9 +47,10 @@ brew install ninja
 brew install lld clang
 brew install python3
 brew install protobuf
+brew install libomp
+pip3 install setuptools
 pip3 install build
 pip3 install onnx
-brew install libomp
 ```
 
 ### Installation
@@ -67,7 +70,10 @@ pip install ./frontend/dist/primus-0.1.0-py3-none-any.whl
 
 #### Using Docker
 
-Aegis will offer Docker images in the future, which you can obtain and use with the following commands:
+Docker images are **not yet available**! The Docker functionality described below is **planned for future release** but **not yet implemented**.
+
+##### Future Usage (When Released)​​
+Once Docker support is available, you'll use:
 
 ```shell
 docker pull primus/aegis:v0.1.0
@@ -88,51 +94,52 @@ Here is the full examples:
 - ONNX model sample​
   ```python
     from primus.aegis.fheruntime import LocalFHEInferenceSession as LocalInferenceSession
-    from typing import List
     import numpy as np
 
     data_1 = np.array([1, 3, 5, 7, 9, 11], dtype = np.float32)
     data_2 = np.array([2, 4, 6, 8, 10, 12], dtype = np.float32)
 
-    inference_session = LocalInferenceSession(path_or_bytes = "/path/to/add.onnx")
+    inference_session = LocalInferenceSession("/path/to/add.onnx")
     output = inference_session.encrypt_run_decrypt(['Y'], {'X1': data_1, 'X2': data_2})
     print(output)
   ```
 
-- ​​Target function sample​(TODO)
+- ​​Target function sample
   ```python
     from primus.aegis.fheruntime import FHEServer as Server, FHEClient as Client 
     import numpy as np
 
-    def add_1d_6elements(X1: list[float, 6], X2: list[float, 6]) -> list[float, 6]:
+    def add_1d(X1: list[float, 6], X2: list[float, 6]) -> list[float, 6]:
         for i in range(6):
             X1[i] = X1[i] + X2[i]
         return X1
 
     # compile the target function
     server = Server()
-    compile_result = server.compile(py_function = add_1d_6elements)
+    compile_result = server.compile(add_1d)
 
     # key gen
     client = Client()
-    client.keygen(compile_result.prog_spec_path)
-    client.dump_pub_keys(pub_keys_path)
+    client.keygen(compile_result)
+    eva_keys = "/tmp/eva_keys.bin"
+    client.save_eva_keys(eva_keys)
 
     # encrypte
     private_data_1 = np.array([1, 3, 5, 7, 9, 11])
     private_data_2 = np.array([2, 4, 6, 8, 10, 12])
-    enc_val1, enc_val2 = client.encrypt([private_data_1, private_data_2], True)
+    enc_val1, enc_val2 = client.encrypt([private_data_1, private_data_2])
 
     # run
-    server.load_pub_keys(pub_keys_path)
-    enc_output = server.run([enc_val1, enc_val2], compile_result)
+    server.load_eva_keys(eva_keys)
+    enc_output = server.run([enc_val1, enc_val2])
 
     # decrypte
-    output = client.decrypt(enc_output)
-    print(output)
+    pt_output = client.decrypt(enc_output)
+    print(pt_output)
   ```
 
 ## Resources
+- [Quick Start](https://fhe.primuslabs.xyz/docs/Quick%20Start/quick_start)
 - [Core Architecture](https://fhe.primuslabs.xyz/docs/Installation/core_architecture)
 - [Compilation Workflow](https://fhe.primuslabs.xyz/docs/Installation/compile_workflow)
 
