@@ -68,7 +68,7 @@ class FHEInferenceSession:
         else:
             return [output_data[all_output_names.index(element)] for element in output_names]
 
-    def run(self, output_names: List[str], input_feed, archive_path: str) -> Value | List[Value] | bytes | List[bytes]:
+    def run(self, output_names: List[str], input_feed) -> Value | List[Value] | bytes | List[bytes]:
         compile_result = self._server.get_compile_result()
         (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
         self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)

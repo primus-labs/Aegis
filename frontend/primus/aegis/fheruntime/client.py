@@ -3,6 +3,8 @@ from .keyset_manager import FHEKeysetManager
 from .compiler import FHECompileResult
 from primus_aegis import Value
 import numpy as np
+import tempfile
+import shutil
 from typing import List
 
 class FHEClient:
