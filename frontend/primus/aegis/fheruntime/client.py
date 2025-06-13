@@ -51,16 +51,16 @@ class FHEClient:
         self._keyset_manager.keygen(prog_spec_file)
         self._are_keys_loaded = True
 
-    def dump_all_keys(self, key_file: str):
+    def save_all_keys(self, key_file_path: str):
         self._require_keys_loaded()
-        self._keyset_manager.dump_all_keys(key_file)
+        self._keyset_manager.save_all_keys(key_file_path)
 
-    def dump_pub_keys(self, key_file: str):
+    def save_eva_keys(self, key_file_path: str):
         self._require_keys_loaded()
-        self._keyset_manager.dump_pub_keys(key_file)
+        self._keyset_manager.save_eva_keys(key_file_path)
 
-    def load_all_keys(self, key_file: str):
-        self._keyset_manager.load_keys(key_file)
+    def load_all_keys(self, key_file_path: str):
+        self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 
     def encrypt(self, plain_input: np.ndarray | List[np.ndarray], serialize_output: bool = False) -> Value | bytes:

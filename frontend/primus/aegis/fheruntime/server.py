@@ -39,8 +39,8 @@ class FHEServer:
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
 
-    def load_pub_keys(self, key_file: str):
-        self._keyset_manager.load_keys(key_file)
+    def load_eva_keys(self, key_file_path: str):
+        self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 
     def _convert_onnx_to_mlir(self, onnx_file: str) -> str:
