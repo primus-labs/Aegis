@@ -56,6 +56,12 @@ sudo ninja install
 
 
 echo "****************************************************"
+echo " setup mlir core python bindings path to PYTHONPATH "
+echo "****************************************************"
+./setup_pythonpath.sh
+
+
+echo "****************************************************"
 echo "**************     build onnx-mlir     *************"
 echo "****************************************************"
 MLIR_DIR=$(pwd)/lib/cmake/mlir
@@ -81,8 +87,7 @@ cmake .. -DRUN_HAVE_POSIX_REGEX=0 \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_BENCHMARKS=OFF \
   -DBUILD_UNITTESTS=OFF \
-  -DBUILD_EXAMPLES=OFF \
-  -DWITH_OPENMP=OFF
+  -DBUILD_EXAMPLES=OFF
 make -j8
 sudo make install
 
