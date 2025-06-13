@@ -1,4 +1,22 @@
-#!/bin/sh
+#!/bin/bash
+
+build_type="Release"
+if [[ $# -gt 0 ]]; then
+    case "${1,,}" in
+        "debug")
+            build_type="Debug"
+            ;;
+        "release")
+            build_type="Release"
+            ;;
+        *)
+            echo "Unknown build type: $1"
+            echo "Valid options: debug | release"
+            exit 1
+            ;;
+    esac
+fi
+
 
 llvm_targets_to_build="X86"
 if [[ $OSTYPE == 'darwin'* ]]; then
@@ -17,7 +35,6 @@ echo "****************************************************"
 cd ../third_party/llvm-project
 mkdir -p build
 cd build
-
 cmake -G Ninja ../llvm \
   -DLLVM_ENABLE_PROJECTS="mlir" \
   -DLLVM_BUILD_EXAMPLES=OFF \
@@ -60,7 +77,12 @@ echo "****************************************************"
 cd ../../openfhe
 mkdir -p build
 cd build
-cmake .. -DRUN_HAVE_POSIX_REGEX=0
+cmake .. -DRUN_HAVE_POSIX_REGEX=0 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_BENCHMARKS=OFF \
+  -DBUILD_UNITTESTS=OFF \
+  -DBUILD_EXAMPLES=OFF \
+  -DWITH_OPENMP=OFF
 make -j8
 sudo make install
 
@@ -71,7 +93,7 @@ echo "****************************************************"
 cd ../../../
 mkdir -p build
 cd build
-cmake ../midend/ -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/
+cmake ../midend/ -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/ -DCMAKE_BUILD_TYPE=${build_type}
 make -j8
 
 
