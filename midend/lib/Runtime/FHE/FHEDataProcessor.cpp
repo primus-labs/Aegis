@@ -86,7 +86,7 @@ Value FHEDataProcessor::processOutput(Value &output) {
     std::vector<double> res;
     if (dims.size() == 1) {
         // size_t plaintextSize = std::accumulate(dims.begin(), dims.end(), (size_t)1, std::multiplies<size_t>());
-        std::vector<double> res = aegiscpu::openfhe::decrypt(tensor.values, dims[0]);
+        res = aegiscpu::openfhe::decrypt(tensor.values, dims[0]);
         
     } else if (dims.size() == 2) {
         std::vector<std::vector<double>> decVal = aegiscpu::openfhe::decryptBatch(tensor.values, dims[0], dims[1]);
