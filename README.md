@@ -17,6 +17,8 @@ sudo apt update
 sudo apt install clang
 sudo apt install python3
 sudo apt install python3-pip
+sudo apt install libomp5
+sudo apt install libomp-dev
 sudo pip install setuptools
 sudo pip install build 
 sudo pip install torch          
@@ -31,6 +33,8 @@ sudo yum update
 sudo yum install clang
 sudo yum install python3
 sudo yum install python3-pip
+sudo yum install libomp
+sudo yum install libomp-devel
 sudo pip install setuptools
 sudo pip install build
 sudo pip install torch          
@@ -47,6 +51,7 @@ brew install ninja
 brew install lld clang
 brew install python3
 brew install protobuf
+brew install cmake
 brew install libomp
 pip3 install setuptools
 pip3 install build
@@ -63,8 +68,8 @@ Install Aegis using the following commands:
 
 ```shell
 git clone https://github.com/primus-labs/Aegis.git
-cd Aegis
-./scripts/build_wheel.sh
+cd Aegis/script/
+./build_wheel.sh
 pip install ./frontend/dist/primus-0.1.0-py3-none-any.whl
 ```
 
@@ -109,6 +114,7 @@ Here is the full examples:
     from primus.aegis.fheruntime import FHEServer as Server, FHEClient as Client 
     import numpy as np
 
+    # define target function
     def add_1d(X1: list[float, 6], X2: list[float, 6]) -> list[float, 6]:
         for i in range(6):
             X1[i] = X1[i] + X2[i]
