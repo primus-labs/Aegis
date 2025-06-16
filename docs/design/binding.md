@@ -1,4 +1,5 @@
 ---
+version 8: 2025.06.16
 version 7: 2025.05.07
 version 6: 2025.04.14
 version 5: 2025.04.02
@@ -160,7 +161,7 @@ classDiagram
   class DataProcessor {
     <<abstract>>
     +privateInput(numpy.ndarray[numpy.float64]) Value
-    +publicInput(numpy.ndarray[numpy.float64]) Value // todo
+    +publicInput(numpy.ndarray[numpy.float64]) Value
     +processOutput(Value) numpy.ndarray[numpy.float64]
   }
   
@@ -200,7 +201,6 @@ Namespace: `primus_aegis.runtime` for FHERuntime.
 classDiagram
   class Runtime {
     <<abstract>>
-    +run(input:Value, CompileResult) Value
     +run(input:List[Value], CompileResult) List[Value]
   }
 
