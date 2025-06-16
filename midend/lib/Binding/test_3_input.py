@@ -23,9 +23,12 @@ for i in range(len(testInputs)):
     plainInput_i = np.array(input["value"], dtype=np.float64)
     print(f"plainInput_{i}:", plainInput_i)
 
-    privateInput_i = FHEDataProcessor.privateInput(plainInput_i)
-    print(f"type of privateInput_{i}:", type(privateInput_i))
-
+    if "type" in input.keys() and input["type"] == "clear":
+        privateInput_i = FHEDataProcessor.publicInput(plainInput_i)
+        print(f"type of publicInput_{i}:", type(privateInput_i))
+    else:
+        privateInput_i = FHEDataProcessor.privateInput(plainInput_i)
+        print(f"type of privateInput_{i}:", type(privateInput_i))
     with open(f"privateInput_{i}.bin", "wb") as f:
         f.write(privateInput_i.to_bytes())
 

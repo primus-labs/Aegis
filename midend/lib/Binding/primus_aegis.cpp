@@ -337,6 +337,27 @@ class PyFHEDataProcessor {
         return pv;
     }
 
+    static PyValue publicInput(const py::array_t<double> &input) {
+        PyValue pv;
+        auto inputValue = Utils::Numpy2Value(input);
+        auto tensor = inputValue.getTensor<double>().value();
+        auto dims = tensor.dims;
+        if (dims.size() == 1) {
+            auto cipherValue = FHEDataProcessor().publicInput(tensor.values);
+            pv.ndim = 1;
+            pv.values.push_back(cipherValue);
+        } else if (dims.size() == 2) {
+            // m x n (dims[0] x dims[1])
+            auto values = reshape2d(tensor.values, dims[0], dims[1]);
+            auto cipherValues = FHEDataProcessor().publicInput(values);
+            pv.ndim = 2;
+            pv.values = cipherValues;
+        } else {
+            throw std::runtime_error("Invalid dims: only support 1-d or 2-d");
+        }
+        return pv;
+    }
+
     static py::array_t<double> processOutput(PyValue &pv) { // TODO:const input
         if (pv.ndim == 1) {
             auto plainValues = FHEDataProcessor().processOutput(pv.values);
@@ -598,6 +619,7 @@ PYBIND11_MODULE(primus_aegis, m) {
     // FHE DataProcessor
     py::class_<PyFHEDataProcessor>(m_dp, "FHEDataProcessor")
         .def_static("privateInput", &PyFHEDataProcessor::privateInput)
+        .def_static("publicInput", &PyFHEDataProcessor::publicInput)
         .def_static("processOutput", &PyFHEDataProcessor::processOutput);
 
     //
