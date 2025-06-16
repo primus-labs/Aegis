@@ -22,8 +22,6 @@ sudo apt install libomp-dev
 sudo pip install setuptools
 sudo pip install build 
 sudo pip install torch          
-sudo pip install tensorflow     # (Optional)
-sudo pip install scikit-learn   # (Optional)
 ```
 
 #### CentOS
@@ -37,9 +35,7 @@ sudo yum install libomp
 sudo yum install libomp-devel
 sudo pip install setuptools
 sudo pip install build
-sudo pip install torch          
-sudo pip install tensorflow     # (Optional)
-sudo pip install scikit-learn   # (Optional)
+sudo pip install torch
 ```
 
 > python version 3.10 or above (which can be checked by running python --version).
@@ -55,7 +51,7 @@ brew install cmake
 brew install libomp
 pip3 install setuptools
 pip3 install build
-pip3 install onnx
+pip install torch
 ```
 
 ### Installation
