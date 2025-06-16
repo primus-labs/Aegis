@@ -16,7 +16,7 @@ export PATH=${curdir}/../third_party/llvm-project/build/bin:$PATH
 #
 #
 # compile
-for ((i = 0; i < 2; i++)); do
+for ((i = 0; i < 3; i++)); do
   export CASE_INDEX=$i
   python test_1_compile.py
   python test_2_generate_key.py
