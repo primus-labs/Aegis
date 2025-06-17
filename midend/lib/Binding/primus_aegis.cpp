@@ -36,7 +36,6 @@ using namespace std;
 
 #include <nlohmann/json.hpp>
 
-#define DEBUG_PRINT 1
 
 namespace mlir::aegis {
 void to_json(nlohmann::json &j, const CompileOptions &x) {
@@ -158,7 +157,7 @@ class Utils {
      */
     static Value Numpy2Value(const py::array_t<double> &input) {
         auto buf = input.request();
-#if DEBUG_PRINT
+#ifndef NDEBUG
         {
             std::stringstream ss;
             ss << "itemsize: " << buf.itemsize << ", size: " << buf.size << ", format: " << buf.format
@@ -189,8 +188,10 @@ class Utils {
         auto tensor = input.getTensor<double>().value(); // TODO: should add getValues()/getDims() for Tensor
         auto values = tensor.values;
         auto dims = tensor.dims;
+#ifndef NDEBUG
         cout << "dims.size() " << dims.size() << endl;
         cout << "values " << values.size() << endl;
+#endif
         return py::array_t<double>(dims, values.data());
     }
 
@@ -431,7 +432,9 @@ class PyFHERuntime {
             if (funcName.empty()) {
                 throw std::runtime_error("Cannot get function name");
             }
+#ifndef NDEBUG
             std::cout << "funcName: " << funcName << std::endl;
+#endif
 
             auto result = rt.resolveSymbol(funcName);
             if (!result) {
