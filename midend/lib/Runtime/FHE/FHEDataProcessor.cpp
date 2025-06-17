@@ -42,45 +42,16 @@ std::vector<Value> FHEDataProcessor::publicInput(const std::vector<std::vector<d
     return inputData;
 }
 
-std::vector<Value> FHEDataProcessor::privateInput(std::vector<Value> &args) {
-    std::vector<Value> inputData;
-    for (auto& arg : args) {
-        inputData.push_back(privateInput(arg));
-    }
-    
-    return inputData;
-}
-
-std::vector<Value> FHEDataProcessor::publicInput(std::vector<Value> &args) {
-    std::vector<Value> inputData;
-    for (auto& arg : args) {
-        inputData.push_back(publicInput(arg));
-    }
-
-    return inputData;
-}
-
-std::vector<Value> FHEDataProcessor::processOutput(std::vector<Value> &outputs) {
+std::vector<Value> FHEDataProcessor::processOutput(const std::vector<Value> &outputs) {
     std::vector<Value> outputData;
-    for (auto& output : outputs) {
-        outputData.push_back(processOutput(output));
+    for (auto const& output : outputs) {
+        outputData.emplace_back(processOutput(output));
     }
 
     return outputData;
 }
 
-Value FHEDataProcessor::privateInput(Value &arg) {
-    auto tensor = arg.getTensor<double>().value();
-    std::vector<uint8_t> res = aegiscpu::openfhe::encrypt(tensor.values);
-    Tensor<uint8_t> resBuf(res, arg.getDims());
-    return Value(resBuf);
-}
-
-Value FHEDataProcessor::publicInput(Value &arg) {
-    return arg;
-}
-
-Value FHEDataProcessor::processOutput(Value &output) {
+Value FHEDataProcessor::processOutput(const Value &output) {
     auto tensor = output.getTensor<uint8_t>().value();
     auto dims = output.getDims();
     std::vector<double> res;
