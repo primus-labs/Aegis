@@ -165,13 +165,14 @@ void InsertEmitcPreamblePass::runOnOperation() {
         // Insert compare related implementation functions
         ProtoMessage<aegisprotocol::StatsInfo> statsInfos = progSpec.getStatsInfo();
         if (statsInfos.asReader().getCmpCount() || statsInfos.asReader().getSelCount()) {
-            auto cmpFuncs = std::string(llvm::formatv(kCmpFuncsTemplate.data(), batchSize));
+            auto cmpFuncs = std::string(llvm::formatv(kCmpFuncsTemplate.data(), batchSize, LOWER_BOUND, UPPER_BOUND, POLY_DEGREE));
             builder.create<emitc::VerbatimOp>(op->getLoc(), cmpFuncs);
         }
 
         // Insert division related implementation functions
         if (statsInfos.asReader().getDivCount() || statsInfos.asReader().getRecipCount()) {
-            builder.create<emitc::VerbatimOp>(op->getLoc(), kDivFuncsTemplate);
+            auto divFuncs = std::string(llvm::formatv(kDivFuncsTemplate.data(), LOWER_BOUND, UPPER_BOUND, POLY_DEGREE));
+            builder.create<emitc::VerbatimOp>(op->getLoc(), divFuncs);
         }
 
         // Insert alloc implementation functions

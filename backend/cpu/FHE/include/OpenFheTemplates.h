@@ -280,7 +280,7 @@ Ciphertext<DCRTPoly> EvalCmpWithZero(Ciphertext<DCRTPoly>& x) {{
     auto approx = [](double d) {{
         return 1.0 / (1.0 + std::exp(-15 * d));
     };
-    return clientCC->EvalChebyshevFunction(approx, x, -10, 10, 156);
+    return clientCC->EvalChebyshevFunction(approx, x, {1}, {2}, {3});
 }
 
 inline Ciphertext<DCRTPoly> Cmp_gt(const Ciphertext<DCRTPoly> &x, const Ciphertext<DCRTPoly> &y) {{
@@ -346,19 +346,19 @@ inline Ciphertext<DCRTPoly> Select(const Ciphertext<DCRTPoly> &cond, const Ciphe
 
 // clang-format off
 constexpr std::string_view kDivFuncsTemplate = R"cpp(
-RLWECipher ReciprocalImpl(RLWECipher cipher, double lower, double upper, uint32_t degree) {
-     return clientCC->EvalChebyshevFunction([](double x) -> double { 
+RLWECipher ReciprocalImpl(RLWECipher cipher, double lower, double upper, uint32_t degree) {{
+     return clientCC->EvalChebyshevFunction([](double x) -> double {{ 
                 const double threshold = 0.0001;
-                if (x >= threshold || x <= -threshold) {
+                if (x >= threshold || x <= -threshold) {{
                     return 1.0 / x;
-                } else {
+                } else {{
                     return 0.0;
                 }
             }, cipher, lower, upper, degree);
 }
 
-RLWECipher DivImpl(RLWECipher cipherA, RLWECipher cipherB) {
-    return clientCC->EvalMult(cipherA, ReciprocalImpl(cipherB, -5, 5, 156));
+RLWECipher DivImpl(RLWECipher cipherA, RLWECipher cipherB) {{
+    return clientCC->EvalMult(cipherA, ReciprocalImpl(cipherB, {0}, {1}, {2}));
 }
 )cpp";
 

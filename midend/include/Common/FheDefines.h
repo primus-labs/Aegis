@@ -38,6 +38,10 @@
 #define RECIP_OP_MULT_DEPTH 9
 #define DIV_OP_MULT_DEPTH   (RECIP_OP_MULT_DEPTH + 1)
 
+#define LOWER_BOUND     -10
+#define UPPER_BOUND     10
+#define POLY_DEGREE     156
+
 #define FHE_DEFAULT_BATCH_SIZE       256
 #define FHE_MAX_MUL_DEPTH_WITH_CMP   18
 #define FHE_MAX_MUL_DEPTH_NO_CMP     8
