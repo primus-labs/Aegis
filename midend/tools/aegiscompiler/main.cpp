@@ -48,9 +48,6 @@ using namespace fhe;
 
 void fhePipeline(OpPassManager &manager) {
     manager.addPass(std::make_unique<CollectMetadataPass>()); // this pass must run first.
-    manager.addPass(std::make_unique<ExtractLoopBodyPass>());
-    manager.addPass(createCanonicalizerPass());
-    manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<ExpandMemrefCopyPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
@@ -64,16 +61,10 @@ void fhePipeline(OpPassManager &manager) {
     manager.addPass(createLowerAffinePass());
     manager.addPass(createCanonicalizerPass()); 
     manager.addPass(createCSEPass());
-    // manager.addPass(std::make_unique<UnrollLoopsPass>());
-    // manager.addPass(createCanonicalizerPass()); 
-    // manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<GlobalMemrefReplacePass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<ForwardInsertToExtractPass>());
-    manager.addPass(createCanonicalizerPass());
-    manager.addPass(createCSEPass());
-    manager.addPass(std::make_unique<ForwardStoreToLoadPass>());
     manager.addPass(createCanonicalizerPass());
     manager.addPass(createCSEPass());
     manager.addPass(std::make_unique<LowerArithToSecretPass>());

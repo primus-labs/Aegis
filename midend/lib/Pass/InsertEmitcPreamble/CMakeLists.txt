@@ -3,6 +3,9 @@ add_compile_options(-fexceptions)
 add_mlir_library(
     AegisInsertEmitcPreamble
     InsertEmitcPreamble.cpp
+
+    DEPENDS
+    aegis-protocol
 )
 
 target_include_directories(AegisInsertEmitcPreamble PUBLIC ${PROJECT_SOURCE_DIR}/include)

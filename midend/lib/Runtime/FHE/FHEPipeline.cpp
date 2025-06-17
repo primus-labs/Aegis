@@ -203,9 +203,6 @@ mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleO
     printPipeline("lowerHighLevelMlir", pm, context, verbose);
 
     addNestedAwarePass(pm, std::make_unique<CollectMetadataPass>(), enablePass);
-    addNestedAwarePass(pm, std::make_unique<ExtractLoopBodyPass>(), enablePass);
-    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
-    addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<ExpandMemrefCopyPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
@@ -223,9 +220,6 @@ mlir::LogicalResult lowerHighLevelMlir(mlir::MLIRContext &context, mlir::ModuleO
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
     addNestedAwarePass(pm, std::make_unique<ForwardInsertToExtractPass>(), enablePass);
-    addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
-    addNestedAwarePass(pm, createCSEPass(), enablePass);
-    addNestedAwarePass(pm, std::make_unique<ForwardStoreToLoadPass>(), enablePass);
     addNestedAwarePass(pm, createCanonicalizerPass(), enablePass);
     addNestedAwarePass(pm, createCSEPass(), enablePass);
 

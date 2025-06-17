@@ -6,10 +6,10 @@ namespace py = pybind11;
 #include "Common/ProgramSpec.h"
 #include "Common/Protocol.h"
 #include "Common/Value.h"
+#include "CryptoContextMgr.h"
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEDataProcessor.h"
 #include "Runtime/FHE/FHERuntime.h"
-#include "CryptoContextMgr.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <capnp/serialize.h>
@@ -36,7 +36,6 @@ using namespace std;
 
 #include <nlohmann/json.hpp>
 
-#define DEBUG_PRINT 1
 
 namespace mlir::aegis {
 void to_json(nlohmann::json &j, const CompileOptions &x) {
@@ -66,6 +65,12 @@ void from_json(const nlohmann::json &j, CompileResult &x) {
     j.at("progSpecFileName").get_to(x.progSpecFileName);
 }
 } // namespace mlir::aegis
+
+using AegisValue = mlir::aegis::Value;
+struct PyValue {
+    uint32_t ndim;
+    std::vector<AegisValue> values;
+};
 
 /// @brief old
 struct KeyInfo {
@@ -132,6 +137,18 @@ static void generate_keyset(FheKeyset &self, const std::string &prog_spec_file) 
     });
 }
 
+std::vector<std::vector<double>> reshape2d(const std::vector<double> &input, size_t m, size_t n) {
+    if (input.size() != m * n)
+        throw std::invalid_argument("reshape size mismatch");
+
+    std::vector<std::vector<double>> result;
+    result.reserve(m);
+    for (size_t i = 0; i < m; ++i) {
+        result.emplace_back(input.begin() + i * n, input.begin() + (i + 1) * n);
+    }
+    return result;
+}
+
 /// @brief
 class Utils {
   public:
@@ -140,7 +157,7 @@ class Utils {
      */
     static Value Numpy2Value(const py::array_t<double> &input) {
         auto buf = input.request();
-#if DEBUG_PRINT
+#ifndef NDEBUG
         {
             std::stringstream ss;
             ss << "itemsize: " << buf.itemsize << ", size: " << buf.size << ", format: " << buf.format
@@ -171,8 +188,10 @@ class Utils {
         auto tensor = input.getTensor<double>().value(); // TODO: should add getValues()/getDims() for Tensor
         auto values = tensor.values;
         auto dims = tensor.dims;
+#ifndef NDEBUG
         cout << "dims.size() " << dims.size() << endl;
         cout << "values " << values.size() << endl;
+#endif
         return py::array_t<double>(dims, values.data());
     }
 
@@ -218,6 +237,22 @@ class Utils {
         protoRawData.writeBinaryToOstream(ss);
         return py::bytes(ss.str());
     }
+    static py::bytes PyValue2PyBytes(const PyValue &pv) {
+        std::ostringstream oss;
+        oss.write(reinterpret_cast<const char *>(&pv.ndim), sizeof(uint32_t));
+
+        uint32_t vsize = (uint32_t)pv.values.size();
+        oss.write(reinterpret_cast<const char *>(&vsize), sizeof(uint32_t));
+
+        for (const auto &v : pv.values) {
+            auto b = Utils::Value2PyBytes(v);
+            std::string s = b;
+            uint32_t len = (uint32_t)s.size();
+            oss.write(reinterpret_cast<const char *>(&len), sizeof(uint32_t));
+            oss.write(s.data(), len);
+        }
+        return py::bytes(oss.str());
+    }
 
     /**
      * Convert py::bytes to Value(uint8_t)
@@ -257,21 +292,93 @@ class Utils {
         Tensor<uint8_t> tensor(std::move(values), dims);
         return Value(std::move(tensor));
     }
+    static PyValue PyBytes2PyValue(const py::bytes &b) {
+        PyValue pv;
+        std::string s = b;
+        std::istringstream iss(s);
+        iss.read(reinterpret_cast<char *>(&pv.ndim), sizeof(uint32_t));
+
+        uint32_t vsize = (uint32_t)pv.values.size();
+        iss.read(reinterpret_cast<char *>(&vsize), sizeof(uint32_t));
+
+        for (size_t i = 0; i < (size_t)vsize; ++i) {
+            uint32_t len;
+            iss.read(reinterpret_cast<char *>(&len), sizeof(uint32_t));
+            std::string s(len, '\0');
+            iss.read(&s[0], len);
+            auto v = Utils::PyBytes2Value(py::bytes(s));
+            pv.values.push_back(v);
+        }
+
+        return pv;
+    }
 };
 
 /// @brief
 class PyFHEDataProcessor {
   public:
-    static Value privateInput(const py::array_t<double> &input) {
-        auto plainValue = Utils::Numpy2Value(input);
-        std::vector<Value> plainValues = {plainValue};
-        auto cipherValues = FHEDataProcessor().privateInput(plainValues);
-        return cipherValues[0];
+    static PyValue privateInput(const py::array_t<double> &input) {
+        PyValue pv;
+        auto inputValue = Utils::Numpy2Value(input);
+        auto tensor = inputValue.getTensor<double>().value();
+        auto dims = tensor.dims;
+        if (dims.size() == 1) {
+            auto cipherValue = FHEDataProcessor().privateInput(tensor.values);
+            pv.ndim = 1;
+            pv.values.push_back(cipherValue);
+        } else if (dims.size() == 2) {
+            // m x n (dims[0] x dims[1])
+            auto values = reshape2d(tensor.values, dims[0], dims[1]);
+            auto cipherValues = FHEDataProcessor().privateInput(values);
+            pv.ndim = 2;
+            pv.values = cipherValues;
+        } else {
+            throw std::runtime_error("Invalid dims: only support 1-d or 2-d");
+        }
+        return pv;
     }
-    static py::array_t<double> processOutput(const Value &input) {
-        std::vector<Value> cipherValues = {input};
-        auto plainValues = FHEDataProcessor().processOutput(cipherValues);
-        return Utils::Value2Numpy(plainValues[0]);
+
+    static PyValue publicInput(const py::array_t<double> &input) {
+        PyValue pv;
+        auto inputValue = Utils::Numpy2Value(input);
+        auto tensor = inputValue.getTensor<double>().value();
+        auto dims = tensor.dims;
+        if (dims.size() == 1) {
+            auto cipherValue = FHEDataProcessor().publicInput(tensor.values);
+            pv.ndim = 1;
+            pv.values.push_back(cipherValue);
+        } else if (dims.size() == 2) {
+            // m x n (dims[0] x dims[1])
+            auto values = reshape2d(tensor.values, dims[0], dims[1]);
+            auto cipherValues = FHEDataProcessor().publicInput(values);
+            pv.ndim = 2;
+            pv.values = cipherValues;
+        } else {
+            throw std::runtime_error("Invalid dims: only support 1-d or 2-d");
+        }
+        return pv;
+    }
+
+    static py::array_t<double> processOutput(PyValue &pv) { // TODO:const input
+        if (pv.ndim == 1) {
+            auto plainValues = FHEDataProcessor().processOutput(pv.values);
+            return Utils::Value2Numpy(plainValues[0]);
+        } else if (pv.ndim == 2) {
+            auto plainValues = FHEDataProcessor().processOutput(pv.values);
+
+            std::vector<size_t> shapes = {plainValues.size()}; // m:dims[0]
+            std::vector<double> values;
+            for (auto &input : plainValues) {
+                auto tensor = input.getTensor<double>().value();
+                values.insert(values.end(), tensor.values.begin(), tensor.values.end());
+            }
+            shapes.push_back(values.size() / plainValues.size()); // n:dims[1]
+
+            Tensor<double> tensor(std::move(values), shapes);
+            return Utils::Value2Numpy(Value(std::move(tensor)));
+        } else {
+            throw std::runtime_error("Invalid ndim: only support 1-d or 2-d");
+        }
     }
 };
 
@@ -295,7 +402,7 @@ class PyCompiler {
 /// @brief
 class PyFHERuntime {
   public:
-    vector<Value> run(const vector<Value> &inputs, const CompileResult &compileResult) {
+    vector<PyValue> run(const vector<PyValue> &pvs, const CompileResult &compileResult) {
         auto progSpecFileName = compileResult.outputDirPath + "/" + compileResult.progSpecFileName;
         auto sharedLibPath = compileResult.outputDirPath + "/" + compileResult.binFileName;
 
@@ -325,7 +432,9 @@ class PyFHERuntime {
             if (funcName.empty()) {
                 throw std::runtime_error("Cannot get function name");
             }
+#ifndef NDEBUG
             std::cout << "funcName: " << funcName << std::endl;
+#endif
 
             auto result = rt.resolveSymbol(funcName);
             if (!result) {
@@ -343,7 +452,8 @@ class PyFHERuntime {
             }
 
             const std::string pubKeyFileName = compileResult.outputDirPath + "/__pubkey.bin";
-            std::shared_ptr<aegiscpu::openfhe::FHEPublicKey> aegisPubKey = aegiscpu::openfhe::FheKeyset::getInstance().getPubKey();
+            std::shared_ptr<aegiscpu::openfhe::FHEPublicKey> aegisPubKey =
+                aegiscpu::openfhe::FheKeyset::getInstance().getPubKey();
             PublicKey<DCRTPoly> pubKey = aegisPubKey->getKey();
             if (!Serial::SerializeToFile(pubKeyFileName, pubKey, SerType::BINARY)) {
                 throw std::runtime_error("Error writing public keys");
@@ -381,19 +491,28 @@ class PyFHERuntime {
                 throw std::runtime_error(s);
             }
         }
+
+        std::vector<mlir::aegis::Value> inputs;
+        for (auto pv : pvs) {
+            inputs.insert(inputs.end(), pv.values.begin(), pv.values.end());
+        }
+
         auto result = rt.call(inputs);
         if (!result) {
             auto s = llvm::toString(result.takeError());
             throw std::runtime_error(s);
         }
 
-        return *result;
-    }
+        std::vector<mlir::aegis::Value> res = *result;
+        std::vector<PyValue> resPVs;
+        for (auto &v : res) {
+            PyValue pv;
+            pv.ndim = 1; // origin
+            pv.values.push_back(v);
+            resPVs.push_back(pv);
+        }
 
-    Value run(const Value &input, const CompileResult &compileResult) {
-        vector<Value> inputs = {input};
-        auto outputs = run(inputs, compileResult);
-        return outputs[0];
+        return resPVs;
     }
 };
 
@@ -403,9 +522,9 @@ PYBIND11_MODULE(primus_aegis, m) {
     //
     //
     // Type
-    py::class_<Value>(m, "Value")
-        .def_static("from_bytes", [](const py::bytes &b) { return Utils::PyBytes2Value(b); })
-        .def("to_bytes", [](Value &self) { return Utils::Value2PyBytes(self); });
+    py::class_<PyValue>(m, "Value")
+        .def_static("from_bytes", [](const py::bytes &b) { return Utils::PyBytes2PyValue(b); })
+        .def("to_bytes", [](PyValue &self) { return Utils::PyValue2PyBytes(self); });
 
     //
     //
@@ -503,6 +622,7 @@ PYBIND11_MODULE(primus_aegis, m) {
     // FHE DataProcessor
     py::class_<PyFHEDataProcessor>(m_dp, "FHEDataProcessor")
         .def_static("privateInput", &PyFHEDataProcessor::privateInput)
+        .def_static("publicInput", &PyFHEDataProcessor::publicInput)
         .def_static("processOutput", &PyFHEDataProcessor::processOutput);
 
     //
@@ -513,8 +633,5 @@ PYBIND11_MODULE(primus_aegis, m) {
     // FHE Runtime
     py::class_<PyFHERuntime>(m_rt, "FHERuntime")
         .def(py::init<>())
-        .def("run", py::overload_cast<const Value &, const CompileResult &>(&PyFHERuntime::run), py::arg("input"),
-             py::arg("compile_result"))
-        .def("run", py::overload_cast<const vector<Value> &, const CompileResult &>(&PyFHERuntime::run),
-             py::arg("input"), py::arg("compile_result"));
+        .def("run", &PyFHERuntime::run, py::arg("input"), py::arg("compile_result"));
 }

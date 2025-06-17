@@ -10,9 +10,11 @@ namespace aegis {
 
 class DataProcessor {
 public:
-    virtual std::vector<Value> privateInput(std::vector<Value> &args) = 0;
-    virtual std::vector<Value> publicInput(std::vector<Value> &args) = 0;
-    virtual std::vector<Value> processOutput(std::vector<Value> &outputs) = 0;
+    virtual Value privateInput(const std::vector<double> &theArg) = 0;
+    virtual std::vector<Value> privateInput(const std::vector<std::vector<double>> &args) = 0;
+    virtual Value publicInput(const std::vector<double> &theArg) = 0;
+    virtual std::vector<Value> publicInput(const std::vector<std::vector<double>> &args) = 0;
+    virtual std::vector<Value> processOutput(const std::vector<Value> &outputs) = 0;
 };
 
 } // namespace aegis

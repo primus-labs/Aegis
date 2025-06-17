@@ -9,14 +9,15 @@ namespace aegis {
 
 class FHEDataProcessor: public DataProcessor {
 public:
-    std::vector<Value> privateInput(std::vector<Value> &args) override;
-    std::vector<Value> publicInput(std::vector<Value> &args) override;
-    std::vector<Value> processOutput(std::vector<Value> &outputs) override;
+    Value privateInput(const std::vector<double> &theArg) override;
+    std::vector<Value> privateInput(const std::vector<std::vector<double>> &args) override;
+    Value publicInput(const std::vector<double> &theArg) override;
+    std::vector<Value> publicInput(const std::vector<std::vector<double>> &args) override;
+    std::vector<Value> processOutput(const std::vector<Value> &outputs) override;
+
 
 private:
-    Value privateInput(Value &arg);
-    Value publicInput(Value &arg);
-    Value processOutput(Value &output);
+    Value processOutput(const Value &output);
 };
 
 } // namespace aegis

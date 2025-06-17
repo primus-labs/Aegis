@@ -1,0 +1,6 @@
+#ifndef PASS_BATCHING_BATCHING_TD
+#define PASS_BATCHING_BATCHING_TD
+
+include "mlir/IR/PatternBase.td"
+
+#endif //PASS_BATCHING_BATCHING_TD
