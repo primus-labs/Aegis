@@ -100,16 +100,16 @@ class FHEServer:
         print(self._compile_result.to_json())
         return self._compile_result
 
-    def compile(self, onnx_file: str = None, py_function: Callable = None, compile_option: CompileOption = None) -> FHECompileResult:
+    def compile(self, onnx_file_or_py_function: str | Callable, compile_option: CompileOption = None) -> FHECompileResult:
         if compile_option == None:
             compile_option = CompileOption()
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
             compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
         self._output_dir = compile_option.outputDir
-        if onnx_file != None:
-            mlir_file = self._convert_onnx_to_mlir(onnx_file)
-        elif py_function != None:
-            mlir_file = self._convert_py_to_mlir(self._output_dir, py_function)
+        if isinstance(onnx_file_or_py_function, str):
+            mlir_file = self._convert_onnx_to_mlir(onnx_file_or_py_function)
+        elif isinstance(onnx_file_or_py_function, Callable):
+            mlir_file = self._convert_py_to_mlir(self._output_dir, onnx_file_or_py_function)
         else:
             raise RuntimeError("onnx_file and py_function are None")
 
