@@ -8,6 +8,9 @@ import re
 from typing import Callable, Tuple, List
 
 class Py2MLIRConverter:
+    """
+    Py2MLIRConverter class, used to compile python code to mlir code
+    """
     def __init__(self, output_dir: str):
         self.output_dir = output_dir
 
