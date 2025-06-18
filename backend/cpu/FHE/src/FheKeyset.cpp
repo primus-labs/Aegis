@@ -116,7 +116,7 @@ void FheKeyset::loads(const std::string &keys) {
     CryptoContext<DCRTPoly> cc;
     cc->ClearEvalMultKeys();
     cc->ClearEvalAutomorphismKeys();
-    lbcrypto::CryptoContextFactory<lbcrypto::DCRTPoly>::ReleaseAllContexts();
+    // lbcrypto::CryptoContextFactory<lbcrypto::DCRTPoly>::ReleaseAllContexts();
 
     while (beg_pos < key_len) {
         char buffer[4] = {0};
