@@ -3,17 +3,37 @@ from .client import FHEClient
 from .compiler import FHECompileResult
 from primus_aegis.compiler import CompileOption, COMPILE_TARGET
 from primus_aegis import Value
-from typing import List
+from typing import List, Union, Optional, Dict
 import numpy as np
 import os
 import json
 import tempfile
 
 class FHEInferenceSession:
+    """
+    FHEInferenceSession class, used to run inference
+    """
     _server: FHEServer
     _archive_path: str
 
-    def __init__(self, path_or_bytes: bytes | str | os.PathLike = None, compile_option: CompileOption = None, is_simulate: bool = False):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
+        """
+        Construct FHEInferenceSession instance
+
+        Args
+            path_or_bytes (Optional[Union[bytes, str, os.PathLike]]):
+                Accept either
+                    - bytes
+                    - str
+                    - os.PathLike
+                    - None, compilation will be skipped
+
+            compile_option (CompileOption):
+                options for compilation
+
+            is_simulate (bool):
+                Whether it works in simulation mode
+        """
         self._server = FHEServer(is_simulate)
         if path_or_bytes != None:
             if isinstance(path_or_bytes, bytes):
@@ -25,17 +45,45 @@ class FHEInferenceSession:
             else:
                 self._do_compile(path_or_bytes, compile_option)
 
-    def _do_compile(self, onnx_file: str | os.PathLike, compile_option: CompileOption):
+    def _do_compile(self, onnx_file: Union[str, os.PathLike], compile_option: CompileOption):
+        """
+        Compile onnx file into FHE operations
+
+        Args
+            onnx_file (Union[str, os.PathLike]]):
+                Accept either
+                    - str
+                    - os.PathLike
+
+            compile_option (CompileOption):
+                options for compilation
+        """
         compile_result = self._server.compile(onnx_file, compile_option)
         self._archive_path = self._server.save(compile_result, compile_result.get_output_dir_path())
 
     def get_server(self) -> FHEServer:
+        """
+        Get the underlying FHEServer
+        """
         return self._server
 
     def get_archive_path(self) -> str:
+        """
+        Get the archive path
+        """
         return self._archive_path
 
     def _compute_input_output_names(self, compile_result: FHECompileResult) -> (List[str], List[str]):
+        """
+        Compute input output names
+
+        Args
+            compile_result (FHECompileResult):
+                The compile result
+            
+        Returns
+            (List[str], List[str]): return input names and output names
+        """
         prog_spec_file_path = compile_result.get_prog_spec_file_path()
         with open(prog_spec_file_path, 'r') as f:
             content = f.read()
@@ -48,7 +96,28 @@ class FHEInferenceSession:
         output_names = [o['name'] for o in outputs]
         return (input_names, output_names)
 
-    def _check_input_output_names(self, input_names, output_names, all_input_names, all_output_names):
+    def _check_input_output_names(self, input_names: List[str], output_names:List[str], all_input_names: List[str], all_output_names: List[str]):
+        """
+        Check input output names
+
+        Args
+            input_names (List[str]):
+                An array of input names
+            output_names (List[str]):
+                An array of output names
+            all_input_names (List[str]):
+                All the input names
+            all_output_names (List[str]):
+                All the output names
+
+        Raises
+            raise RuntimeError when
+                - not all `input_names` in `all_input_names`
+                - not all `all_input_names` in `input_names`
+                - not all `output_names` in `all_output_names`
+
+            
+        """
         if not all([i in all_input_names for i in input_names]):
             raise RuntimeError("some input names is not valid")
 
@@ -58,17 +127,56 @@ class FHEInferenceSession:
         if output_names != None and not all([o in all_output_names for o in output_names]):
             raise RuntimeError("some output name is not valid")
 
-    def _compute_input_data(self, input_feed, input_names: List[str]) -> List[Value] | List[bytes]:
+    def _compute_input_data(self, input_feed: Union[Dict[str, str], Dict[str, Value]], input_names: List[str]) -> Union[List[Value], List[bytes]]:
+        """
+        Compute input data according input names
+
+        Args
+            input_feed (Union[Dict[str, str], Dict[str, Value]]):
+                The input data
+            input_names (List[str]):
+                The input names
+
+        Returns
+            &nion[List[Value], List[bytes]], return the computed input data
+        """
         input_data = [input_feed[n] for n in input_names]
         return input_data
 
-    def _compute_output_data(self, output_data, output_names: List[str], all_output_names: List[str]) -> List[bytes] | List[Value]:
+    def _compute_output_data(self, output_data: Union[List[bytes], List[Value]], output_names: List[str], all_output_names: List[str]) -> Union[List[bytes], List[Value]]:
+        """
+        Compute output data
+
+        Args
+            output_data (List[Value]):
+                An array of output data
+            output_names (List[str]):
+                An array of output names
+            all_output_names (List[str]):
+                All the output names
+
+        Returns
+            Union[List[bytes], List[Value]]: return the computed output data
+        """
         if output_names == None:
             return output_data
         else:
             return [output_data[all_output_names.index(element)] for element in output_names]
 
-    def run(self, output_names: List[str], input_feed) -> Value | List[Value] | bytes | List[bytes]:
+    def run(self, output_names: List[str], input_feed: Union[Dict[str, str], Dict[str, Value]]) -> Union[Value, List[Value], bytes, List[bytes]]:
+        """
+        Execute FHE computation
+
+        Args
+            output_names (List[str]):
+                An array of output names for the computation result
+            input_feed (Union[Dict[str, str], Dict[str, Value]]):
+                The input data
+
+        Returns
+            Union[Value, List[Value], bytes, List[bytes]]: the computation result
+
+        """
         compile_result = self._server.get_compile_result()
         (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
         self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
@@ -77,14 +185,41 @@ class FHEInferenceSession:
         return self._compute_output_data(output_data, output_names, all_output_names)
 
 class LocalFHEInferenceSession(FHEInferenceSession):
+    """
+    LocalFHEInferenceSession class, used to compute FHE operations locally
+    """
     _client: FHEClient
-    def __init__(self, path_or_bytes: bytes | str | os.PathLike = None, compile_option: CompileOption = None):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, compile_option: CompileOption = None):
+        """
+        Construct LocalFHEInferenceSession instance
+
+        Args
+            path_or_bytes (Optional[Union[bytes, str, os.PathLike]])
+                Accept either
+                    - bytes: onnx file content
+                    - str: onnx file path
+                    - os.PathLike: onnx file path
+            compile_option (CompileOption):
+                Options for compilation
+        """
         super().__init__(path_or_bytes, compile_option, True)
         compile_result = self._server.get_compile_result()
         self._client = FHEClient(True)
         self._client.keygen(compile_result)
 
-    def encrypt_run_decrypt(self, output_names: List[str], input_feed) -> np.ndarray | List[np.ndarray]:
+    def encrypt_run_decrypt(self, output_names: List[str], input_feed: Dict[str, np.ndarray]) -> Union[np.ndarray, List[np.ndarray]]:
+        """
+        Encrypt plaintext, execute computation and decrypt ciphertext
+
+        Args
+            output_names (List[str])
+                An array of output names
+            input_feed (Dict[str, np.ndarray])
+                The input data
+
+        Returns
+            Union[np.ndarray, List[np.ndarray]]: return the computation result in plaintext format
+        """
         compile_result = self._server.get_compile_result()
         (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
         self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)

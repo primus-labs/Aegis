@@ -4,12 +4,15 @@ from .keyset_manager import FHEKeysetManager
 from .py2mlir_converter import Py2MLIRConverter
 from primus_aegis.compiler import CompileOption, COMPILE_TARGET
 from primus_aegis import Value
-from typing import Callable, List
+from typing import Callable, List, Union
 import tempfile
 import shutil
 import os
 
 class FHEServer:
+    """
+    FHEServer class, used to compile onnx file or python code to FHE operations
+    """
     _compile_result: FHECompileResult
     _compiler: FHECompiler
     _runtime: FHERuntime
@@ -18,7 +21,13 @@ class FHEServer:
     _output_dir: str
     _is_simulate: bool
 
-    def __init__(self, is_simulate = False):
+    def __init__(self, is_simulate: bool = False):
+        """
+        Construct FHEServer
+        Args
+            is_simulate (bool):
+                Whether it works in simulate mode
+        """
         self._compiler = FHECompiler()
         self._runtime = FHERuntime()
         self._keyset_manager = FHEKeysetManager()
@@ -28,22 +37,48 @@ class FHEServer:
         self._compile_result = None
 
     def get_output_dir(self) -> str:
+        """
+        Return output dir
+        """
         return self._output_dir
     
     def get_compile_result(self) -> FHECompileResult:
+        """
+        Return compile result
+        """
         return self._compile_result
 
     def _require_keys_loaded(self):
+        """
+        Check whether keys are loaded
+        """
         if self._is_simulate:
             return
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
 
     def load_eva_keys(self, key_file_path: str):
+        """
+        Load eva keys
+
+        Args
+            key_file_path (str):
+                The location from which eva keys are loaded
+        """
         self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 
     def _convert_onnx_to_mlir(self, onnx_file: str) -> str:
+        """
+        Convert onnx file to mlir file
+
+        Args
+            onnx_file (str):
+                The onnx file which willl be converted to mlir file
+
+        Returns
+            str: return the mlir file path
+        """
         import os
         import subprocess
         cmd = ['onnx-mlir', '--EmitMLIR', onnx_file]
@@ -58,10 +93,36 @@ class FHEServer:
         return mlir_file
 
     def _convert_py_to_mlir(self, output_dir: str, function: Callable) -> str:
+        """
+        Convert python code to mlir code
+
+        Args
+            output_dir (str):
+                The location where the generated mlir file will be put
+            function (Callable):
+                The python function
+        
+        Returns
+            str: return the mlir file path
+        """
         converter = Py2MLIRConverter(output_dir)
         return converter.convert(function)
 
     def _do_save(self, compile_result: FHECompileResult, output_dir: str, is_server: bool) -> str:
+        """
+        Save files generated during compilation into the zip format file
+
+        Args
+            compile_result (FHECompileResult)
+                The collection of files generated during compilation
+            output_dir (str):
+                The location where the generated zip format file will be put
+            is_server (bool):
+                True if save for the server else False
+
+        Returns
+            str: return the zip format file path
+        """
         file_name = 'server' if is_server else 'client'
         with tempfile.TemporaryDirectory() as tmp_dir:
             progSpecFileName = compile_result.get_prog_spec_file_name()
@@ -84,11 +145,33 @@ class FHEServer:
         return output_dir + '/' + file_name + '.zip'
     
     def save(self, compile_result: FHECompileResult, output_dir: str) -> (str, str):
+        """
+        Save files generated during compilation into the zip format file
+
+        Args
+            compile_result (FHECompileResult)
+                The collection of files generated during compilation
+            output_dir (str):
+                The location where the generated zip format file will be put
+
+        Returns
+            (str, str): return the client archive file path and the server archive file path
+        """
         client_archive_path = self._do_save(compile_result, output_dir, False)
         server_archive_path = self._do_save(compile_result, output_dir, True)
         return (client_archive_path, server_archive_path)
 
     def load(self, archive_path: str) -> FHECompileResult:
+        """
+        Load the zip format file and return as compile result
+
+        Args
+            archive_path (str):
+                The archive file path where the archive file will be loaded
+
+        Returns
+            FHECompileResult: return the compile result
+        """
         tmp_dir = tempfile.mkdtemp()
         print('unpack dir', tmp_dir)
         print(archive_path)
@@ -100,7 +183,24 @@ class FHEServer:
         print(self._compile_result.to_json())
         return self._compile_result
 
-    def compile(self, onnx_file_or_py_function: str | Callable, compile_option: CompileOption = None) -> FHECompileResult:
+    def compile(self, onnx_file_or_py_function: Union[str, Callable], compile_option: CompileOption = None) -> FHECompileResult:
+        """
+        Compile onnx file or python code into FHE operations
+
+        Args
+            onnx_file_or_py_function (Union[str, Callable]):
+                Accept either
+                    - str: the onnx file path
+                    - Callable: the python function
+            compile_option (CompileOption):
+                options for compilation
+
+        Raises
+            RuntimeError: if neither onnx file nor python function is provided
+
+        Returns
+            FHECompileResult: return the compile result
+        """
         if compile_option == None:
             compile_option = CompileOption()
             compile_option.compileTarget = COMPILE_TARGET.LIBRARY
@@ -108,7 +208,7 @@ class FHEServer:
         self._output_dir = compile_option.outputDir
         if isinstance(onnx_file_or_py_function, str):
             mlir_file = self._convert_onnx_to_mlir(onnx_file_or_py_function)
-        elif isinstance(onnx_file_or_py_function, Callable):
+        elif callable(onnx_file_or_py_function):
             mlir_file = self._convert_py_to_mlir(self._output_dir, onnx_file_or_py_function)
         else:
             raise RuntimeError("onnx_file and py_function are None")
@@ -116,7 +216,20 @@ class FHEServer:
         self._compile_result = self._compiler.compile(mlir_file, compile_option)
         return self._compile_result
 
-    def run(self, private_data: bytes | List[bytes] | Value | List[Value]) -> bytes | List[bytes] | Value | List[Value]:
+    def run(self, private_data: Union[bytes, List[bytes], Value, List[Value]]) -> Union[bytes, List[bytes], Value, List[Value]]:
+        """
+        Execute the FHE computation
+
+        Args
+            private_data (Union[bytes, List[bytes], Value, List[Value]]):
+                The input data for computation
+
+        Raises
+            RuntimeError: if the server archive file is not loaded
+
+        Returns
+            Union[bytes, List[bytes], Value, List[Value]]: the computation result
+        """
         self._require_keys_loaded()
         if self._compile_result == None:
             raise RuntimeError("server.zip is not provided")
