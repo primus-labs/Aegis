@@ -25,7 +25,12 @@ using namespace fhe;
 template <typename OpType> 
 LogicalResult LweBinOpToRlweBinOp(IRRewriter &rewriter, MLIRContext *context, Operation* genericOp,
                                   TypeConverter& typeConverter) {
-    auto op = mlir::cast<OpType>(genericOp);
+    auto op = mlir::dyn_cast<OpType>(genericOp);
+    if (!op) {
+        LLVM_DEBUG(llvm::dbgs() << "Invalid operation type for conversion\n");
+        return failure();
+    }
+
     rewriter.setInsertionPoint(op);
 
     auto destTy = typeConverter.convertType(op.getType());
@@ -617,25 +622,28 @@ void LweToRlwePass::runOnOperation() {
                 return WalkResult(success());
             }).wasInterrupted()) {
             signalPassFailure();
+            return;
         }
 
         // handle function prototype
-        func::FuncOp op = f;
+        func::FuncOp funcOp = f;
 
         // Generate the new signature of the function.
         SmallVector<Type> newResTypes;
-        if (failed(type_converter.convertTypes(op.getFunctionType().getResults(), newResTypes))) {
+        if (failed(type_converter.convertTypes(funcOp.getFunctionType().getResults(), newResTypes))) {
             signalPassFailure();
+            return;
         }
 
         // Iterate through all parameters and process them one by one.
-        TypeConverter::SignatureConversion signatureConversion(op.getFunctionType().getNumInputs());
-        for (auto [index, arg] : llvm::enumerate(op.getRegion().getArguments())) {
-            Type originalType = op.getFunctionType().getInput(index);
+        TypeConverter::SignatureConversion signatureConversion(funcOp.getFunctionType().getNumInputs());
+        for (auto [index, arg] : llvm::enumerate(funcOp.getRegion().getArguments())) {
+            Type originalType = funcOp.getFunctionType().getInput(index);
             if (mlir::isa<LWECipherType, LWECipherVectorType, LWECipherMatrixType>(originalType)) {
                 SmallVector<Type> destTypes;
                 if (failed(type_converter.convertType(originalType, destTypes))) {
                     signalPassFailure();
+                    return;
                 }
                 signatureConversion.addInputs(index, destTypes);
             } else {
@@ -643,27 +651,33 @@ void LweToRlwePass::runOnOperation() {
             }
         }
 
+        // handle function arguments
         auto newFuncTy = FunctionType::get(&getContext(), signatureConversion.getConvertedTypes(), newResTypes);
-        rewriter.startOpModification(op);
-        op.setType(newFuncTy);
-        for (BlockArgument arg : op.getRegion().getArguments()) {
+        rewriter.startOpModification(funcOp);
+        funcOp.setType(newFuncTy);
+        for (BlockArgument arg : funcOp.getRegion().getArguments()) {
             if (!(mlir::isa<LWECipherType, LWECipherVectorType, LWECipherMatrixType>(arg.getType()))) {
                 continue;
             }
 
             auto oldType = arg.getType();
             auto newType = type_converter.convertType(oldType);
-            assert(newType);
+            if (!newType) {
+                emitError(funcOp.getLoc(), "Type conversion failed for function argument");
+                signalPassFailure();
+                return;
+            }
+
             arg.setType(newType);
             if (newType != oldType) {
-                rewriter.setInsertionPointToStart(&op.getBody().getBlocks().front());
+                rewriter.setInsertionPointToStart(&funcOp.getBody().getBlocks().front());
                 auto cast_op = type_converter.materializeSourceConversion(rewriter, arg.getLoc(), oldType, arg);
                 arg.replaceAllUsesExcept(cast_op, cast_op.getDefiningOp());
             }
         }
 
         // handle function return stmt
-        for (auto &block : op.getBody()) {
+        for (auto &block : funcOp.getBody()) {
             for (auto retOp : llvm::make_early_inc_range(block.getOps<func::ReturnOp>())) {
                 SmallVector<Value, 4> newOperands;
                 for (auto operand : retOp.getOperands()) {
@@ -676,18 +690,19 @@ void LweToRlwePass::runOnOperation() {
                         if (!convertedOperand) {
                             emitError(retOp.getLoc(), "Failed to convert return operand type");
                             signalPassFailure();
+                            return;
                         }
                         newOperands.push_back(convertedOperand);
                     } else {
                         newOperands.push_back(operand);
                     }
                 }
-                rewriter.eraseOp(retOp);
-                rewriter.setInsertionPointToEnd(&block);
-                rewriter.create<func::ReturnOp>(retOp.getLoc(), newOperands);
+
+                rewriter.setInsertionPoint(retOp);
+                rewriter.replaceOpWithNewOp<func::ReturnOp>(retOp, newOperands);
             }
         }
 
-        rewriter.finalizeOpModification(op);
+        rewriter.finalizeOpModification(funcOp);
     }
 }
