@@ -58,7 +58,7 @@ sudo ninja install
 echo "****************************************************"
 echo " setup mlir core python bindings path to PYTHONPATH "
 echo "****************************************************"
-./setup_pythonpath.sh
+./../../../scripts/setup_pythonpath.sh
 
 
 echo "****************************************************"
