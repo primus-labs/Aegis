@@ -48,6 +48,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
     ProtoMessage<aegisprotocol::Function> theFunc = progSpec.getFuncInfo()[0];
     std::string mainFuncName = theFunc.asReader().getName();
     std::vector<std::tuple<bool, int, int>> paramsInfo;
+    bool hasPlainParam = false;
     for (auto param : theFunc.asReader().getInputs()) {
         int inputDims = param.getShape().getDimensions().size() ? 
                         param.getShape().getDimensions().size() : 1;
@@ -57,6 +58,7 @@ void InsertEmitcPreamblePass::runOnOperation() {
             paramsInfo.push_back({true, inputDims, lastDim});  //cryptext type
         } else {
             paramsInfo.push_back({false, inputDims, lastDim}); //plaintext type
+            hasPlainParam = true;
         }
     }
 
@@ -137,6 +139,11 @@ void InsertEmitcPreamblePass::runOnOperation() {
 
         // Insert all using stmts
         builder.create<emitc::VerbatimOp>(op->getLoc(), kUsingStmts);
+
+        // Insert double deserializer funcs
+        if (hasPlainParam) {
+            builder.create<emitc::VerbatimOp>(op->getLoc(), kDeserialToDoubleFuncs);
+        }
 
         // Insert all macros
         builder.create<emitc::VerbatimOp>(op->getLoc(), kMacroStmts);

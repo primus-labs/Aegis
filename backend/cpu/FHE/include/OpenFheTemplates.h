@@ -17,6 +17,80 @@ constexpr std::string_view kIncludeStmts = R"cpp(
 // clang-format on
 
 // clang-format off
+constexpr std::string_view kDeserialToDoubleFuncs = R"cpp(
+inline bool isLittleEndian() {
+    static const uint32_t testValue = 0x01020304;
+    static const bool result = (reinterpret_cast<const uint8_t*>(&testValue)[0] == 0x04);
+    return result;
+}
+inline uint64_t toBigEndian64(uint64_t value) {
+    if (isLittleEndian()) {
+        return ((value & 0x00000000000000FFULL) << 56) |
+               ((value & 0x000000000000FF00ULL) << 40) |
+               ((value & 0x0000000000FF0000ULL) << 24) |
+               ((value & 0x00000000FF000000ULL) << 8) |
+               ((value & 0x000000FF00000000ULL) >> 8) |
+               ((value & 0x0000FF0000000000ULL) >> 24) |
+               ((value & 0x00FF000000000000ULL) >> 40) |
+               ((value & 0xFF00000000000000ULL) >> 56);
+    }
+    return value;
+}
+inline uint64_t fromBigEndian64(uint64_t value) {
+    return toBigEndian64(value);
+}
+inline uint32_t toBigEndian32(uint32_t value) {
+    if (isLittleEndian()) {
+        return ((value & 0x000000FF) << 24) |
+               ((value & 0x0000FF00) << 8) |
+               ((value & 0x00FF0000) >> 8) |
+               ((value & 0xFF000000) >> 24);
+    }
+    return value;
+}
+inline uint32_t fromBigEndian32(uint32_t value) {
+    return toBigEndian32(value);
+}
+inline double deserializeDouble(const uint8_t *&data) {
+    uint64_t temp;
+    std::memcpy(&temp, data, sizeof(temp));
+    data += sizeof(temp);
+    temp = fromBigEndian64(temp);
+    double result;
+    std::memcpy(&result, &temp, sizeof(result));
+    return result;
+}
+inline uint32_t deserializeUint32(const uint8_t *&data) {
+    uint32_t value;
+    std::memcpy(&value, data, sizeof(value));
+    data += sizeof(value);
+    return fromBigEndian32(value);
+}
+std::vector<double> deserializeToVectorDouble(const std::vector<uint8_t>& bytes) {
+    if (bytes.size() < sizeof(uint32_t)) {
+        throw std::runtime_error("Insufficient bytes for vector<double> header");
+    }
+    const uint8_t* data = bytes.data();
+    const uint8_t* end = data + bytes.size();
+    uint32_t count = deserializeUint32(data);
+    size_t expectedSize = sizeof(uint32_t) + count * sizeof(double);
+    if (bytes.size() != expectedSize) {
+        throw std::runtime_error("Invalid byte count for vector<double>");
+    }
+    std::vector<double> result;
+    result.reserve(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        result.push_back(deserializeDouble(data));
+    }
+    if (data != end) {
+        throw std::runtime_error("Extra bytes in vector<double> data");
+    }
+    return result;
+}
+)cpp";
+// clang-format on
+
+// clang-format off
 constexpr std::string_view kUsingStmts = R"cpp(
 using namespace std;
 using namespace lbcrypto;
@@ -231,17 +305,14 @@ constexpr std::string_view kDeserisBufToMultiCipher = R"cpp(
 
 // clang-format off
 constexpr std::string_view kDeserisBufToSingleDouble = R"cpp(
-    double v{0};
-    memcpy(&v{0}, buf{0}.data(), buf{0}.size());
+    std::vector<double> temp{0} = deserializeToVectorDouble(buf{0});
+    double v{0} = temp{0}[0];
 )cpp";
 // clang-format on
 
 // clang-format off
 constexpr std::string_view kDeserisBufToVectDouble = R"cpp(
-    std::vector<double> v{0};
-    size_t count{0} = buf{0}.size() / sizeof(double);
-    v{0}.resize(count{0});
-    memcpy(v{0}.data(), buf{0}.data(), buf{0}.size());
+    std::vector<double> v{0} = deserializeToVectorDouble(buf{0});
 )cpp";
 // clang-format on
 
@@ -249,10 +320,7 @@ constexpr std::string_view kDeserisBufToVectDouble = R"cpp(
 constexpr std::string_view kDeserisBufToMatDouble = R"cpp(
     std::vector<std::vector<double>> v{0};
     for (auto i = 0; i < buf{0}.size(); i++) {{
-        std::vector<double> item;
-        size_t count = buf{0}[i].size() / sizeof(double);
-        item.resize(count);
-        memcpy(item.data(), buf{0}[i].data(), buf{0}[i].size());
+        std::vector<double> item = deserializeToVectorDouble(buf{0}[i]);
         v{0}.emplace_back(item);
     }
 )cpp";

@@ -1,5 +1,6 @@
 #include "Runtime/FHE/FHEDataProcessor.h"
 #include "Common/ProgramSpec.h"
+#include "Common/DoubleSerializer.h"
 #include "../../backend/cpu/FHE/include/Operate.h"
 #include <numeric> 
 
@@ -29,19 +30,13 @@ std::vector<Value> FHEDataProcessor::privateInput(const std::vector<std::vector<
 }
 
 Value FHEDataProcessor::publicInput(double theArg) {
-    std::vector<uint8_t> bufArg;
-    size_t byte_size = sizeof(double);
-    bufArg.resize(byte_size);
-    memcpy(bufArg.data(), &theArg, byte_size);
+    std::vector<uint8_t> bufArg = aegis::serializeFormDouble(theArg);
     Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{1}));
     return inputVal;
 }
 
 Value FHEDataProcessor::publicInput(const std::vector<double> &theArg) {
-    std::vector<uint8_t> bufArg;
-    size_t byte_size = theArg.size() * sizeof(double);
-    bufArg.resize(byte_size);
-    memcpy(bufArg.data(), theArg.data(), byte_size);
+    std::vector<uint8_t> bufArg = aegis::serializeFormVectorDouble(theArg);
     Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{theArg.size()}));
     return inputVal;
 }

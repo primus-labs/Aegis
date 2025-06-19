@@ -92,13 +92,13 @@ inline uint32_t deserializeUint32(const uint8_t *&data) {
 // Serialization functions implementation
 // ==============================================
 
-std::vector<uint8_t> serialize(double value) {
+std::vector<uint8_t> serializeFormDouble(double value) {
     std::vector<uint8_t> buffer;
     serializeDouble(value, buffer);
     return buffer;
 }
 
-std::vector<uint8_t> serialize(const std::vector<double>& values) {
+std::vector<uint8_t> serializeFormVectorDouble(const std::vector<double>& values) {
     std::vector<uint8_t> buffer;
     
     // Serialize element count
@@ -112,7 +112,7 @@ std::vector<uint8_t> serialize(const std::vector<double>& values) {
     return buffer;
 }
 
-std::vector<uint8_t> serialize(const std::vector<std::vector<double>>& values) {
+std::vector<uint8_t> serializeFormMatrixDouble(const std::vector<std::vector<double>>& values) {
     std::vector<uint8_t> buffer;
     
     // Serialize outer element count
@@ -145,7 +145,7 @@ double deserializeToDouble(const std::vector<uint8_t>& bytes) {
     return deserializeDouble(data);
 }
 
-std::vector<double> deserializeToVector(const std::vector<uint8_t>& bytes) {
+std::vector<double> deserializeToVectorDouble(const std::vector<uint8_t>& bytes) {
     if (bytes.size() < sizeof(uint32_t)) {
         throw std::runtime_error("Insufficient bytes for vector<double> header");
     }
@@ -178,7 +178,7 @@ std::vector<double> deserializeToVector(const std::vector<uint8_t>& bytes) {
     return result;
 }
 
-std::vector<std::vector<double>> deserializeToMatrix(const std::vector<uint8_t>& bytes) {
+std::vector<std::vector<double>> deserializeToMatrixDouble(const std::vector<uint8_t>& bytes) {
     if (bytes.size() < sizeof(uint32_t)) {
         throw std::runtime_error("Insufficient bytes for vector<vector<double>> header");
     }
