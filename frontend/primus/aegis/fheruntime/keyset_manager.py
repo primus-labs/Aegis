@@ -47,7 +47,6 @@ class FHEKeysetManager:
         self.save_keys(key_file_path, False)
 
     def load_keys(self, key_file_path: str):
-        print('keyset manager', self._keyset)
         """
         Args
             key_file_path (str)

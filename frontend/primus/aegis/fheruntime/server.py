@@ -173,14 +173,11 @@ class FHEServer:
             FHECompileResult: return the compile result
         """
         tmp_dir = tempfile.mkdtemp()
-        print('unpack dir', tmp_dir)
-        print(archive_path)
         shutil.unpack_archive(archive_path, tmp_dir, 'zip')
         with open(tmp_dir + '/' + 'compile_result.json', 'r') as f:
             content = f.read()
         self._compile_result = FHECompileResult.from_json(content)
         self._compile_result.set_output_dir_path(tmp_dir)
-        print(self._compile_result.to_json())
         return self._compile_result
 
     def compile(self, onnx_file_or_py_function: Union[str, Callable], compile_option: CompileOption = None) -> FHECompileResult:
