@@ -9,13 +9,13 @@ namespace aegis {
 
 // Serialization API
 // Serialize a single double value
-std::vector<uint8_t> serialize(double value);
+std::vector<uint8_t> serializeFormDouble(double value);
 
 // Serialize a vector of doubles
-std::vector<uint8_t> serialize(const std::vector<double>& values);
+std::vector<uint8_t> serializeFormVectorDouble(const std::vector<double>& values);
 
 // Serialize a matrix of doubles
-std::vector<uint8_t> serialize(const std::vector<std::vector<double>>& values);
+std::vector<uint8_t> serializeFormMatrixDouble(const std::vector<std::vector<double>>& values);
 
 
 // Deserialization API
@@ -23,10 +23,10 @@ std::vector<uint8_t> serialize(const std::vector<std::vector<double>>& values);
 double deserializeToDouble(const std::vector<uint8_t>& bytes);
 
 // Deserialize to a vector of doubles
-std::vector<double> deserializeToVector(const std::vector<uint8_t>& bytes);
+std::vector<double> deserializeToVectorDouble(const std::vector<uint8_t>& bytes);
 
 // Deserialize to a matrix of doubles
-std::vector<std::vector<double>> deserializeToMatrix(const std::vector<uint8_t>& bytes);
+std::vector<std::vector<double>> deserializeToMatrixDouble(const std::vector<uint8_t>& bytes);
 
 } // namespace aegis
 } // namespace mlir
