@@ -4,7 +4,7 @@ from .keyset_manager import FHEKeysetManager
 from .py2mlir_converter import Py2MLIRConverter
 from primus_aegis.compiler import CompileOption, COMPILE_TARGET
 from primus_aegis import Value
-from typing import Callable, List, Union
+from typing import Callable, List, Union, Dict, Optional
 import tempfile
 import shutil
 import os
@@ -91,6 +91,36 @@ class FHEServer:
         if len(result.stderr) > 0:
             raise RuntimeError(result.stderr)
         return mlir_file
+
+    def _modify_mlir_file(self, param_annos: Dict[str, str], mlir_file: str):
+        """
+        Modify mlir file, add param annotations
+
+        Args
+            param_annos (Dict[str, str]):
+                The param annotations, either encrypted or clear
+            mlir_file (str)
+                The mlir file which willl be modified
+
+        Returns
+            str: return the mlir file path
+        """
+        import os
+        import subprocess
+        replace_list = []
+        for (k, v) in param_annos.items():
+            replace_str = 's/onnx.name = "' + k + '"/' + 'onnx.name = "' + k + '", onnx.type = "' + v + '"/g'
+            replace_list.append(replace_str)
+
+        cmd = ['sed', '-i']
+        for item in replace_list:
+            cmd.append('-e')
+            cmd.append(item)
+        cmd.append(mlir_file)
+        print(cmd)
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if len(result.stderr) > 0:
+            raise RuntimeError(result.stderr)
 
     def _convert_py_to_mlir(self, output_dir: str, function: Callable) -> str:
         """
@@ -180,7 +210,7 @@ class FHEServer:
         self._compile_result.set_output_dir_path(tmp_dir)
         return self._compile_result
 
-    def compile(self, onnx_file_or_py_function: Union[str, Callable], compile_option: CompileOption = None) -> FHECompileResult:
+    def compile(self, onnx_file_or_py_function: Union[str, Callable], param_annos: Optional[Dict[str, str]] = None, compile_option: CompileOption = None) -> FHECompileResult:
         """
         Compile onnx file or python code into FHE operations
 
@@ -189,6 +219,8 @@ class FHEServer:
                 Accept either
                     - str: the onnx file path
                     - Callable: the python function
+            param_annos (Optional[Dict[str, str]]):
+                Annotation for params, either encrypted or clear
             compile_option (CompileOption):
                 options for compilation
 
@@ -209,6 +241,9 @@ class FHEServer:
             mlir_file = self._convert_py_to_mlir(self._output_dir, onnx_file_or_py_function)
         else:
             raise RuntimeError("onnx_file and py_function are None")
+
+        if param_annos != None:
+            self._modify_mlir_file(param_annos, mlir_file)
 
         self._compile_result = self._compiler.compile(mlir_file, compile_option)
         return self._compile_result

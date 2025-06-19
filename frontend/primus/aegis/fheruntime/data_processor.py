@@ -19,6 +19,16 @@ class FHEDataProcessor:
         """
         return DataProcessor.privateInput(plain_input)
 
+    def public_input(self, plain_input: np.ndarray) -> Value:
+        """
+        Args
+            plain_input (np.ndarray)
+                plaintext, which will be encrypted
+        Returns
+            Value: return the public value 
+        """
+        return DataProcessor.publicInput(plain_input)
+
     def decrypt(self, ciphertext: Value) -> Value:
         """
         Args
