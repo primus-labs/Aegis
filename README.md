@@ -123,8 +123,8 @@ Here is the full examples:
     compile_result = server.compile(add_1d)
 
     # key gen
-    client = Client()
-    client.keygen(compile_result)
+    client = Client(compile_result)
+    client.keygen()
     eva_keys = "/tmp/eva_keys.bin"
     client.save_eva_keys(eva_keys)
 

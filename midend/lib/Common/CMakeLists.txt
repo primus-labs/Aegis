@@ -5,6 +5,7 @@ add_mlir_library(
     Value.cpp
     Utils.cpp
     MetadataMgr.cpp
+    DoubleSerializer.cpp
 
     DEPENDS
     aegis-protocol
