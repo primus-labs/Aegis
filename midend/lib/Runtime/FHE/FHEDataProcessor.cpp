@@ -1,8 +1,7 @@
 #include "Runtime/FHE/FHEDataProcessor.h"
 #include "Common/ProgramSpec.h"
 #include "../../backend/cpu/FHE/include/Operate.h"
-
-#include <numeric> // for std::accumulate
+#include <numeric> 
 
 namespace mlir {
 namespace aegis {

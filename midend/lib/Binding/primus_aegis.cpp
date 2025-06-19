@@ -322,7 +322,7 @@ class PyFHEDataProcessor {
         auto inputValue = Utils::Numpy2Value(input);
         auto tensor = inputValue.getTensor<double>().value();
         auto dims = tensor.dims;
-        if (dims.size() == 1) {
+        if (dims.size() == 0 || dims.size() == 1) {
             auto cipherValue = FHEDataProcessor().privateInput(tensor.values);
             pv.ndim = 1;
             pv.values.push_back(cipherValue);
@@ -343,7 +343,7 @@ class PyFHEDataProcessor {
         auto inputValue = Utils::Numpy2Value(input);
         auto tensor = inputValue.getTensor<double>().value();
         auto dims = tensor.dims;
-        if (dims.size() == 1) {
+        if (dims.size() == 0 || dims.size() == 1) {
             auto cipherValue = FHEDataProcessor().publicInput(tensor.values);
             pv.ndim = 1;
             pv.values.push_back(cipherValue);
