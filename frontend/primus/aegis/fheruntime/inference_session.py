@@ -204,8 +204,8 @@ class LocalFHEInferenceSession(FHEInferenceSession):
         """
         super().__init__(path_or_bytes, compile_option, True)
         compile_result = self._server.get_compile_result()
-        self._client = FHEClient(True)
-        self._client.keygen(compile_result)
+        self._client = FHEClient(compile_result, True)
+        self._client.keygen()
 
     def encrypt_run_decrypt(self, output_names: List[str], input_feed: Dict[str, np.ndarray]) -> Union[np.ndarray, List[np.ndarray]]:
         """

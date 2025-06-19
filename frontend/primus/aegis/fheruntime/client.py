@@ -16,14 +16,32 @@ class FHEClient:
     _are_keys_loaded: bool
     _is_simulate: bool
 
-    def __init__(self, is_simulate: bool = False):
+    def __init__(self, compile_result_or_file: Union[FHECompileResult, str], is_simulate: bool = False):
         """
         Construct FHEClient instance
 
-        Args:
+        Args
+            compile_result_or_file (Union[FHECompileResult, str]):
+            Accept either
+                - FHECompileResult: compile result struct
+                - str: either a zip format file or a json format file
             is_simulate (bool):
                 True if it works in simulate mode
+
+        raise
+            RuntimeError: if compile_result_or_file is type `str`, and it is neither a zip format file nor a json format file
         """
+        if isinstance(compile_result_or_file, str):
+            if compile_result_or_file.endswith('.zip'):
+                compile_result_or_file = self.load(compile_result_or_file) 
+            elif compile_result_or_file.endswith('.json'):
+                prog_spec_file = compile_result_or_file
+            else:
+                raise RuntimeError('not supported keygen parameter')
+
+        if isinstance(compile_result_or_file, FHECompileResult):
+            prog_spec_file = compile_result_or_file.get_prog_spec_file_path()
+        self._prog_spec_file = prog_spec_file
         self._data_processor = FHEDataProcessor()
         self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
@@ -65,30 +83,12 @@ class FHEClient:
         print(self._compile_result.to_json())
         return self._compile_result
 
-    def keygen(self, compile_result_or_file: Union[FHECompileResult, str]):
+
+    def keygen(self):
         """
         Generate FHE keys
-
-        Args
-            compile_result_or_file (Union[FHECompileResult, str]):
-            Accept either
-                - FHECompileResult: compile result struct
-                - str: either a zip format file or a json format file
-
-        raise
-            RuntimeError: if compile_result_or_file is type `str`, and it is neither a zip format file nor a json format file
         """
-        if isinstance(compile_result_or_file, str):
-            if compile_result_or_file.endswith('.zip'):
-                compile_result_or_file = self.load(compile_result_or_file) 
-            elif compile_result_or_file.endswith('.json'):
-                prog_spec_file = compile_result_or_file
-            else:
-                raise RuntimeError('not supported keygen parameter')
-
-        if isinstance(compile_result_or_file, FHECompileResult):
-            prog_spec_file = compile_result_or_file.get_prog_spec_file_path()
-        self._keyset_manager.keygen(prog_spec_file)
+        self._keyset_manager.keygen(self._prog_spec_file)
         self._are_keys_loaded = True
 
     def save_all_keys(self, key_file_path: str):

@@ -11,7 +11,7 @@ if __name__ == '__main__':
     all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
     eva_keys_path = os.getenv('AEGIS_EVA_KEYS_PATH')
 
-    client = Client()
-    client.keygen(file_path)
+    client = Client(file_path)
+    client.keygen()
     client.save_all_keys(all_keys_path)
     client.save_eva_keys(eva_keys_path)
