@@ -7,6 +7,12 @@
 namespace mlir {
 namespace aegis {
 
+Value FHEDataProcessor::privateInput(double theArg) {
+    std::vector<uint8_t> bufArg = aegiscpu::openfhe::encrypt(std::vector<double>(theArg));
+    Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{1}));
+    return inputVal;
+}
+
 Value FHEDataProcessor::privateInput(const std::vector<double> &theArg) {
     std::vector<uint8_t> bufArg = aegiscpu::openfhe::encrypt(theArg);
     Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{theArg.size()}));
@@ -21,6 +27,15 @@ std::vector<Value> FHEDataProcessor::privateInput(const std::vector<std::vector<
     }
 
     return inputData;
+}
+
+Value FHEDataProcessor::publicInput(double theArg) {
+    std::vector<uint8_t> bufArg;
+    size_t byte_size = sizeof(double);
+    bufArg.resize(byte_size);
+    memcpy(bufArg.data(), &theArg, byte_size);
+    Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{1}));
+    return inputVal;
 }
 
 Value FHEDataProcessor::publicInput(const std::vector<double> &theArg) {
