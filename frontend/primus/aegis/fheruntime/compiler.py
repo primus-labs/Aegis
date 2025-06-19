@@ -18,19 +18,19 @@ class FHECompileResult:
         self._progSpecFileName = compile_result.progSpecFileName
         self._outputDirPath = compile_result.outputDirPath
 
-    def get_bin_file_name(self) -> str:
+    def _get_bin_file_name(self) -> str:
         """
         return the binanry file name
         """
         return self._binFileName
 
-    def get_cpp_file_name(self) -> str:
+    def _get_cpp_file_name(self) -> str:
         """
         return the cpp file name
         """
         return self._cppFileName
 
-    def get_prog_spec_file_name(self) -> str:
+    def _get_prog_spec_file_name(self) -> str:
         """
         return the prog spec file name
         """

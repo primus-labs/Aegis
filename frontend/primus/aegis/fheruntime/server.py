@@ -125,16 +125,16 @@ class FHEServer:
         """
         file_name = 'server' if is_server else 'client'
         with tempfile.TemporaryDirectory() as tmp_dir:
-            progSpecFileName = compile_result.get_prog_spec_file_name()
+            progSpecFileName = compile_result._get_prog_spec_file_name()
             if len(progSpecFileName) > 0:
                 shutil.copyfile(compile_result.get_prog_spec_file_path(), tmp_dir + '/' + progSpecFileName)
 
             if is_server:
-                binFileName = compile_result.get_bin_file_name()
+                binFileName = compile_result._get_bin_file_name()
                 if len(binFileName) > 0:
                     shutil.copyfile(compile_result.get_bin_file_path(), tmp_dir + '/' +  binFileName)
 
-                cppFileName = compile_result.get_cpp_file_name()
+                cppFileName = compile_result._get_cpp_file_name()
                 if len(cppFileName) > 0:
                     shutil.copyfile(compile_result.get_cpp_file_path(), tmp_dir + '/' +  cppFileName)
 
