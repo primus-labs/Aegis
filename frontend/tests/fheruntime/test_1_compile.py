@@ -2,9 +2,10 @@ from primus.aegis.fheruntime import FHEServer as Server, FHEInferenceSession as 
 import numpy as np
 import os
 
-def add_1d_6elements(X1: list[float, 6], X2: list[float, 6]) -> list[float, 6]:
-    for i in range(6):
-        X1[i] = X1[i] + X2[i]
+def add_2d_6elements(X1: list[list[float, 2], 3], X2: list[list[float, 2], 3]) -> list[list[float, 2], 3]:
+    for i in range(3):
+        for j in range(2):
+            X1[i][j] = X1[i][j] + X2[i][j]
     return X1
 
 def test_compile() -> str:
@@ -18,7 +19,7 @@ def test_compile() -> str:
     if test_server_api:
         server = Server()
         # compile_result = server.compile(onnx_file_path)
-        compile_result = server.compile(add_1d_6elements)
+        compile_result = server.compile(add_2d_6elements)
         archive_path = server.save(compile_result, compile_result.get_output_dir_path())
     else:
         inference_session = InferenceSession(onnx_file_path)

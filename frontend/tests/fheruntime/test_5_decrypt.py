@@ -14,4 +14,4 @@ if __name__ == '__main__':
 
     ser_output = load_data_array(data_dir + '/output.bin')
     output = client.decrypt(ser_output)
-    print(output)
+    print(__file__, output)

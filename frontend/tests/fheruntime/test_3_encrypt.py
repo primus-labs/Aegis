@@ -14,8 +14,8 @@ if __name__ == '__main__':
     private_data_1 = np.array([[1, 3], [5, 7], [9, 11]])
     private_data_2 = np.array([[2, 4], [6, 8], [10, 12]])
 
-    private_data_1 = np.array([1, 3, 5, 7, 9, 11])
-    private_data_2 = np.array([2, 4, 6, 8, 10, 12])
+    # private_data_1 = np.array([1, 3, 5, 7, 9, 11])
+    # private_data_2 = np.array([2, 4, 6, 8, 10, 12])
 
     ser = client.encrypt([private_data_1, private_data_2], True)
 
