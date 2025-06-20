@@ -19,7 +19,7 @@ class FHEDataProcessor:
         """
         return DataProcessor.privateInput(plain_input)
 
-    def public_input(self, plain_input: np.ndarray) -> Value:
+    def plaintext(self, plain_input: np.ndarray) -> Value:
         """
         Args
             plain_input (np.ndarray)

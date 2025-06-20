@@ -18,6 +18,6 @@ if __name__ == '__main__':
     # private_data_2 = np.array([2, 4, 6, 8, 10, 12])
 
     ser1 = client.encrypt(private_data_1, True)
-    ser2 = client.public_input(private_data_2, True)
+    ser2 = client.plaintext(private_data_2, True)
 
     save_data_array([ser1, ser2], data_dir + "/private_data.bin")

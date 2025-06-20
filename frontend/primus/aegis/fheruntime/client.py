@@ -144,9 +144,9 @@ class FHEClient:
             output = output.to_bytes()
         return output
 
-    def public_input(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes]:
+    def plaintext(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes]:
         """
-        Public input plaintext
+        Convert np.ndarray to Value
 
         Args
             plain_input (Union[np.ndarray, List[np.ndarray]):
@@ -162,7 +162,7 @@ class FHEClient:
         if isinstance(plain_input, List):
             return [self.encrypt(i, serialize_output) for i in plain_input]
 
-        output = self._data_processor.public_input(plain_input)
+        output = self._data_processor.plaintext(plain_input)
         if serialize_output:
             output = output.to_bytes()
         return output
