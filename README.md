@@ -144,6 +144,7 @@ Here is the full examples:
 
 ## Resources
 - [Quick Start](https://fhe.primuslabs.xyz/docs/Quick%20Start/quick_start)
+- [Deployment](https://fhe.primuslabs.xyz/docs/Quick%20Start/deploy)
 - [Core Architecture](https://fhe.primuslabs.xyz/docs/Installation/core_architecture)
 - [Compilation Workflow](https://fhe.primuslabs.xyz/docs/Installation/compile_workflow)
 
