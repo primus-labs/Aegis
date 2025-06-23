@@ -9,6 +9,15 @@ import os
 import json
 import tempfile
 
+class InputOutput:
+    """
+    InputOutput class
+    """
+    name: str
+
+    def __init__(self, name):
+        self.name = name
+
 class FHEInferenceSession:
     """
     FHEInferenceSession class, used to run inference
@@ -72,6 +81,22 @@ class FHEInferenceSession:
         Get the archive path
         """
         return self._archive_path
+
+    def get_inputs(self) -> List[InputOutput]:
+        """
+        Get inputs
+        """
+        compile_result = self._server.get_compile_result()
+        (input_names, output_names) = self._compute_input_output_names(compile_result)
+        return [InputOutput(name) for name in input_names]
+
+    def get_outputs(self) -> List[InputOutput]:
+        """
+        Get outputs
+        """
+        compile_result = self._server.get_compile_result()
+        (input_names, output_names) = self._compute_input_output_names(compile_result)
+        return [InputOutput(name) for name in output_names]
 
     def _compute_input_output_names(self, compile_result: FHECompileResult) -> (List[str], List[str]):
         """
@@ -207,7 +232,7 @@ class LocalFHEInferenceSession(FHEInferenceSession):
         self._client = FHEClient(compile_result, True)
         self._client.keygen()
 
-    def encrypt_run_decrypt(self, output_names: List[str], input_feed: Dict[str, np.ndarray]) -> Union[np.ndarray, List[np.ndarray]]:
+    def run(self, output_names: List[str], input_feed: Dict[str, np.ndarray]) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Encrypt plaintext, execute computation and decrypt ciphertext
 

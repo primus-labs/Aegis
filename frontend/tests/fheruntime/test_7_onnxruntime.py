@@ -1,4 +1,5 @@
-import onnxruntime as ort
+# from onnxruntime import InferenceSession
+from primus.aegis.fheruntime import LocalFHEInferenceSession as InferenceSession
 import numpy as np
 
 if __name__ == '__main__':
@@ -7,8 +8,7 @@ if __name__ == '__main__':
     with open(onnx_file, 'rb') as f:
         content = f.read()
 
-    # inference_session = ort.InferenceSession(path_or_bytes = 'data/add.onnx')
-    inference_session = ort.InferenceSession(path_or_bytes = content)
+    inference_session = InferenceSession(path_or_bytes = content)
     inputs = inference_session.get_inputs()
     outputs = inference_session.get_outputs()
     input_name = [i.name for i in inputs]

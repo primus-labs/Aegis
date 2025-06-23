@@ -1,4 +1,4 @@
-from primus.aegis.fheruntime import LocalFHEInferenceSession as LocalInferenceSession, CompileOption, CompileResult, COMPILE_TARGET 
+from primus.aegis.fheruntime import LocalFHEInferenceSession as LocalInferenceSession 
 from typing import List
 import numpy as np
 import os
@@ -17,6 +17,6 @@ if __name__ == '__main__':
     # data_2 = np.array([2, 4, 6, 8, 10, 12], dtype = np.float32)
 
     inference_session = LocalInferenceSession(path_or_bytes = onnx_file_path)
-    output = inference_session.encrypt_run_decrypt(['Y'], {'X1' : data_1, 'X2': data_2})
+    output = inference_session.run(['Y'], {'X1' : data_1, 'X2': data_2})
     print(__file__, output)
 
