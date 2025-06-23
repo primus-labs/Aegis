@@ -8,6 +8,7 @@ from typing import Callable, List, Union, Dict, Optional
 import tempfile
 import shutil
 import os
+from .mlir_tool import apply_mlir
 
 class FHEServer:
     """
@@ -86,10 +87,13 @@ class FHEServer:
         mlir_file = onnx_file + '.mlir'
         if len(result.stderr) > 0:
             raise RuntimeError('convert onnx to mlir error: ' + result.stderr)
-        cmd = ['sed','-i', '/krnl/d', mlir_file]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if len(result.stderr) > 0:
-            raise RuntimeError(result.stderr)
+        
+        # apply mlir content
+        with open(mlir_file, 'r', encoding='utf-8') as f:
+          input_mlir = f.read()
+          output_mlir = apply_mlir(input_mlir)
+        with open(mlir_file, 'w', encoding='utf-8') as f:
+          f.write(output_mlir)
         return mlir_file
 
     def _modify_mlir_file(self, param_annos: Dict[str, str], mlir_file: str):
