@@ -40,3 +40,38 @@ void updateProgressBar(const string& msg) {
 }
 ```
 
+### FHERuntime
+```cpp
+class FHERuntime {
+public:
+    void initProgressBar(const string& prog_spec_content) {
+        // parse prog_spec_content
+        ProgressBar::instance().setTotalCount(...);
+    }
+};
+```
+
+### Binding
+```cpp
+#include <pybind11/pybind11.h>
+static pybind11::function python_function;
+void set_python_function(pybind11::function fn) {
+    python_function = fn;
+}
+
+void call_python_function(const string& msg) {
+    if (python_function) {
+        python_function(msg);
+    }
+}
+
+PYBIND11_MODULE(callback, m) {
+    m.def("set_print_callback", &set_python_function);
+}
+```
+
+### Python
+```python
+def print_msg(msg):
+    print(msg, end = '', flush = True)
+```
