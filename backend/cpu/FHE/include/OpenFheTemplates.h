@@ -9,6 +9,9 @@ namespace openfhe {
 // clang-format off
 constexpr std::string_view kIncludeStmts = R"cpp(
 #include "openfhe.h"
+#include "ciphertext-ser.h"
+#include "cryptocontext-ser.h"
+#include "key/key-ser.h"
 #include <vector>
 #include <iostream>
 #include <cmath>
