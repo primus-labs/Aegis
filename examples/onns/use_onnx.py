@@ -15,5 +15,5 @@ data_2 = np.array([[2, 4],
                    dtype = np.float32)
 
 inference_session = LocalInferenceSession(onnx_file)
-output = inference_session.encrypt_run_decrypt(['Y'], {'X1': data_1, 'X2': data_2})
+output = inference_session.run(['Y'], {'X1': data_1, 'X2': data_2})
 print(output)

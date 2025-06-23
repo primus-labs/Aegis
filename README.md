@@ -103,7 +103,7 @@ Here is the full examples:
     data_2 = np.array([2, 4, 6, 8, 10, 12], dtype = np.float32)
 
     inference_session = LocalInferenceSession("/path/to/add.onnx")
-    output = inference_session.encrypt_run_decrypt(['Y'], {'X1': data_1, 'X2': data_2})
+    output = inference_session.run(['Y'], {'X1': data_1, 'X2': data_2})
     print(output)
   ```
 
