@@ -22,7 +22,24 @@ llvm::Expected<std::vector<Value>> FHERuntime::call(const std::vector<Value> &in
         std::vector<ProtoMessage<aegisprotocol::Function>> vectFuncs = progSpec.getFuncInfo();
         assert(vectFuncs.size() == 1 && "Only one public function can be generated.");
 
-        // Prepare parameters
+        // Argument dimension mismatch detected
+        unsigned expectSizes = 0;
+        for (auto arg : vectFuncs[0].asReader().getInputs()) {
+            auto dims = arg.getShape().getDimensions();
+            auto dim_size = dims.size() ? dims.size() : 1;
+            if (dim_size > 1) {
+                expectSizes += dims[0];
+            } else {
+                expectSizes++;
+            }
+        }
+        if (expectSizes != input.size()) {
+            // llvm::outs() << "expect input:" << expectSizes << ", real input size:" << input.size() << "\n";
+            return ErrorMsg("Dimension mismatch detected in arguments. Please verify argument dimensions.");
+        }
+
+
+        // Prepare arguments
         int valIdx = 0;
         std::vector<ArgWrapperBase*> args;
         for (auto func : vectFuncs) {
