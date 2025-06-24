@@ -10,7 +10,8 @@ cd ${sodir}
 #
 #
 # prepare
-export LD_LIBRARY_PATH=${curdir}/../third_party/openfhe/build/lib
+export LD_LIBRARY_PATH=${curdir}/../third_party/openfhe/build/lib:${curdir}/../build/lib/Runtime/FHE:.
+export DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 export PATH=${curdir}/../third_party/llvm-project/build/bin:$PATH
 
 #

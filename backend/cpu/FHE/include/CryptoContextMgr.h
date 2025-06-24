@@ -16,11 +16,8 @@ class CryptoContextMgr {
     // Delete copy constructor and assignment operator to prevent copying.
     CryptoContextMgr(const CryptoContextMgr &) = delete;
     CryptoContextMgr &operator=(const CryptoContextMgr &) = delete;
-
-    static CryptoContextMgr &getInstance() {
-        static CryptoContextMgr instance;
-        return instance;
-    }
+    
+    static CryptoContextMgr &getInstance();
 
     CryptoContext<DCRTPoly> getCryptoContext(const CCParams<CryptoContextCKKSRNS> &parameters) {
         static std::once_flag initFlag;

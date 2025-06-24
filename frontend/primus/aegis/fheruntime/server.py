@@ -2,12 +2,14 @@ from .compiler import FHECompiler, FHECompileResult
 from .runtime import FHERuntime
 from .keyset_manager import FHEKeysetManager
 from .py2mlir_converter import Py2MLIRConverter
-from primus_aegis.compiler import CompileOption, COMPILE_TARGET
-from primus_aegis import Value
+from primus.lib.primus_aegis.compiler import CompileOption, COMPILE_TARGET
+from primus.lib.primus_aegis import Value
 from typing import Callable, List, Union, Dict, Optional
 import tempfile
 import shutil
 import os
+import re
+import inspect
 from .mlir_tool import apply_mlir
 
 class FHEServer:
@@ -96,35 +98,54 @@ class FHEServer:
           f.write(output_mlir)
         return mlir_file
 
-    def _modify_mlir_file(self, param_annos: Dict[str, str], mlir_file: str):
+    def _modify_mlir_file(self, param_annos: Dict[str, str], param_names: List[str], mlir_file: str):
         """
         Modify mlir file, add param annotations
 
         Args
             param_annos (Dict[str, str]):
                 The param annotations, either encrypted or clear
+            param_names (List[str])
+                The param name
             mlir_file (str)
                 The mlir file which willl be modified
 
         Returns
             str: return the mlir file path
         """
-        import os
-        import subprocess
-        replace_list = []
-        for (k, v) in param_annos.items():
-            replace_str = 's/onnx.name = "' + k + '"/' + 'onnx.name = "' + k + '", onnx.type = "' + v + '"/g'
-            replace_list.append(replace_str)
+        with open(mlir_file, 'r') as f:
+            content = f.read()
+        match_fn = re.search('func.func.*{', content)
+        fn_str = match_fn.group()
+    
+        match_args = re.search('\((.*?)\)', fn_str)
+        args_str = match_args.group(1)
+    
+        match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)\s*{([^}]+)}', args_str)
+        has_onnx_name = True
+        if len(match_arg) == 0:
+            match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)', args_str)
+            has_onnx_name = False
+        arg_lst = []
+        for i in range(len(match_arg)):
+            if has_onnx_name:
+                name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
+                name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos[name] + '"'
+            else:
+                name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos[param_names[i]] + '"'
+            arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
+    
+        args_str2 = ''
+        for arg in arg_lst:
+            if len(args_str2) > 0:
+                args_str2 += ', '
+            args_str2 += arg[0] + ': ' + arg[1] + ' {' + arg[2] + '}'
+    
+        sub_fn = re.sub('\((.*?)\)\s*->', '(' + args_str2 + ') ->', fn_str)
+        sub_content = re.sub('func.func.*{', sub_fn, content)
 
-        cmd = ['sed', '-i']
-        for item in replace_list:
-            cmd.append('-e')
-            cmd.append(item)
-        cmd.append(mlir_file)
-        print(cmd)
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if len(result.stderr) > 0:
-            raise RuntimeError(result.stderr)
+        with open(mlir_file, 'w') as f:
+            f.write(sub_content)
 
     def _convert_py_to_mlir(self, output_dir: str, function: Callable) -> str:
         """
@@ -247,7 +268,14 @@ class FHEServer:
             raise RuntimeError("onnx_file and py_function are None")
 
         if param_annos != None:
-            self._modify_mlir_file(param_annos, mlir_file)
+            param_names = None
+            if callable(onnx_file_or_py_function):
+                source = inspect.getsource(onnx_file_or_py_function)
+                match_args = re.search('\((.*?)\)', source)
+                args_str = match_args.group(1)
+            
+                param_names = re.findall('(\w+)\s*:', args_str)
+            self._modify_mlir_file(param_annos, param_names, mlir_file)
 
         self._compile_result = self._compiler.compile(mlir_file, compile_option)
         return self._compile_result

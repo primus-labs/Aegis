@@ -40,8 +40,8 @@ Use `./scripts/copy_files_to_frontend.sh` to copy the necessary files to the fol
 │   ├── mlir-translate
 │   └── onnx-mlir
 └── lib
-    ├── libAegisRuntime.so*
-    └── primus_aegis.so
+    ├── libAegisRuntime.so*[dylib]
+    └── primus_aegis.cpython-*.so
 ```
 
 **Note**: Once you have the relevant files under `bin` and `lib`, you don't need to set the corresponding paths in the test script.

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(primus_aegis)
 set(target_name primus_aegis)
 
+add_compile_options(-fexceptions -frtti)
+
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 
@@ -13,6 +15,7 @@ FetchContent_Declare(
 message(STATUS "Starting pybind11 download...")
 FetchContent_MakeAvailable(pybind11)
 message(STATUS "pybind11 downloaded successfully.")
+# find_package(pybind11 REQUIRED)
 
 FetchContent_Declare(
     nlohmann_json
@@ -23,24 +26,24 @@ message(STATUS "Starting nlohmann_json download...")
 FetchContent_MakeAvailable(nlohmann_json)
 message(STATUS "pybind11 nlohmann_json successfully.")
 
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 include_directories(${Python_INCLUDE_DIRS})
 
 # The following two forms of library files can be imported directly into python by `import primus_aegis`
-IF(FALSE)
+IF(TRUE)
   # generate such as "primus_aegis.cpython-version-arch-xxx.so"
   pybind11_add_module(primus_aegis primus_aegis.cpp)
+  set_source_files_properties(primus_aegis.cpp PROPERTIES COMPILE_FLAGS "-fvisibility=default -fno-lto -ffat-lto-objects -O0")
 ELSE()
   # generate "primus_aegis.so", more general
   add_library(primus_aegis SHARED primus_aegis.cpp)
   set_target_properties(primus_aegis PROPERTIES PREFIX "")
 ENDIF()
 target_link_libraries(${target_name} PRIVATE pybind11::headers pybind11::module nlohmann_json::nlohmann_json)
+target_link_libraries(${target_name} PRIVATE Python3::Python)
 
 target_link_libraries(${target_name}
   PRIVATE
-  aegis_cpu
-  AegisCommon
   AegisRuntime
   OPENFHEcore
   OPENFHEpke

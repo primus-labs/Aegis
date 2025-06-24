@@ -10,6 +10,8 @@ Aegis provides developer-friendly FHE compiler and runtime environment toolkit, 
 
 ### Prerequisites
 
+> python version 3.10 or above (which can be checked by running python --version).
+
 #### Ubuntu
 
 ```shell
@@ -39,8 +41,6 @@ sudo pip install setuptools
 sudo pip install build
 sudo pip install torch
 ```
-
-> python version 3.10 or above (which can be checked by running python --version).
 
 ### MacOS(Arm64)
 

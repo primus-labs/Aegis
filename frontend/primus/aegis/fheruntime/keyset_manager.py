@@ -1,4 +1,4 @@
-from primus_aegis.fhe import KeyInfo, Keyset
+from primus.lib.primus_aegis.fhe import KeyInfo, Keyset
 import json
 
 class FHEKeysetManager:

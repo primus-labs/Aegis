@@ -15,14 +15,15 @@ def test_compile() -> str:
 
     with open(onnx_file_path, 'rb') as f:
         onnx_file_bytes = f.read()
+    param_annos = {'X1': 'encrypted', 'X2': 'clear'}
 
     if test_server_api:
         server = Server()
-        compile_result = server.compile(onnx_file_path, {'X1': 'encrypted', 'X2': 'clear'})
-        # compile_result = server.compile(add_2d_6elements)
+        compile_result = server.compile(onnx_file_path, param_annos)
+        # compile_result = server.compile(add_2d_6elements, param_annos)
         archive_path = server.save(compile_result, compile_result.get_output_dir_path())
     else:
-        inference_session = InferenceSession(onnx_file_path)
+        inference_session = InferenceSession(onnx_file_path, param_annos)
         archive_path = inference_session.get_archive_path()
     return archive_path
 

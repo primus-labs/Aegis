@@ -17,4 +17,4 @@ requires-python = ">=3.10"
 include = ["primus*"]
 
 [tool.setuptools.package-data]
-primus = ["lib/*.so*", "bin/*"]
+primus = ["lib/*.so*", "lib/*.dylib*", "bin/*"]

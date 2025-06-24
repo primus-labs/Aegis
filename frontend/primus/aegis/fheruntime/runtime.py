@@ -1,6 +1,6 @@
-from primus_aegis.runtime import FHERuntime as Runtime
-from primus_aegis.compiler import CompileOption
-from primus_aegis import Value
+from primus.lib.primus_aegis.runtime import FHERuntime as Runtime
+from primus.lib.primus_aegis.compiler import CompileOption
+from primus.lib.primus_aegis import Value
 from typing import List, Union
 from .compiler import FHECompileResult
 

@@ -31,10 +31,10 @@ namespace aegis {
 const std::string COMPILER = "g++";
 #ifdef __APPLE__
     const std::string LINKER_SHARED_OPT =
-        " -dylib -undefined dynamic_lookup -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem -o ";
+        " -dylib -undefined dynamic_lookup -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem -std=c++17 -o ";
     const std::string SHARED_LIB_EXT = ".dylib";
 #else // Linux
-    const std::string LINKER_SHARED_OPT = " -O2 -shared -fPIC -o ";
+    const std::string LINKER_SHARED_OPT = " -std=c++17 -O2 -shared -fPIC -o ";
     const std::string SHARED_LIB_EXT = ".so";
 #endif
 

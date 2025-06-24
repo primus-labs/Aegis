@@ -1,8 +1,8 @@
 from .server import FHEServer
 from .client import FHEClient
 from .compiler import FHECompileResult
-from primus_aegis.compiler import CompileOption, COMPILE_TARGET
-from primus_aegis import Value
+from primus.lib.primus_aegis.compiler import CompileOption, COMPILE_TARGET
+from primus.lib.primus_aegis import Value
 from typing import List, Union, Optional, Dict
 import numpy as np
 import os
@@ -25,7 +25,7 @@ class FHEInferenceSession:
     _server: FHEServer
     _archive_path: str
 
-    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
         """
         Construct FHEInferenceSession instance
 
@@ -36,7 +36,8 @@ class FHEInferenceSession:
                     - str
                     - os.PathLike
                     - None, compilation will be skipped
-
+            param_annos (Optional[Dict[str, str]])
+                Annotation for parameter, either encrypted/clear
             compile_option (CompileOption):
                 options for compilation
 
@@ -50,11 +51,11 @@ class FHEInferenceSession:
                     onnx_file = tmp_dir + '/' + 'tmp.onnx'
                     with open(onnx_file, 'wb') as f:
                         f.write(path_or_bytes)
-                    self._do_compile(onnx_file, compile_option)
+                    self._do_compile(onnx_file, param_annos, compile_option)
             else:
-                self._do_compile(path_or_bytes, compile_option)
+                self._do_compile(path_or_bytes, param_annos, compile_option)
 
-    def _do_compile(self, onnx_file: Union[str, os.PathLike], compile_option: CompileOption):
+    def _do_compile(self, onnx_file: Union[str, os.PathLike], param_annos: Dict[str, str], compile_option: CompileOption):
         """
         Compile onnx file into FHE operations
 
@@ -63,11 +64,13 @@ class FHEInferenceSession:
                 Accept either
                     - str
                     - os.PathLike
+            param_annos (Dict[str, str])
+                Annotation for parameter, either encrypted/clear
 
             compile_option (CompileOption):
                 options for compilation
         """
-        compile_result = self._server.compile(onnx_file, compile_option)
+        compile_result = self._server.compile(onnx_file, param_annos, compile_option)
         self._archive_path = self._server.save(compile_result, compile_result.get_output_dir_path())
 
     def get_server(self) -> FHEServer:
@@ -214,7 +217,7 @@ class LocalFHEInferenceSession(FHEInferenceSession):
     LocalFHEInferenceSession class, used to compute FHE operations locally
     """
     _client: FHEClient
-    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, compile_option: CompileOption = None):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None):
         """
         Construct LocalFHEInferenceSession instance
 
@@ -224,10 +227,12 @@ class LocalFHEInferenceSession(FHEInferenceSession):
                     - bytes: onnx file content
                     - str: onnx file path
                     - os.PathLike: onnx file path
+            param_annos (Dict[str, str]):
+                Paramter annotations, either encrypted/clear
             compile_option (CompileOption):
                 Options for compilation
         """
-        super().__init__(path_or_bytes, compile_option, True)
+        super().__init__(path_or_bytes, param_annos, compile_option, True)
         compile_result = self._server.get_compile_result()
         self._client = FHEClient(compile_result, True)
         self._client.keygen()

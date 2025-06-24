@@ -60,6 +60,9 @@ llvm_update_compile_flags(aegiscompiler)
 set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 #link_directories(${OPENFHE_LIBRARY_PATH})
 target_link_libraries(aegiscompiler PRIVATE ${DEP_LIBS} aegis-protocol -L${OPENFHE_LIBRARY_PATH} OPENFHEcore)
+if(APPLE)
+target_link_options(aegiscompiler PRIVATE "LINKER:-rpath,@loader_path" "LINKER:-rpath,/usr/local/lib")
+endif()
 
 add_dependencies(aegiscompiler mlir-headers)
 

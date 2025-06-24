@@ -8,3 +8,5 @@ midend/tests/bincheck/
 
 # third party
 third_party/
+
+__pycache__

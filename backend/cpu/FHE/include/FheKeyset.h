@@ -27,10 +27,7 @@ class FheKeyset {
 
   public:
     // static method to get the singleton instance.
-    static FheKeyset &getInstance() {
-        static FheKeyset instance(std::make_shared<FHEPrivateKey>(), std::make_shared<FHEPublicKey>());
-        return instance;
-    }
+    static FheKeyset &getInstance();
 
     // initialize the singleton instance.
     static void initialize(std::shared_ptr<FHEPrivateKey> PriKey, std::shared_ptr<FHEPublicKey> PubKey) {
