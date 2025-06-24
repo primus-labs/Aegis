@@ -1,6 +1,7 @@
 import os
 import importlib.resources
 import ctypes
+import platform
 
 
 def __valid_check(bin_path: str):
@@ -12,7 +13,11 @@ def __valid_check(bin_path: str):
 
 def load_dependencis():
     try:
-        lib_path = importlib.resources.files("primus").joinpath("lib/libAegisRuntime.so.20.0git")
+        system = platform.system()
+        so_name = "libAegisRuntime.so.20.0git"
+        if system == "Darwin":
+            so_name = "libAegisRuntime.dylib"
+        lib_path = importlib.resources.files("primus").joinpath(f"lib/{so_name}")
         lib_path_str = str(lib_path)
         __valid_check(lib_path_str)
         ctypes.CDLL(lib_path_str)
