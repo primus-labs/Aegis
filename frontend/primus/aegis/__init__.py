@@ -1,4 +1,4 @@
-from .utils import ensure_bin_in_path, load_primus_aegis
+from .utils import ensure_bin_in_path, load_dependencis
 
 ensure_bin_in_path()
-_ = load_primus_aegis()
+load_dependencis()

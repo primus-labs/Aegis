@@ -6,7 +6,7 @@ cd "$SCRIPT_DIR"
 
 #
 #
-primus_aegis_so=${SCRIPT_DIR}/../build/lib/Binding/primus_aegis.so
+primus_aegis_so=$(ls ${SCRIPT_DIR}/../build/lib/Binding/primus_aegis.cpython*.so)
 aegis_rt_so=${SCRIPT_DIR}/../build/lib/Runtime/FHE/libAegisRuntime.so.20.0git
 onnx_mlir_exe=${SCRIPT_DIR}/../third_party/onnx-mlir/build/Release/bin/onnx-mlir
 mlir_translate_exe=${SCRIPT_DIR}/../third_party/llvm-project/build/bin/mlir-translate
