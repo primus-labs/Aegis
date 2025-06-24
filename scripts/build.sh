@@ -2,21 +2,20 @@
 
 build_type="Release"
 if [[ $# -gt 0 ]]; then
-    case "${1,,}" in
-        "debug")
-            build_type="Debug"
-            ;;
-        "release")
-            build_type="Release"
-            ;;
-        *)
-            echo "Unknown build type: $1"
-            echo "Valid options: debug | release"
-            exit 1
-            ;;
-    esac
+  case "${1,,}" in
+  "debug")
+    build_type="Debug"
+    ;;
+  "release")
+    build_type="Release"
+    ;;
+  *)
+    echo "Unknown build type: $1"
+    echo "Valid options: debug | release"
+    exit 1
+    ;;
+  esac
 fi
-
 
 llvm_targets_to_build="X86"
 if [[ $OSTYPE == 'darwin'* ]]; then
@@ -54,12 +53,10 @@ cmake -G Ninja ../llvm \
 ninja -j8
 sudo ninja install
 
-
 echo "****************************************************"
 echo " setup mlir core python bindings path to PYTHONPATH "
 echo "****************************************************"
 ./../../../scripts/setup_pythonpath.sh
-
 
 echo "****************************************************"
 echo "**************     build onnx-mlir     *************"
@@ -76,7 +73,6 @@ cmake -G Ninja \
   ..
 ninja -j8
 
-
 echo "****************************************************"
 echo "**************      build OpenFHE      *************"
 echo "****************************************************"
@@ -91,16 +87,17 @@ cmake .. -DRUN_HAVE_POSIX_REGEX=0 \
 make -j8
 sudo make install
 
-
 echo "****************************************************"
 echo "**************       build aegis       *************"
 echo "****************************************************"
 cd ../../../
 mkdir -p build
 cd build
-cmake ../midend/ -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/ -DCMAKE_BUILD_TYPE=${build_type}
+cmake ../midend/ \
+  -DMLIR_DIR=../third_party/llvm-project/build/lib/cmake/mlir/ \
+  -DCMAKE_BUILD_TYPE=${build_type} \
+  -DPython3_EXECUTABLE=$(which python3)
 make -j8
-
 
 echo "****************************************************"
 echo "**************       test aegis        *************"

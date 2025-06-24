@@ -2,8 +2,8 @@ from .compiler import FHECompiler, FHECompileResult
 from .runtime import FHERuntime
 from .keyset_manager import FHEKeysetManager
 from .py2mlir_converter import Py2MLIRConverter
-from primus_aegis.compiler import CompileOption, COMPILE_TARGET
-from primus_aegis import Value
+from primus.lib.primus_aegis.compiler import CompileOption, COMPILE_TARGET
+from primus.lib.primus_aegis import Value
 from typing import Callable, List, Union, Dict, Optional
 import tempfile
 import shutil

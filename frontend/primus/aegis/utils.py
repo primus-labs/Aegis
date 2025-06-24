@@ -1,7 +1,5 @@
 import os
 import importlib.resources
-import importlib.util
-import importlib.machinery
 import ctypes
 
 
@@ -12,26 +10,16 @@ def __valid_check(bin_path: str):
         raise PermissionError(f"Not executable: {bin_path}")
 
 
-def load_primus_aegis():
+def load_dependencis():
     try:
         lib_path = importlib.resources.files("primus").joinpath("lib/libAegisRuntime.so.20.0git")
         lib_path_str = str(lib_path)
         __valid_check(lib_path_str)
         ctypes.CDLL(lib_path_str)
-
-        lib_path = importlib.resources.files("primus").joinpath("lib/primus_aegis.so")
-        lib_path_str = str(lib_path)
-        __valid_check(lib_path_str)
-
-        loader = importlib.machinery.ExtensionFileLoader("primus_aegis", str(lib_path_str))
-        spec = importlib.util.spec_from_loader("primus_aegis", loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        return module
     except ModuleNotFoundError:
         raise ImportError("Package 'primus' not found. Make sure it's installed.")
     except Exception as e:
-        raise RuntimeError(f"Failed to load primus_aegis: {e}")
+        raise RuntimeError(f"Failed to load dependencis library: {e}")
 
 
 def ensure_bin_in_path():

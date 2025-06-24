@@ -1,4 +1,4 @@
-from primus_aegis.compiler import CompileOption, CompileResult, Compiler
+from primus.lib.primus_aegis.compiler import CompileOption, CompileResult, Compiler
 
 class FHECompileResult:
     """

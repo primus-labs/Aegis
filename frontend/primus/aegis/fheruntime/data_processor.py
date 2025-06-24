@@ -1,5 +1,5 @@
-from primus_aegis.dataprocessor import FHEDataProcessor as DataProcessor
-from primus_aegis import Value
+from primus.lib.primus_aegis.dataprocessor import FHEDataProcessor as DataProcessor
+from primus.lib.primus_aegis import Value
 import numpy as np
 
 class FHEDataProcessor:

@@ -1,8 +1,8 @@
 from .server import FHEServer
 from .client import FHEClient
 from .compiler import FHECompileResult
-from primus_aegis.compiler import CompileOption, COMPILE_TARGET
-from primus_aegis import Value
+from primus.lib.primus_aegis.compiler import CompileOption, COMPILE_TARGET
+from primus.lib.primus_aegis import Value
 from typing import List, Union, Optional, Dict
 import numpy as np
 import os
