@@ -3,10 +3,12 @@ import numpy as np
 
 # define target function
 def apply_discount(member_level: float, price: float) -> float:
+    result = 0.0
     if member_level >= 2.0:
-        return price * 0.75
+        result = price * 0.75
     else:
-        return price * 1.0
+        result = price * 1.0
+    return result
 
 # compile the target function
 server = Server()
