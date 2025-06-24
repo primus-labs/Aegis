@@ -121,32 +121,6 @@ class FHEClient:
         self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 
-    def encrypt_or_plaintext(self, plain_input: List[np.ndarray], input_status: List[bool], serialize_output: bool = False) -> Union[Value, bytes, List[Value], List[bytes]]:
-        """
-        Encrypt or plaintext
-
-        Args
-            plain_input (List[np.ndarray])
-                plain input
-            input_status (List[bool])
-                input status
-            serilize_output (bool)
-                 serialize output
-
-        Returns
-            Union[Value, bytes, List[Value], List[bytes]]
-        """
-        if len(plain_input) != len(input_status):
-            raise RuntimeError('the size of plain input and input status is not the same')
-
-        result = []
-        for i in range(len(plain_input)):
-            if input_status[i]:
-                result.append(self.encrypt(plain_input[i], serialize_output))
-            else:
-                result.append(self.plaintext(plain_input[i], serialize_output))
-        return result
-        
     def encrypt(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes, List[Value], List[bytes]]:
         """
         Encrypt plaintext

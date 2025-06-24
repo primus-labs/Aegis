@@ -260,7 +260,7 @@ class LocalFHEInferenceSession(FHEInferenceSession):
             input_status = [self._param_annos.get(item, 'encrypted') == 'encrypted' for item in all_input_names]
         else:
             input_status = [True for i in all_input_names]
-        private_data = self._client.encrypt_or_plaintext(input_data, input_status)
+        private_data = [self._client.encrypt(input_data[i]) if input_status[i] else self._client.plaintext(input_data[i]) for i in range(len(input_status))]
         output_data = self._server.run(private_data)
         output_data = self._compute_output_data(output_data, output_names, all_output_names)
         decrypted_data = self._client.decrypt(output_data)
