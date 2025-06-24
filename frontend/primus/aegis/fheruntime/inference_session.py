@@ -24,6 +24,7 @@ class FHEInferenceSession:
     """
     _server: FHEServer
     _archive_path: str
+    _param_annos: Optional[Dict[str, str]]
 
     def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
         """
@@ -45,6 +46,7 @@ class FHEInferenceSession:
                 Whether it works in simulation mode
         """
         self._server = FHEServer(is_simulate)
+        self._param_annos = param_annos
         if path_or_bytes != None:
             if isinstance(path_or_bytes, bytes):
                 with tempfile.TemporaryDirectory() as tmp_dir:
@@ -254,7 +256,11 @@ class LocalFHEInferenceSession(FHEInferenceSession):
         (all_input_names, all_output_names) = self._compute_input_output_names(compile_result)
         self._check_input_output_names(list(input_feed.keys()), output_names, all_input_names, all_output_names)
         input_data = self._compute_input_data(input_feed, all_input_names);
-        private_data = self._client.encrypt(input_data)
+        if self._param_annos:
+            input_status = [self._param_annos.get(item, 'encrypted') == 'encrypted' for item in all_input_names]
+        else:
+            input_status = [True for i in all_input_names]
+        private_data = self._client.encrypt_or_plaintext(input_data, input_status)
         output_data = self._server.run(private_data)
         output_data = self._compute_output_data(output_data, output_names, all_output_names)
         decrypted_data = self._client.decrypt(output_data)
