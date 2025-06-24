@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(primus_aegis)
 set(target_name primus_aegis)
 
+add_compile_options(-fexceptions -frtti)
+
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 
@@ -31,7 +33,7 @@ include_directories(${Python_INCLUDE_DIRS})
 IF(TRUE)
   # generate such as "primus_aegis.cpython-version-arch-xxx.so"
   pybind11_add_module(primus_aegis primus_aegis.cpp)
-  set_source_files_properties(primus_aegis.cpp PROPERTIES COMPILE_FLAGS "-fvisibility=default -fno-lto -ffat-lto-objects")
+  set_source_files_properties(primus_aegis.cpp PROPERTIES COMPILE_FLAGS "-fvisibility=default -fno-lto -ffat-lto-objects -O0")
 ELSE()
   # generate "primus_aegis.so", more general
   add_library(primus_aegis SHARED primus_aegis.cpp)
@@ -42,8 +44,6 @@ target_link_libraries(${target_name} PRIVATE Python3::Python)
 
 target_link_libraries(${target_name}
   PRIVATE
-  aegis_cpu
-  AegisCommon
   AegisRuntime
   OPENFHEcore
   OPENFHEpke

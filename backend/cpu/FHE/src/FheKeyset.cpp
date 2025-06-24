@@ -17,6 +17,11 @@ using namespace lbcrypto;
 namespace aegiscpu {
 namespace openfhe {
 
+FheKeyset &FheKeyset::getInstance() {
+    static FheKeyset instance(std::make_shared<FHEPrivateKey>(), std::make_shared<FHEPublicKey>());
+    return instance;
+}
+
 static std::string serializeBE(uint32_t value) {
     uint8_t buffer[4] = {0};
     buffer[3] = value & 0xFF;

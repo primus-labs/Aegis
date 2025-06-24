@@ -1,7 +1,8 @@
-add_compile_options(-fexceptions)
+add_compile_options(-fexceptions -frtti)
 
 add_library (
     aegis_cpu
+    CryptoContextMgr.cpp
     KeysetGenerator.cpp
     Operate.cpp
     FheKeyset.cpp
