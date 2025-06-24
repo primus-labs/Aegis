@@ -9,6 +9,7 @@ import tempfile
 import shutil
 import os
 import re
+import inspect
 from .mlir_tool import apply_mlir
 
 class FHEServer:
@@ -97,13 +98,15 @@ class FHEServer:
           f.write(output_mlir)
         return mlir_file
 
-    def _modify_mlir_file(self, param_annos: Dict[str, str], mlir_file: str):
+    def _modify_mlir_file(self, param_annos: Dict[str, str], param_names: List[str], mlir_file: str):
         """
         Modify mlir file, add param annotations
 
         Args
             param_annos (Dict[str, str]):
                 The param annotations, either encrypted or clear
+            param_names (List[str])
+                The param name
             mlir_file (str)
                 The mlir file which willl be modified
 
@@ -119,10 +122,17 @@ class FHEServer:
         args_str = match_args.group(1)
     
         match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)\s*{([^}]+)}', args_str)
+        has_onnx_name = True
+        if len(match_arg) == 0:
+            match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)', args_str)
+            has_onnx_name = False
         arg_lst = []
         for i in range(len(match_arg)):
-            name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
-            name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos[name] + '"'
+            if has_onnx_name:
+                name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
+                name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos[name] + '"'
+            else:
+                name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos[param_names[i]] + '"'
             arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
     
         args_str2 = ''
@@ -258,7 +268,14 @@ class FHEServer:
             raise RuntimeError("onnx_file and py_function are None")
 
         if param_annos != None:
-            self._modify_mlir_file(param_annos, mlir_file)
+            param_names = None
+            if callable(onnx_file_or_py_function):
+                source = inspect.getsource(onnx_file_or_py_function)
+                match_args = re.search('\((.*?)\)', source)
+                args_str = match_args.group(1)
+            
+                param_names = re.findall('(\w+)\s*:', args_str)
+            self._modify_mlir_file(param_annos, param_names, mlir_file)
 
         self._compile_result = self._compiler.compile(mlir_file, compile_option)
         return self._compile_result

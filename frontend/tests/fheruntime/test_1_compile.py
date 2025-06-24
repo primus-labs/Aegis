@@ -18,8 +18,8 @@ def test_compile() -> str:
 
     if test_server_api:
         server = Server()
-        compile_result = server.compile(onnx_file_path, {'X1': 'encrypted', 'X2': 'clear'})
-        # compile_result = server.compile(add_2d_6elements)
+        # compile_result = server.compile(onnx_file_path, {'X1': 'encrypted', 'X2': 'clear'})
+        compile_result = server.compile(add_2d_6elements, {'X1': 'encrypted', 'X2': 'clear'})
         archive_path = server.save(compile_result, compile_result.get_output_dir_path())
     else:
         inference_session = InferenceSession(onnx_file_path)
