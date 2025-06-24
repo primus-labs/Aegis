@@ -1,7 +1,12 @@
 dist/
 *.egg-info/
+__pycache__
 
 # ignore the following files
 # run ./scripts/copy_files_to_frontend.sh
 primus/bin/*
 primus/lib/*
+!primus/lib/__init__.py
+
+# tests
+tests/*/output
