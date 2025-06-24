@@ -130,9 +130,9 @@ class FHEServer:
         for i in range(len(match_arg)):
             if has_onnx_name:
                 name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
-                name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos[name] + '"'
+                name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos.get(name, 'encrypted') + '"'
             else:
-                name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos[param_names[i]] + '"'
+                name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos.get(param_names[i], 'encrypted') + '"'
             arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
     
         args_str2 = ''
@@ -142,6 +142,11 @@ class FHEServer:
             args_str2 += arg[0] + ': ' + arg[1] + ' {' + arg[2] + '}'
     
         sub_fn = re.sub('\((.*?)\)\s*->', '(' + args_str2 + ') ->', fn_str)
+        if not has_onnx_name:
+            return_type = re.search('->\s*([^\s]+)\s*{', sub_fn)
+            return_type = return_type.group(1)
+            onnx_name = '{onnx.name = "Y"}'
+            sub_fn = re.sub('->.*?{', '-> (' + return_type + ' ' + onnx_name + ') {', sub_fn)
         sub_content = re.sub('func.func.*{', sub_fn, content)
 
         with open(mlir_file, 'w') as f:
