@@ -9,10 +9,14 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/include/llvm/ADT/ArrayRef.h"
 #include "llvm/include/llvm/ADT/SmallVector.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "Common/FheDefines.h"
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 
 namespace mlir {
@@ -54,6 +58,9 @@ llvm::SmallVector<int32_t> getAllGaloisIndexs(mlir::ModuleOp module);
 
 // Adjusts batch size based on the batchSize parameter, adjust batch size to power of 2
 int64_t adjustAndGetBatchSize(int64_t batchSize);
+
+// Searches for a specified tool in system paths and environment variables.
+std::string findAegisTool(const std::string &toolFileName, const std::string &envVarName);
 
 } // namespace aegis
 } // namespace mlir

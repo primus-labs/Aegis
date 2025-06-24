@@ -1,5 +1,6 @@
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEPipeline.h"
+#include "Runtime/FHE/SimPipeline.h"
 #include "Runtime/FHE/ProgramSpecGeneration.h"
 #include "Common/Error.h"
 #include "Dialect/FHE/FHEDialect.h"
@@ -85,93 +86,111 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
         return ErrorMsg("The compiler does not yes sopport GPUs.");
     }
 
-    // higher mlir(using onnx-mlir conver module to mlir)
-    if (options.target == TARGET::MLIR) {
-        return res;
-    }
+    // if target is SIM_MLIR, the generate lower level mlir for simulate
+    if (options.target == TARGET::SIM_MLIR) {
+        std::string fullMlirFileName;
+        res.simFileName = "sim.mlir";
+        fullMlirFileName = res.outputDirPath + '/' + res.simFileName;
 
-    // Lower high mlir to low mlir.(eg: unroll affine.for ...)
-    if (aegis::fhepipeline::lowerHighLevelMlir(mlirContext, module, enablePass, options.verbose).failed()) {
-        return ErrorMsg("Failed to lower higher level mlir.");
-    }
-    if (options.target == TARGET::LOWER_MLIR) {
-        return res;
-    }
-
-    // Lower build-in mlir to Secret IR
-    if (aegis::fhepipeline::lowerMlirToSecret(mlirContext, module, enablePass, options.verbose).failed()) {
-        return ErrorMsg("Failed to lower buildin mlir to secret ir.");
-    }
-    if (options.target == TARGET::SECRET) {
-        return res;
-    }
-
-    // Lower secret ir to fhe ir
-    if (aegis::fhepipeline::lowerSecretToFhe(mlirContext, module, enablePass, options.verbose).failed()) {
-        return ErrorMsg("Failed to lower secret ir to fhe ir.");
-    }
-    if (options.target == TARGET::FHE) {
-        return res;
-    }
-
-    // Generate prog_spec file.
-    // We must first generate the prog_spec.json file, because in the lowerFheToEmitc pipeline, 
-    // we need to generate the corresponding cpp code based on the prog_spec.json.
-    std::string fullProgSpecJsonFileName;
-    res.progSpecFileName = "prog_spec.json";
-    fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
-
-    // Recursively create directories (eg: auto-create /tmp/aegis if missing)
-    std::error_code error = llvm::sys::fs::create_directories(res.outputDirPath);
-    if (error) {
-        return ErrorMsg("Directory creation failed: " + error.message());
-    }
-
-    // Lower fhe ir to emitc ir
-    if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, options.verbose).failed()) {
-        return ErrorMsg("Failed to lower fhe ir to emitc ir.");
-    }
-
-    // Generate prog_spec.json
-    if (options.target == TARGET::EMITC || options.target == TARGET::CPP || 
-        options.target == TARGET::LIBRARY) {
-        auto progSpecOrErr = createProgramSpec(module, options);
-        if (!progSpecOrErr) {
-            return progSpecOrErr.takeError();
+        // Recursively create directories (eg: auto-create /tmp/aegis if missing)
+        std::error_code error = llvm::sys::fs::create_directories(res.outputDirPath);
+        if (error) {
+            return ErrorMsg("Directory creation failed: " + error.message());
         }
 
-        llvm::sys::fs::remove(fullProgSpecJsonFileName);
-        if (!emitProgragSpecToJson(fullProgSpecJsonFileName, progSpecOrErr.get())) {
-            return ErrorMsg("Failed to generate program spec json file.");
+        if (aegis::simpipeline::lowerToLowLevelMLIR(module, fullMlirFileName).failed()) {
+            return ErrorMsg("Failed to lower mlir to simulate mlir.");
         }
-    }
+    } else {
 
-    // Lower emitc ir finalize(prepare for codegen)
-    if (aegis::fhepipeline::lowerEmitcFinalize(mlirContext, module, enablePass, fullProgSpecJsonFileName, options.verbose).failed()) {
-        return ErrorMsg("Failed to lower emitc ir finalize");
-    }
-    if (options.target == TARGET::EMITC) {
-        return res;
-    }
+        // higher mlir(using onnx-mlir conver module to mlir)
+        if (options.target == TARGET::MLIR) {
+            return res;
+        }
 
-    // Transform emitc ir to cpp
-    std::string fullCppFileName;
-    res.cppFileName = "output.cpp";
-    fullCppFileName = res.outputDirPath + '/' + res.cppFileName;
-    if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, fullCppFileName, options.verbose).failed()) {
-        return ErrorMsg("Failed to transform emitc to cpp.");
-    }
-    if (options.target == TARGET::CPP) {
-        return res;
-    }
-    
-    // Compile cpp to library
-    std::string fullBinFileName;
-    res.binFileName = "libaegisshared" + SHARED_LIB_EXT;
-    fullBinFileName = res.outputDirPath + '/' + res.binFileName;
-    auto emitShareRes = emitSharedLib(fullCppFileName, fullBinFileName);
-    if (!emitShareRes) {
-        return ErrorMsg(llvm::toString(emitShareRes.takeError()));
+        // Lower high mlir to low mlir.(eg: unroll affine.for ...)
+        if (aegis::fhepipeline::lowerHighLevelMlir(mlirContext, module, enablePass, options.verbose).failed()) {
+            return ErrorMsg("Failed to lower higher level mlir.");
+        }
+        if (options.target == TARGET::LOWER_MLIR) {
+            return res;
+        }
+
+        // Lower build-in mlir to Secret IR
+        if (aegis::fhepipeline::lowerMlirToSecret(mlirContext, module, enablePass, options.verbose).failed()) {
+            return ErrorMsg("Failed to lower buildin mlir to secret ir.");
+        }
+        if (options.target == TARGET::SECRET) {
+            return res;
+        }
+
+        // Lower secret ir to fhe ir
+        if (aegis::fhepipeline::lowerSecretToFhe(mlirContext, module, enablePass, options.verbose).failed()) {
+            return ErrorMsg("Failed to lower secret ir to fhe ir.");
+        }
+        if (options.target == TARGET::FHE) {
+            return res;
+        }
+
+        // Generate prog_spec file.
+        // We must first generate the prog_spec.json file, because in the lowerFheToEmitc pipeline, 
+        // we need to generate the corresponding cpp code based on the prog_spec.json.
+        std::string fullProgSpecJsonFileName;
+        res.progSpecFileName = "prog_spec.json";
+        fullProgSpecJsonFileName = res.outputDirPath + '/' + res.progSpecFileName;
+
+        // Recursively create directories (eg: auto-create /tmp/aegis if missing)
+        std::error_code error = llvm::sys::fs::create_directories(res.outputDirPath);
+        if (error) {
+            return ErrorMsg("Directory creation failed: " + error.message());
+        }
+
+        // Lower fhe ir to emitc ir
+        if (aegis::fhepipeline::lowerFheToEmitc(mlirContext, module, enablePass, options.verbose).failed()) {
+            return ErrorMsg("Failed to lower fhe ir to emitc ir.");
+        }
+
+        // Generate prog_spec.json
+        if (options.target == TARGET::EMITC || options.target == TARGET::CPP || 
+            options.target == TARGET::LIBRARY) {
+            auto progSpecOrErr = createProgramSpec(module, options);
+            if (!progSpecOrErr) {
+                return progSpecOrErr.takeError();
+            }
+
+            llvm::sys::fs::remove(fullProgSpecJsonFileName);
+            if (!emitProgragSpecToJson(fullProgSpecJsonFileName, progSpecOrErr.get())) {
+                return ErrorMsg("Failed to generate program spec json file.");
+            }
+        }
+
+        // Lower emitc ir finalize(prepare for codegen)
+        if (aegis::fhepipeline::lowerEmitcFinalize(mlirContext, module, enablePass, fullProgSpecJsonFileName, options.verbose).failed()) {
+            return ErrorMsg("Failed to lower emitc ir finalize");
+        }
+        if (options.target == TARGET::EMITC) {
+            return res;
+        }
+
+        // Transform emitc ir to cpp
+        std::string fullCppFileName;
+        res.cppFileName = "output.cpp";
+        fullCppFileName = res.outputDirPath + '/' + res.cppFileName;
+        if (aegis::fhepipeline::transformEmitcToCpp(mlirContext, module, fullCppFileName, options.verbose).failed()) {
+            return ErrorMsg("Failed to transform emitc to cpp.");
+        }
+        if (options.target == TARGET::CPP) {
+            return res;
+        }
+        
+        // Compile cpp to library
+        std::string fullBinFileName;
+        res.binFileName = "libaegisshared" + SHARED_LIB_EXT;
+        fullBinFileName = res.outputDirPath + '/' + res.binFileName;
+        auto emitShareRes = emitSharedLib(fullCppFileName, fullBinFileName);
+        if (!emitShareRes) {
+            return ErrorMsg(llvm::toString(emitShareRes.takeError()));
+        }
     }
 
     return res;

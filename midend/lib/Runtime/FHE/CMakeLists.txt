@@ -7,6 +7,7 @@ add_mlir_library(
     FHEDataProcessor.cpp
     FHERuntime.cpp
     FHEPipeline.cpp
+    SimPipeline.cpp
     ProgramSpecGeneration.cpp
 
     DEPENDS

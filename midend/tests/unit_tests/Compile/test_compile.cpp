@@ -85,6 +85,33 @@ module {
 }
 )mlir";
 
+constexpr std::string_view prog_content_6 = R"mlir(
+module  {
+  func.func  @MVP(%m: memref<4xf64> {onnx.name = "input_x", onnx.type = "encrypted"}, 
+                  %v: memref<4xf64> {onnx.name = "input_y", onnx.type = "encrypted"}
+                  ) -> memref<4xf64> {
+    %c0 = arith.constant 0 : index
+    %c2 = arith.constant 2 : index
+    %c0_sf64 = arith.constant 0.000000e+00 : f64
+    %0 = affine.for %i = 0 to 2 iter_args(%r = %v) -> (memref<4xf64>) {
+      %1 = affine.for %j = 0 to 2 iter_args(%sum = %c0_sf64) -> (f64) {
+       %2 = arith.muli %i, %c2 : index
+       %ij = arith.addi %2, %j : index
+        %mij = memref.load %m[%ij] : memref<4xf64>
+        %vj = memref.load %v[%j] : memref<4xf64>
+        %p = arith.mulf %mij, %vj  : f64
+        %s = arith.addf %sum, %p : f64
+        affine.yield %s : f64
+      }
+
+      memref.store %1, %r[%i] : memref<4xf64>
+      affine.yield %r : memref<4xf64>
+    }
+    return %0: memref<4xf64>
+  }
+}
+)mlir";
+
 
 bool compileMlir(std::string_view mlirContent) {
     auto compile_context =  CompileContext::createContext();
@@ -147,6 +174,20 @@ bool run_case(std::string_view mlirContent) {
     }
 }
 
+bool simuate_case(std::string_view mlirContent) {
+    auto compile_context = CompileContext::createContext();
+    CompilerEngine engine(compile_context);
+    CompileOptions compileOpts = engine.getCompileOptions();
+    compileOpts.target = TARGET::SIM_MLIR;
+    // compileOpts.verbose = true;
+    engine.setCompileOptions(compileOpts);
+    auto compile_res = engine.compile(mlirContent);
+    if (!compile_res) {
+        return false;
+    }
+
+    return true;
+}
 
 int main() {
     if (run_case(prog_content)) {
@@ -166,6 +207,10 @@ int main() {
     }
 
     if (run_case(prog_content_5)) {
+        return -1;
+    }
+
+    if (simuate_case(prog_content_6)) {
         return -1;
     }
 

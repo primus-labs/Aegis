@@ -48,7 +48,10 @@ enum class TARGET {
     CPP,
 
     /// compile cpp source code to a futur library
-    LIBRARY
+    LIBRARY,
+
+    /// compiler mlir to lowe lever mlir for simulation
+    SIM_MLIR,
 
 };
 
@@ -73,6 +76,7 @@ typedef struct tagCompileOptions {
 struct CompileResult {
     std::string outputDirPath;
     std::string cppFileName;
+    std::string simFileName;
     std::string binFileName;
     std::string progSpecFileName;
 };

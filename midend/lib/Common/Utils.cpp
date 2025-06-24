@@ -231,5 +231,43 @@ int64_t adjustAndGetBatchSize(int64_t batchSize) {
     }
 }
 
+std::string findAegisTool(const std::string &toolFileName, const std::string &envVarName) {
+    // Check environment variables
+    if (const char* env_path = std::getenv(envVarName.c_str())) {
+        struct stat statbuf;
+        if (stat(env_path, &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
+            std::string toolFullFileName = std::string(llvm::formatv("{0}/{1}", env_path, toolFileName));
+            return toolFullFileName;
+        }
+    }
+
+    // Search PATH environment variable
+    const char* path_env = std::getenv("PATH");
+    if (!path_env) {
+        return "";
+    }
+
+    std::vector<std::string> search_paths;
+    const std::string delimiter = ":";
+    std::string path_str(path_env);
+    size_t pos = 0;
+    while ((pos = path_str.find(delimiter)) != std::string::npos) {
+        search_paths.push_back(path_str.substr(0, pos));
+        path_str.erase(0, pos + delimiter.length());
+    }
+    search_paths.push_back(path_str);
+
+    // Traverse search paths
+    for (const auto& dir : search_paths) {
+        std::string full_path = dir + '/' + toolFileName;
+        struct stat statbuf;
+        if (stat(full_path.c_str(), &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
+            return full_path;
+        }
+    }
+
+    return "";
+}
+
 } // namespace aegis
 } // namespace mlir

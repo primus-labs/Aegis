@@ -3,11 +3,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
 
 #include "Runtime/FHE/FHEPipeline.h"
+#include "Common/Utils.h"
 #include "Pass/ArithToSecret/LowerArithToSecret.h"
 #include "Pass/CastToEmitcStub/LowerCastToEmitcStub.h"
 #include "Pass/CollectMetadata/CollectMetadata.h"
@@ -58,48 +56,7 @@ static void printPipeline(llvm::StringRef name, mlir::PassManager &pm, mlir::MLI
     }
 }
 
-static bool findEmitcTranslateTool(std::string &toolPath) {
-    toolPath.clear();
-
-    // Check environment variables
-    if (const char* env_path = std::getenv("MLIR_TRANSLATE_PATH")) {
-        struct stat statbuf;
-        if (stat(env_path, &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
-            toolPath = std::string(llvm::formatv("{0}/mlir-translate", env_path));
-            return true;
-        }
-    }
-
-    // Search PATH environment variable
-    const char* path_env = std::getenv("PATH");
-    if (!path_env) {
-        return false;
-    }
-
-    std::vector<std::string> search_paths;
-    const std::string delimiter = ":";
-    std::string path_str(path_env);
-    size_t pos = 0;
-    while ((pos = path_str.find(delimiter)) != std::string::npos) {
-        search_paths.push_back(path_str.substr(0, pos));
-        path_str.erase(0, pos + delimiter.length());
-    }
-    search_paths.push_back(path_str);
-
-    // Traverse search paths
-    for (const auto& dir : search_paths) {
-        std::string full_path = dir + "/mlir-translate";
-        struct stat statbuf;
-        if (stat(full_path.c_str(), &statbuf) == 0 && (statbuf.st_mode & S_IXUSR)) {
-            toolPath = full_path;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static mlir::LogicalResult moduleOpToString(mlir::ModuleOp &moduleOp, std::string &mlirContent) {
+static mlir::LogicalResult emitcOpToString(mlir::ModuleOp &moduleOp, std::string &mlirContent) {
     mlir::MLIRContext *context = moduleOp.getContext();
     context->getOrLoadDialect<mlir::emitc::EmitCDialect>();
 
@@ -121,8 +78,8 @@ static mlir::LogicalResult moduleOpToString(mlir::ModuleOp &moduleOp, std::strin
 
 static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, const std::string &cppFullFileName) {
     // Find emitc-translate tool path
-    std::string emitcTranTool;
-    if (!findEmitcTranslateTool(emitcTranTool)) {
+    std::string emitcTranTool = aegis::findAegisTool("mlir-translate", "MLIR_TRANSLATE_PATH");
+    if (emitcTranTool.empty()) {
         llvm::errs() << "mlir-translate not found in PATH or MLIR_TRANSLATE_PATH.\n";
         return failure();
     }
@@ -311,7 +268,7 @@ mlir::LogicalResult transformEmitcToCpp(mlir::MLIRContext &context, mlir::Module
 
     // Get emitc mlir text content.
     std::string mlirContent;
-    if (moduleOpToString(module, mlirContent).failed()) {
+    if (emitcOpToString(module, mlirContent).failed()) {
         return failure();
     }
 
