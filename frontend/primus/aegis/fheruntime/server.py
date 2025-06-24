@@ -8,6 +8,7 @@ from typing import Callable, List, Union, Dict, Optional
 import tempfile
 import shutil
 import os
+import re
 from .mlir_tool import apply_mlir
 
 class FHEServer:
@@ -109,22 +110,32 @@ class FHEServer:
         Returns
             str: return the mlir file path
         """
-        import os
-        import subprocess
-        replace_list = []
-        for (k, v) in param_annos.items():
-            replace_str = 's/onnx.name = "' + k + '"/' + 'onnx.name = "' + k + '", onnx.type = "' + v + '"/g'
-            replace_list.append(replace_str)
+        with open(mlir_file, 'r') as f:
+            content = f.read()
+        match_fn = re.search('func.func.*{', content)
+        fn_str = match_fn.group()
+    
+        match_args = re.search('\((.*?)\)', fn_str)
+        args_str = match_args.group(1)
+    
+        match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)\s*{([^}]+)}', args_str)
+        arg_lst = []
+        for i in range(len(match_arg)):
+            name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
+            name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos[name] + '"'
+            arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
+    
+        args_str2 = ''
+        for arg in arg_lst:
+            if len(args_str2) > 0:
+                args_str2 += ', '
+            args_str2 += arg[0] + ': ' + arg[1] + ' {' + arg[2] + '}'
+    
+        sub_fn = re.sub('\((.*?)\)\s*->', '(' + args_str2 + ') ->', fn_str)
+        sub_content = re.sub('func.func.*{', sub_fn, content)
 
-        cmd = ['sed', '-i']
-        for item in replace_list:
-            cmd.append('-e')
-            cmd.append(item)
-        cmd.append(mlir_file)
-        print(cmd)
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if len(result.stderr) > 0:
-            raise RuntimeError(result.stderr)
+        with open(mlir_file, 'w') as f:
+            f.write(sub_content)
 
     def _convert_py_to_mlir(self, output_dir: str, function: Callable) -> str:
         """
