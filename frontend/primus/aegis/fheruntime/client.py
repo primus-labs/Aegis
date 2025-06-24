@@ -121,7 +121,33 @@ class FHEClient:
         self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 
-    def encrypt(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes]:
+    def encrypt_or_plaintext(self, plain_input: List[np.ndarray], input_status: List[bool], serialize_output: bool = False) -> Union[Value, bytes, List[Value], List[bytes]]:
+        """
+        Encrypt or plaintext
+
+        Args
+            plain_input (List[np.ndarray])
+                plain input
+            input_status (List[bool])
+                input status
+            serilize_output (bool)
+                 serialize output
+
+        Returns
+            Union[Value, bytes, List[Value], List[bytes]]
+        """
+        if len(plain_input) != len(input_status):
+            raise RuntimeError('the size of plain input and input status is not the same')
+
+        result = []
+        for i in range(len(plain_input)):
+            if input_status[i]:
+                result.append(self.encrypt(plain_input[i], serialize_output))
+            else:
+                result.append(self.plaintext(plain_input[i], serialize_output))
+        return result
+        
+    def encrypt(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes, List[Value], List[bytes]]:
         """
         Encrypt plaintext
 
@@ -133,7 +159,7 @@ class FHEClient:
             serialize_output (bool):
                 True if serialize output else False
 
-        Returns Union[Value, bytes] return either `Value` or `bytes` according to `serialize_output`
+        Returns Union[Value, bytes, List[Value], List[bytes]] return either `Value`/`List[Value]` or `bytes`/`List[bytes]` according to `serialize_output`
         """
         self._require_keys_loaded()
         if isinstance(plain_input, List):
@@ -144,7 +170,7 @@ class FHEClient:
             output = output.to_bytes()
         return output
 
-    def plaintext(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes]:
+    def plaintext(self, plain_input: Union[np.ndarray, List[np.ndarray]], serialize_output: bool = False) -> Union[Value, bytes, List[Value], List[bytes]]:
         """
         Convert np.ndarray to Value
 
@@ -156,7 +182,7 @@ class FHEClient:
             serialize_output (bool):
                 True if serialize output else False
 
-        Returns Union[Value, bytes] return either `Value` or `bytes` according to `serialize_output`
+        Returns Union[Value, bytes, List[Value], List[bytes]] return either `Value`/`List[Value]` or `bytes`/`List[bytes]` according to `serialize_output`
         """
         self._require_keys_loaded()
         if isinstance(plain_input, List):
@@ -167,7 +193,7 @@ class FHEClient:
             output = output.to_bytes()
         return output
 
-    def decrypt(self, ciphertext_input: Union[Value, bytes, List[Value], List[bytes]]) -> np.ndarray:
+    def decrypt(self, ciphertext_input: Union[Value, bytes, List[Value], List[bytes]]) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Decrypt ciphertext
 
@@ -180,7 +206,7 @@ class FHEClient:
                 - List[bytes]
 
         Returns
-            np.ndarray returns decrypted plaintext
+            Union[np.ndarray, List[np.ndarray]] returns decrypted plaintext
         """
         self._require_keys_loaded()
         if isinstance(ciphertext_input, List):
