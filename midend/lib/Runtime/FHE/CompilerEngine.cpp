@@ -98,11 +98,11 @@ llvm::Expected<CompileResult> CompilerEngine::compile(mlir::ModuleOp module) {
             return ErrorMsg("Directory creation failed: " + error.message());
         }
 
-        if (aegis::simpipeline::lowerToLowLevelMLIR(module, fullMlirFileName).failed()) {
+        // Gen simulate mlir file
+        if (aegis::simpipeline::lowerToSimulateMLIR(module, fullMlirFileName).failed()) {
             return ErrorMsg("Failed to lower mlir to simulate mlir.");
         }
     } else {
-
         // higher mlir(using onnx-mlir conver module to mlir)
         if (options.target == TARGET::MLIR) {
             return res;
