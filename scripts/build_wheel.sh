@@ -6,8 +6,8 @@ cd "$SCRIPT_DIR"
 
 #
 # Build the project
-# cd ${SCRIPT_DIR}
-# bash ./build.sh
+cd ${SCRIPT_DIR}
+bash ./build.sh
 
 #
 # Copy executable and shared library files
