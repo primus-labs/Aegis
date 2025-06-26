@@ -8,27 +8,24 @@ Aegis provides developer-friendly FHE compiler and runtime environment toolkit, 
 
 ## Installation
 
-```sh
-git clone --recurse-submodules https://github.com/primus-labs/Aegis.git
-```
-
 ### Prerequisites
 
 > python version 3.10 or above (which can be checked by running python --version).
+> cmake version >= 3.13.4 <= 3.27
+> make >= 4.2.1
+> ninja >= 1.10.2
+> gcc >= 7 (with C++17 support)
 
 #### Ubuntu
 
 ```shell
 sudo apt update
 sudo apt install ninja-build
-sudo apt install clang
 sudo apt install python3
 sudo apt install python3-pip
 sudo apt install libomp5
 sudo apt install libomp-dev
-sudo pip install setuptools
-sudo pip install build 
-sudo pip install torch          
+sudo python3 -m pip install -r frontend/requirements.txt      
 ```
 
 #### CentOS
@@ -36,29 +33,23 @@ sudo pip install torch
 ```shell
 sudo yum update
 sudo yum install ninja-build
-sudo yum install clang
 sudo yum install python3
 sudo yum install python3-pip
 sudo yum install libomp
 sudo yum install libomp-devel
-sudo pip install setuptools
-sudo pip install build
-sudo pip install torch
+sudo python3 -m pip install -r frontend/requirements.txt
 ```
 
 ### MacOS(Arm64)
 
 ```shell
-xcode-select --install # If there is no clang environment
 brew install ninja
 brew install lld
 brew install python3
 brew install protobuf
 brew install cmake
 brew install libomp
-pip3 install setuptools
-pip3 install build
-pip3 install torch
+sudo python3 -m pip install -r frontend/requirements.txt
 ```
 
 ### Installation
