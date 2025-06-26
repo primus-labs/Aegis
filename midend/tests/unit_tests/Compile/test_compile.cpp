@@ -219,35 +219,35 @@ bool simuate_case(std::string_view mlirContent) {
 }
 
 int main() {
-    if (run_case(prog_content)) {
+    if (!run_case(prog_content)) {
         return -1;
     }
 
-    if (run_case(prog_content_2)) {
+    if (!run_case(prog_content_2)) {
         return -1;
     }
 
-    if (run_case(prog_content_3)) {
+    if (!run_case(prog_content_3)) {
         return -1;
     }
 
-    if (run_case(prog_content_4)) {
+    if (!run_case(prog_content_4)) {
         return -1;
     }
 
-    if (run_case(prog_content_5)) {
+    if (!run_case(prog_content_5)) {
         return -1;
     }
 
-    if (simuate_case(prog_content_6)) {
+    if (!simuate_case(prog_content_6)) {
         return -1;
     }
 
-    if (simuate_case(prog_content_6_2)) {
+    if (!simuate_case(prog_content_6_2)) {
         return -1;
     }
 
-    if (simuate_case(prog_content_6_3)) {
+    if (!simuate_case(prog_content_6_3)) {
         return -1;
     }
 

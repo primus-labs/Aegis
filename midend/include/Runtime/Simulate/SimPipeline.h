@@ -28,7 +28,6 @@ func.func @main() {{
 )cpp";
 // clang-format on
 
-mlir::LogicalResult lowerToLowLevelMLIR(mlir::ModuleOp &moduleOp, const std::string &mlirFullFileName);
 mlir::LogicalResult lowerToSimulateMLIR(mlir::ModuleOp &moduleOp, const std::string &mlirFullFileName);
 mlir::LogicalResult addEntryPointFunc(mlir::ModuleOp &moduleOp, const std::string &mlirFullFileName);
 

@@ -157,8 +157,7 @@ llvm::Expected<bool> FHERuntime::resolveSymbol(const std::string &funcName) {
 }
 
 llvm::Expected<std::vector<Value>> FHERuntime::simulate(const std::vector<Value> &input) {
-    //TODO
-    return input;
+    return ErrorMsg("simulate not supported in FHERuntime");
 }
 
 } // namespace aegis

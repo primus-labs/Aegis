@@ -7,7 +7,6 @@ add_mlir_library(
     FHEDataProcessor.cpp
     FHERuntime.cpp
     FHEPipeline.cpp
-    SimPipeline.cpp
     ProgramSpecGeneration.cpp
 
     DEPENDS
@@ -63,6 +62,7 @@ set(RT_DEP_LIBS
     AegisLowerCastToEmitcStub
     AegisInsertEmitcPreamble
     AegisCollectMetadata
+    AegisSimRuntime
 )
 
 set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)

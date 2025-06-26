@@ -1,6 +1,6 @@
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEPipeline.h"
-#include "Runtime/FHE/SimPipeline.h"
+#include "Runtime/Simulate/SimPipeline.h"
 #include "Runtime/FHE/ProgramSpecGeneration.h"
 #include "Common/Error.h"
 #include "Dialect/FHE/FHEDialect.h"

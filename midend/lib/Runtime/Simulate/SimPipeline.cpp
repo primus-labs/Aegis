@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Common/Utils.h"
-#include "Runtime/FHE/SimPipeline.h"
+#include "Runtime/Simulate/SimPipeline.h"
 #include "mlir/include/mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
@@ -307,9 +307,6 @@ mlir::LogicalResult lowerToSimulateMLIR(mlir::ModuleOp &moduleOp, const std::str
     } else {
         return failure();
     }
-
-    // Exec aegiscompile tool to generate low level mlir file
-    // return fromHighLevelMlirToLowerLevelMlir(mlirContent, mlirFullFileName);
 }
 
 } // namespace simpipeline
