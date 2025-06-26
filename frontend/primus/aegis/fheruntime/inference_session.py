@@ -23,7 +23,7 @@ class FHEInferenceSession:
     FHEInferenceSession class, used to run inference
     """
     _server: FHEServer
-    _archive_path: str
+    _archive_path: Optional[tuple[str, str]]
     _param_annos: Optional[Dict[str, str]]
 
     def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
@@ -81,7 +81,7 @@ class FHEInferenceSession:
         """
         return self._server
 
-    def get_archive_path(self) -> str:
+    def get_archive_path(self) -> Optional[tuple[str, str]]:
         """
         Get the archive path
         """

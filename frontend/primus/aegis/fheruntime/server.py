@@ -204,7 +204,7 @@ class FHEServer:
             shutil.make_archive(output_dir + '/' + file_name, 'zip', tmp_dir)
         return output_dir + '/' + file_name + '.zip'
     
-    def save(self, compile_result: FHECompileResult, output_dir: str) -> (str, str):
+    def save(self, compile_result: FHECompileResult, output_dir: str) -> tuple[str, str]:
         """
         Save files generated during compilation into the zip format file
 
@@ -215,7 +215,7 @@ class FHEServer:
                 The location where the generated zip format file will be put
 
         Returns
-            (str, str): return the client archive file path and the server archive file path
+            tuple[str, str]: return the client archive file path and the server archive file path
         """
         client_archive_path = self._do_save(compile_result, output_dir, False)
         server_archive_path = self._do_save(compile_result, output_dir, True)
