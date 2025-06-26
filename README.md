@@ -8,6 +8,10 @@ Aegis provides developer-friendly FHE compiler and runtime environment toolkit, 
 
 ## Installation
 
+```sh
+git clone --recurse-submodules https://github.com/primus-labs/Aegis.git
+```
+
 ### Prerequisites
 
 > python version 3.10 or above (which can be checked by running python --version).
@@ -45,15 +49,16 @@ sudo pip install torch
 ### MacOS(Arm64)
 
 ```shell
+xcode-select --install # If there is no clang environment
 brew install ninja
-brew install lld clang
+brew install lld
 brew install python3
 brew install protobuf
 brew install cmake
 brew install libomp
 pip3 install setuptools
 pip3 install build
-pip install torch
+pip3 install torch
 ```
 
 ### Installation
@@ -65,7 +70,7 @@ Aegis offers out-of-the-box functionality, allowing you to get started quickly w
 Install Aegis using the following commands:
 
 ```shell
-git clone https://github.com/primus-labs/Aegis.git
+git clone --recurse-submodules https://github.com/primus-labs/Aegis.git
 cd Aegis/script/
 ./build_wheel.sh
 pip install ../frontend/dist/primus-0.1.0-py3-none-any.whl
