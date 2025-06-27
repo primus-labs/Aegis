@@ -156,9 +156,5 @@ llvm::Expected<bool> FHERuntime::resolveSymbol(const std::string &funcName) {
     return true;
 }
 
-llvm::Expected<std::vector<Value>> FHERuntime::simulate(const std::vector<Value> &input) {
-    return ErrorMsg("simulate not supported in FHERuntime");
-}
-
 } // namespace aegis
 } // namespace mlir

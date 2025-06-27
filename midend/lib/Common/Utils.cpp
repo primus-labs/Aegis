@@ -3,7 +3,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
-
+#include <memory>
 #include "Common/MetadataMgr.h"
 #include "Common/Utils.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -17,6 +17,10 @@
 #include "mlir/include/mlir/Support/LLVM.h"
 #include "llvm/include/llvm/ADT/ArrayRef.h"
 #include "llvm/include/llvm/ADT/SmallVector.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace mlir {
 namespace aegis {
@@ -267,6 +271,73 @@ std::string findAegisTool(const std::string &toolFileName, const std::string &en
     }
 
     return "";
+}
+
+int executeAegisTool(const std::string aegisTool, const std::vector<std::string> args, 
+                     std::string &output, std::string &errorMsg) {
+    // Create temporary files
+    llvm::SmallString<128> outFile, errFile;
+    if (llvm::sys::fs::createTemporaryFile("aegistool-output", "txt", outFile)) {
+        errorMsg = "Error creating temporary output file\n";
+        return -1;
+    }
+
+    // Create temporary error file if requested
+    if (llvm::sys::fs::createTemporaryFile("aegistool-err", "txt", errFile)) {
+        errorMsg = "Error creating temporary error file\n";
+        llvm::sys::fs::remove(outFile);
+        return -1;
+    }
+
+    // Configure I/O redirection
+     std::vector<std::optional<StringRef>> Redirects = {
+        {""},                                                 
+        llvm::StringRef(outFile.str()),                            
+        llvm::StringRef(errFile.str())
+    };
+
+    // Prepare argument list
+    llvm::SmallVector<StringRef, 8> fullArgs;
+    fullArgs.push_back(aegisTool);                                 // First argument is program itself
+    fullArgs.append(args.begin(), args.end());
+
+    // Execute the aegis tool
+    int retCode = llvm::sys::ExecuteAndWait(aegisTool,             // Program path
+                                            fullArgs,              // Arguments array (ArrayRef<StringRef>)
+                                            /*Env=*/std::nullopt,  // Environment (inherit)
+                                            ArrayRef(Redirects),   // I/O redirection
+                                            /*SecondsToWait=*/0,   // Timeout (0=infinite)
+                                            /*MemoryLimit=*/0,     // Memory limit (0=unlimited)
+                                            &errorMsg,             // Error message output
+                                            /*ExecutionFailed=*/nullptr);
+
+    // Handle execution failure
+    if (retCode < 0) {
+        llvm::sys::fs::remove(outFile);
+        llvm::sys::fs::remove(errFile);
+        return retCode;
+    }
+
+    // Read output file
+    if (auto outBuffer = llvm::MemoryBuffer::getFile(outFile)) {
+        output = outBuffer.get()->getBuffer().str();
+    } else {
+        errorMsg = "Error reading output file: " + std::string(outFile.c_str());
+        output.clear();
+    }
+
+    // Read error file
+    if (auto errBuffer = llvm::MemoryBuffer::getFile(errFile)) {
+        errorMsg = errBuffer.get()->getBuffer().str();
+    } else {
+        errorMsg = "Error reading error file: " + std::string(errFile.c_str());
+    }
+
+    // Clean up temporary files
+    llvm::sys::fs::remove(outFile);
+    llvm::sys::fs::remove(errFile);
+
+    return retCode; 
 }
 
 } // namespace aegis

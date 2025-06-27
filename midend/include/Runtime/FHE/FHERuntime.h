@@ -216,7 +216,6 @@ public:
                                              const std::string &rotKeyFileName) override;
     llvm::Expected<bool> resolveSymbol(const std::string &funcName) override;
     llvm::Expected<std::vector<Value>> call(const std::vector<Value> &input) override;
-    llvm::Expected<std::vector<Value>> simulate(const std::vector<Value> &input) override;
     
 
 private:

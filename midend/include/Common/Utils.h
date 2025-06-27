@@ -62,6 +62,11 @@ int64_t adjustAndGetBatchSize(int64_t batchSize);
 // Searches for a specified tool in system paths and environment variables.
 std::string findAegisTool(const std::string &toolFileName, const std::string &envVarName);
 
+// Execute external program and capture output.
+// Exit code of the tool, -1 indicates execution failure
+int executeAegisTool(const std::string aegisTool, const std::vector<std::string> args,
+                     std::string &output, std::string &errorMsg);
+
 } // namespace aegis
 } // namespace mlir
 

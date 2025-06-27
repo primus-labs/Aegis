@@ -26,11 +26,8 @@ class Runtime {
     virtual llvm::Expected<bool> resolveSymbol(const std::string &funcName) = 0;
 
     // Executes the resolved cryptographic function with encrypted/plaintext inputs and returns results.
+    // or Executes simulation (i.e., run in plaintext) an MLIR program on the given input values.
     virtual llvm::Expected<std::vector<Value>> call(const std::vector<Value> &input) = 0;
-
-    // This function is intended to simulate (i.e., run in plaintext) an MLIR program on the given input values. 
-    // It returns an llvm::Expected object which either holds the output values from the simulation or an error if the simulation fails.
-    virtual llvm::Expected<std::vector<Value>> simulate(const std::vector<Value> &input) = 0;
 };
 
 
