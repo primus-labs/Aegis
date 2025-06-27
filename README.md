@@ -127,7 +127,7 @@ Here is the full examples:
     eva_keys = "/tmp/eva_keys.bin"
     client.save_eva_keys(eva_keys)
 
-    # encrypte
+    # encrypt
     private_data_1 = np.array([1, 3, 5, 7, 9, 11])
     private_data_2 = np.array([2, 4, 6, 8, 10, 12])
     enc_val1, enc_val2 = client.encrypt([private_data_1, private_data_2])
@@ -136,7 +136,7 @@ Here is the full examples:
     server.load_eva_keys(eva_keys)
     enc_output = server.run([enc_val1, enc_val2])
 
-    # decrypte
+    # decrypt
     pt_output = client.decrypt(enc_output)
     print(pt_output)
   ```
