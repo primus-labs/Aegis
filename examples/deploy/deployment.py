@@ -26,8 +26,8 @@ eva_keys = "/tmp/eva_keys.bin"
 client.save_eva_keys(eva_keys)
 
 # encrypt data
-data_1 = np.array([[1, 3], [5, 7], [9, 11]], dtype = np.float32)
-data_2 = np.array([[2, 4], [6, 8], [10, 12]], dtype = np.float32)
+data_1 = np.array([[1, 3], [5, 7], [9, 11]], dtype=np.float32)
+data_2 = np.array([[2, 4], [6, 8], [10, 12]], dtype=np.float32)
 enc_val1, enc_val2 = client.encrypt([data_1, data_2])
 
 # send encrypt data to server
@@ -51,6 +51,11 @@ enc_output = server.run([enc_val1, enc_val2])
 # ---------------
 # client role
 # ---------------
-# decrypte
+# decrypt
 pt_output = client.decrypt(enc_output)
 print(pt_output)
+"""
+[array([[ 3.,  7.],
+       [11., 15.],
+       [19., 23.]])]
+"""

@@ -1,5 +1,6 @@
-from primus.aegis.fheruntime import FHEServer as Server, FHEClient as Client 
+from primus.aegis.fheruntime import FHEServer as Server, FHEClient as Client
 import numpy as np
+
 
 # define target function
 def apply_discount(member_level: float, price: float) -> float:
@@ -9,6 +10,7 @@ def apply_discount(member_level: float, price: float) -> float:
     else:
         result = price * 1.0
     return result
+
 
 # compile the target function
 server = Server()
@@ -20,7 +22,7 @@ client.keygen()
 eva_keys = "/tmp/eva_keys.bin"
 client.save_eva_keys(eva_keys)
 
-# encrypte
+# encrypt
 private_data_1 = 2.1
 private_data_2 = 120
 enc_val1, enc_val2 = client.encrypt([private_data_1, private_data_2])
@@ -29,6 +31,9 @@ enc_val1, enc_val2 = client.encrypt([private_data_1, private_data_2])
 server.load_eva_keys(eva_keys)
 enc_output = server.run([enc_val1, enc_val2])
 
-# decrypte
+# decrypt
 pt_output = client.decrypt(enc_output)
 print(pt_output)
+"""
+[array([89.98626839])]
+"""
