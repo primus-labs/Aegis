@@ -109,8 +109,8 @@ llvm::Expected<bool> SimRuntime::replaceMlirTokenWith(const std::vector<std::str
     if (!outputFile) {
         return ErrorMsg("Failed to write file: ") << simMlirFileName;
     }
-    
     outputFile << content;
+
     return true;
 }
 
@@ -122,7 +122,7 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
         auto dims = val.getDims();
         auto tensors = val.getTensor<uint8_t>().value().values;
         if (dims.size() == 1) {
-            if (dims[0] == 1) {
+            if (dims[0] == 0) {
                 auto realVal = aegis::deserializeToDouble(tensors);
                 unitArgContent = std::to_string(realVal);
             } else {
@@ -151,7 +151,7 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
 
                 unitArgContent += '[';
                 for (auto j = 0; j < itemRealVals.size(); j++) {
-                    unitArgContent += std::to_string(itemRealVals[i]);
+                    unitArgContent += std::to_string(itemRealVals[j]);
                     if (j != (itemRealVals.size() - 1)) {
                         unitArgContent += ',';
                     }
@@ -162,6 +162,7 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
                     unitArgContent += ',';
                 }
             }
+            unitArgContent += ']';
         } else {
             assert(false && "Dimensions higher than 2D are currently not supported.");
         }
@@ -193,6 +194,7 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
         "--convert-func-to-llvm",
         "--convert-cf-to-llvm",
         "--reconcile-unrealized-casts",
+        simMlirFileName,
     };
     std::string llvmLevelMlirContent, errContent;
     if (executeAegisTool(aegisCompileTool, args, llvmLevelMlirContent, errContent)) {
@@ -212,12 +214,16 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
         return ErrorMsg("mlir-cpu-runner not found in PATH or MLIR_RUNNER_PATH.\n");
     }
     auto parentPath = llvm::sys::path::parent_path(llvm::StringRef(mlirRunTool));
-    std::string argShareLib = std::string(llvm::formatv("-shared-libs={0}/libmlir_runner_utils.so", 
+    parentPath = llvm::sys::path::parent_path(llvm::StringRef(parentPath));
+    std::string argShareLib = std::string(llvm::formatv("-shared-libs={0}/lib/libmlir_runner_utils.so", 
                                           parentPath.str()));
     std::vector<std::string> argsRun = {
-        "-e main",
+        "-e",
+        "main",
+        "-O2",
         "-entry-point-result=void",
         argShareLib,
+        simMlirFileName,
     };
     std::string runMlirRetContent;
     if (executeAegisTool(mlirRunTool, argsRun, runMlirRetContent, errContent)) {
@@ -253,74 +259,94 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
 llvm::Expected<std::vector<std::vector<double>>> SimRuntime::parseMlirRunnerOutput(const std::string& output) {
     // Locate the starting position of data section
     const std::string marker = "data =";
-    auto start_pos = output.find(marker);
-    if (start_pos == std::string::npos) {
+    auto startPos = output.find(marker);
+    if (startPos == std::string::npos) {
         return ErrorMsg("Data section marker not found");
     }
-    start_pos += marker.length();
+    startPos += marker.length();
     
     // Find the starting bracket '[' for the array
-    auto array_start = output.find('[', start_pos);
-    if (array_start == std::string::npos) {
+    auto arrayStart = output.find('[', startPos);
+    if (arrayStart == std::string::npos) {
         return ErrorMsg("Array start marker not found");
     }
     
     // Initialize parsing states and storage variables
     std::vector<std::vector<double>> result;
-    std::vector<double> current_row;
-    std::string current_num;     
-    int bracket_level = 1;       
+    std::vector<double> curRow;
+    std::string curNum;     
+    int bracketLevel = 1;        // Track nested array levels (1 = outer, 2 = inner)
     
     // Start parsing from array beginning
-    for (size_t i = array_start + 1; i < output.size() && bracket_level > 0; ++i) {
+    for (size_t i = arrayStart + 1; i < output.size() && bracketLevel > 0; ++i) {
         char c = output[i];
         
-        if (bracket_level == 1) { 
-            if (c == '[') { 
-                bracket_level = 2;
-                current_row.clear(); 
-                current_num.clear(); 
+        if (bracketLevel == 1) { 
+            if (c == '[') {
+                // Start a new row (2D array)
+                bracketLevel = 2;
+                curRow.clear();
+                curNum.clear(); 
+            } else if (c == ']') { 
+                // End of outer array
+                bracketLevel--;
+            } else if (std::isdigit(c) || c == '.' || c == '-' || c == 'e' || c == 'E') {
+                // Handle numbers or scientific notation directly in 1D array
+                bracketLevel = 2;           
+                curRow.clear();
+                curNum.clear();
+                i--;
             }
-            else if (c == ']') { 
-                bracket_level--;
-            }
-            // Ignore spaces/commas as separators
-        }
-        else if (bracket_level == 2) {
-            if (std::isdigit(c) || c == '.' || c == '-') {
-                // Handle digit characters: 0-9, decimal point, negative sign
-                current_num += c;
-            }
-            else if (c == ',' || c == ']') {
-                // Value separator or row end detected
-                if (!current_num.empty()) {
-                    // Convert number string to double
+            // Ignore other characters (commas/spaces)
+        } else if (bracketLevel == 2) {
+            if (std::isdigit(c) || c == '.' || c == '-' || c == 'e' || c == 'E') {
+                // Accumulate number characters
+                curNum += c;
+            } else if (c == ',' || c == ']') {
+                // End of number or row
+                if (!curNum.empty()) {
                     try {
-                        current_row.push_back(std::stod(current_num));
+                        curRow.push_back(std::stod(curNum));
                     } catch (...) {
-                        return ErrorMsg("Invalid number format: ") << current_num;
+                        return ErrorMsg("Invalid number format: ") << curNum;
                     }
-                    current_num.clear();
+                    curNum.clear();
                 }
                 
                 if (c == ']') {
-                    // Row ended, save current row
-                    bracket_level--;
-                    if (!current_row.empty()) {
-                        result.push_back(current_row);
+                    // End of current row
+                    bracketLevel--;
+                    result.push_back(curRow); // Save even if empty
+                    curRow.clear();           // Reset for next row
+
+                    // Check if next non-whitespace character ends the entire array
+                    size_t nextIndex = i + 1;
+                    // Skip whitespace
+                    while (nextIndex < output.size() && 
+                          std::isspace(static_cast<unsigned char>(output[nextIndex]))) {
+                        nextIndex++;
+                    }
+                    
+                    if (nextIndex >= output.size()) {
+                        // String ends after row: close entire array
+                        bracketLevel--;
+                        break;  
+                    } else if (output[nextIndex] == ']') {
+                        // Subsequent ']' closes entire array
+                        bracketLevel--;
+                        i = nextIndex;
+                        break;
                     }
                 }
-            }
-            else if (c == '[') {
-                // Unexpected nested array detected
+            } else if (c == '[') {
                 return ErrorMsg("Nested arrays are not supported");
             }
-            // Ignore spaces/tabs/newlines
+            // Ignore other characters (spaces/commas inside rows)
         }
     }
     
-    // Verify all brackets are matched
-    if (bracket_level != 0) {
+    // Verify all brackets are closed
+    if (bracketLevel != 0) {
         return ErrorMsg("Array brackets not properly closed");
     }
     

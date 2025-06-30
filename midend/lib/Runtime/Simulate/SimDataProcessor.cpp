@@ -20,7 +20,7 @@ std::vector<Value> SimDataProcessor::privateInput(const std::vector<std::vector<
 
 Value SimDataProcessor::publicInput(double theArg) {
     std::vector<uint8_t> bufArg = aegis::serializeFormDouble(theArg);
-    Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{1}));
+    Value inputVal(Tensor<uint8_t>(bufArg, std::vector<size_t>{0}));
     return inputVal;
 }
 

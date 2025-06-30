@@ -100,7 +100,7 @@ static mlir::LogicalResult getEntryPointFuncStmts(mlir::ModuleOp &moduleOp, std:
     for (auto dims : argDims) {
         std::string unitArgStmt;
         if (!dims.size() || dims[0] == 1) {
-            unitArgStmt = std::string(llvm::formatv("%arg{0} = arith.constant $0$ : f64\n", argIdx));
+            unitArgStmt = std::string(llvm::formatv("%arg{0} = arith.constant ${0}$ : f64\n", argIdx));
             argsTys.push_back("f64");
         } else {
             std::string strDimsTy;
