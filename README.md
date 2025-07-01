@@ -66,7 +66,7 @@ Install Aegis using the following commands:
 git clone --recurse-submodules https://github.com/primus-labs/Aegis.git
 cd Aegis/script/
 ./build_wheel.sh
-pip install ../frontend/dist/primus-0.1.0-py3-none-any.whl
+pip install ../frontend/dist/aegis-0.1.0-py3-none-any.whl
 ```
 
 #### Using Docker
