@@ -4,12 +4,21 @@
 - Deployment
   - [deploy/deployment.py](./deploy/deployment.py), full process of deployment.
 - ONNX Model
-  - [onnx/use_onnx.py](./onnx/use_onnx.py), a 2-d plus 2-d onnx additive model.
+  - [onnx/use_onnx.py](./onnx/use_onnx.py)
+    This example demonstrates Aegis' support for ONNX models: It seamlessly compiles plaintext ONNX models into executable ciphertext models while maintaining full API compatibility with ONNX Runtime.
+  
 - ​Target Function
-  - [loop/loop_2d_add.py](./loop/loop_2d_add.py), additive operation.
-  - [div/div.py](./div/div.py), division operation.
-  - [compare/apply_discount.py](./compare/apply_discount.py), comparative operation.
-  - [cipher_vs_plain/mix.py](./cipher_vs_plain/mix.py), mixed input of plaintext(clear) and ciphertext(encrypted).
+  - [loop/loop_2d_add.py](./loop/loop_2d_add.py)
+    This example illustrates that Aegis supports loops, though the loop's induction variable must be constant.
+
+  - [div/div.py](./div/div.py)
+    This example demonstrates that Aegis supports ciphertext division operations.
+
+  - [compare/apply_discount.py](./compare/apply_discount.py)
+    This example demonstrates that Aegis supports ciphertext comparative operations.
+
+  - [cipher_vs_plain/mix.py](./cipher_vs_plain/mix.py)
+    This example demonstrates how Aegis supports mixed operations between ciphertexts and plaintexts.
 
 
 ### Usage

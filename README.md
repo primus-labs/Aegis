@@ -140,6 +140,8 @@ Here is the full examples:
     print(pt_output)
   ```
 
+[Click](./examples/README.md) for more examples.
+
 ## Resources
 - [Quick Start](https://fhe.primuslabs.xyz/docs/Quick%20Start/quick_start)
 - [Deployment](https://fhe.primuslabs.xyz/docs/Quick%20Start/deploy)
