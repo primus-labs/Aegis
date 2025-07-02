@@ -51,14 +51,31 @@ static mlir::LogicalResult moduleOpToString(mlir::ModuleOp &moduleOp, std::strin
     return success();
 }
 
-static void extractFuncPrototypeInfo(mlir::ModuleOp &moduleOp, std::string &funcName, 
-                                     std::vector<std::vector<int64_t>> &argDims, 
-                                     std::vector<std::vector<int64_t>> &retDims) {
-    auto getParamOrRetDims = [](func::FuncOp funcOp, bool isArguments, std::vector<std::vector<int64_t>> &dims) -> void {
+static mlir::LogicalResult extractFuncPrototypeInfo(mlir::ModuleOp &moduleOp, std::string &funcName, 
+                                                    std::vector<std::vector<int64_t>> &argDims, 
+                                                    std::vector<std::vector<int64_t>> &retDims,
+                                                    std::vector<bool> &argF64Tys,
+                                                    std::vector<bool> &retF64Tys) {
+    auto getParamOrRetDims = [](func::FuncOp funcOp, bool isArguments, std::vector<std::vector<int64_t>> &dims,
+                                std::vector<bool> &f64Tys) -> mlir::LogicalResult {
         const size_t numArgs = isArguments ? funcOp.getNumArguments() : funcOp.getNumResults();
         for (unsigned i = 0; i < numArgs; ++i) {
             Type elementType =
                 isArguments ? funcOp.getFunctionType().getInput(i) : funcOp.getFunctionType().getResult(i);
+
+            // Process types, float32 type set false, float64 type set true, otherwise is not supported.
+            Type _elemType = elementType;
+            while (auto shapedType = mlir::dyn_cast<ShapedType>(_elemType)) {
+                _elemType = shapedType.getElementType();
+            }
+            if (_elemType.isF32()) {
+                f64Tys.push_back(false);
+            } else if (_elemType.isF64()) {
+                f64Tys.push_back(true);
+            } else {
+                llvm::errs() << "The simulate function only supports parameters or return values of floating-point types.​";
+                return mlir::failure();
+            }
 
             // Process shaped types
             std::vector<int64_t> itemDims;
@@ -76,38 +93,57 @@ static void extractFuncPrototypeInfo(mlir::ModuleOp &moduleOp, std::string &func
             //Store dims
             dims.emplace_back(itemDims);
         }
+
+        return mlir::success();
     };
 
+    mlir::LogicalResult handleState = mlir::failure();
     moduleOp.walk([&](func::FuncOp funcOp) {
         funcName = funcOp.getName().str();
-        getParamOrRetDims(funcOp, true, argDims);
-        getParamOrRetDims(funcOp, false, retDims);
+        if (failed(getParamOrRetDims(funcOp, true, argDims, argF64Tys))) {
+            return mlir::WalkResult::interrupt();
+        }
+        if (failed(getParamOrRetDims(funcOp, false, retDims, retF64Tys))) {
+            return mlir::WalkResult::interrupt();
+        }
 
+        handleState = mlir::success();
         return mlir::WalkResult::interrupt();
     });
+
+    return handleState;
 }
 
 static mlir::LogicalResult getEntryPointFuncStmts(mlir::ModuleOp &moduleOp, std::string &entryPointStmts) {
     // Get function prototype
     std::string funcName;
     std::vector<std::vector<int64_t>> argDims, retDims;
-    extractFuncPrototypeInfo(moduleOp, funcName, argDims, retDims);
+    std::vector<bool> argF64Tys, retF64Tys;
+    if (failed(extractFuncPrototypeInfo(moduleOp, funcName, argDims, retDims, argF64Tys, retF64Tys))) {
+        return mlir::failure();
+    }
 
     // Get argument statements
     std::string argsStmts;
     std::vector<std::string> argsTys;
     auto argIdx = 0;
     for (auto dims : argDims) {
-        std::string unitArgStmt;
+        std::string unitArgStmt, unitArgTy;
+        if (argF64Tys[argIdx]) {
+            unitArgTy = "f64";
+        } else {
+            unitArgTy = "f32";
+        }
+
         if (!dims.size() || dims[0] == 1) {
-            unitArgStmt = std::string(llvm::formatv("%arg{0} = arith.constant ${0}$ : f64\n", argIdx));
-            argsTys.push_back("f64");
+            unitArgStmt = std::string(llvm::formatv("%arg{0} = arith.constant ${0}$ : {1}\n", argIdx, unitArgTy));
+            argsTys.push_back(unitArgTy);
         } else {
             std::string strDimsTy;
             if (dims.size() == 1) {
-                strDimsTy = std::to_string(dims[0]) + "xf64";
+                strDimsTy = std::to_string(dims[0]) + "x" + unitArgTy;
             } else if (dims.size() == 2) {
-                strDimsTy = std::to_string(dims[0]) + "x" + std::to_string(dims[1]) + "xf64";
+                strDimsTy = std::to_string(dims[0]) + "x" + std::to_string(dims[1]) + "x" + unitArgTy;
             } else {
                 assert(false && "Dimensions higher than 2D are currently not supported.");
             }
@@ -125,19 +161,26 @@ static mlir::LogicalResult getEntryPointFuncStmts(mlir::ModuleOp &moduleOp, std:
     }
 
     // Get output types
-    std::string retTys;
+    std::string retTys, retUnitTy;
     std::vector<int64_t> dims;
+
+    if (retF64Tys[0]) {
+        retUnitTy = "f64";
+    } else {
+        retUnitTy = "f32";
+    }
+
     for (auto dim : retDims[0]) {
         dims.push_back(dim);
     }
     if (!dims.size() || dims[0] == 1) {
-        retTys = "f64";
+        retTys = retUnitTy;
     } else {
         std::string strDimsTy;
         if (dims.size() == 1) {
-            strDimsTy = std::to_string(dims[0]) + "xf64";
+            strDimsTy = std::to_string(dims[0]) + "x" + retUnitTy;
         } else if (dims.size() == 2) {
-            strDimsTy = std::to_string(dims[0]) + "x" + std::to_string(dims[1]) + "xf64";
+            strDimsTy = std::to_string(dims[0]) + "x" + std::to_string(dims[1]) + "x" + retUnitTy;
         } else {
             assert(false && "Dimensions higher than 2D are currently not supported.");
         }
@@ -166,19 +209,23 @@ static mlir::LogicalResult getEntryPointFuncStmts(mlir::ModuleOp &moduleOp, std:
     std::string castStmt;
     if (!dims.size() || dims[0] == 1) {
         castStmt = std::string(llvm::formatv("%c0 = arith.constant 0 : index\n"
-                                             "{0}_tmp = memref.alloca() : memref<1xf64>\n"
-                                             "memref.store %result, {0}_tmp[%c0] : memref<1xf64>\n"
-                                             "{0} = memref.cast {0}_tmp : memref<1xf64> to memref<*xf64>\n", 
-                               real_res));
+                                             "{0}_tmp = memref.alloca() : memref<1x{1}>\n"
+                                             "memref.store %result, {0}_tmp[%c0] : memref<1x{1}>\n"
+                                             "{0} = memref.cast {0}_tmp : memref<1x{1}> to memref<*x{1}>\n", 
+                               real_res, retUnitTy));
     } else {
-        castStmt = std::string(llvm::formatv("{0} = memref.cast %result : {1} to memref<*xf64>\n", 
-                               real_res, retTys));
+        castStmt = std::string(llvm::formatv("{0} = memref.cast %result : {1} to memref<*x{2}>\n", 
+                               real_res, retTys, retUnitTy));
     }
 
     // Combine entry point function
+    std::string printMemFuncName = "printMemrefF64";
+    if (!retF64Tys[0]) {
+        printMemFuncName = "printMemrefF32";
+    }
     entryPointStmts.clear();
     entryPointStmts = std::string(llvm::formatv(kEntryPointFunc.data(), 
-                                  argsStmts, callFuncStmts, castStmt, real_res));
+                                  printMemFuncName, retUnitTy, argsStmts, callFuncStmts, castStmt, real_res));
 
     return success();
 }

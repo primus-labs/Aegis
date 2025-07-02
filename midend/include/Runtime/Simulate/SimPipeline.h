@@ -14,15 +14,15 @@ namespace simpipeline {
 
 // clang-format off
 constexpr std::string_view kEntryPointFunc = R"cpp(
-func.func private @printMemrefF64(memref<*xf64>)
+func.func private @{0}(memref<*x{1}>)
 func.func @main() {{
     // deal with argument
-    {0} 
-    // call func
-    {1}
-    // memref.cast to real result memref
     {2} 
-    call @printMemrefF64({3}) : (memref<*xf64>) -> ()
+    // call func
+    {3}
+    // memref.cast to real result memref
+    {4} 
+    call @{0}({5}) : (memref<*x{1}>) -> ()
     func.return
 }
 )cpp";
