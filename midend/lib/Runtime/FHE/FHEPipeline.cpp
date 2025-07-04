@@ -35,6 +35,7 @@
 #include "mlir/IR/AsmState.h"
 #include "mlir/Dialect/EmitC/IR/EmitC.h"
 #include "llvm/Support/FormatVariadic.h"
+#include "llvm/Support/FileSystem.h"
 
 namespace mlir {
 namespace aegis {
@@ -84,58 +85,37 @@ static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, const 
         return failure();
     }
 
-    // Create a temporary input file
-    char inputTemp[] = "/tmp/emitc_XXXXXX.mlir";
-    int fdInput = mkstemps(inputTemp, 5); 
-    if (fdInput == -1) {
-        llvm::errs() << "Failed to create temporary input file.\n";
+    // Write mlir content to input file
+    std::string tmpFileName = cppFullFileName + ".tmp";
+    std::ofstream inputFile(tmpFileName);
+    if (!inputFile) {
+        llvm::errs() << "Cannot open input file: " << tmpFileName << ".\n";
         return failure();
     }
-    close(fdInput);
-    
-    const std::string inputPath(inputTemp);
-    {
-        std::ofstream inputFile(inputPath);
-        if (!inputFile) {
-            llvm::errs() << "Cannot open input file: " << inputPath << ".\n";
-            return failure();
-        }
-        inputFile << mlirContent;
-    }
+    inputFile << mlirContent;
 
-    // exec mlir-translate tool
-    const std::string outputPath(cppFullFileName);
-    pid_t pid = fork();
-    if (pid == -1) {
-        unlink(inputPath.c_str());
-        unlink(outputPath.c_str());
-        llvm::errs() << "Failed to fork process.\n";
+    // Exec emitc-translate tool to get result
+    std::vector<std::string> argsTrans = {
+        "--mlir-to-cpp",
+        tmpFileName,
+        "-o",
+        cppFullFileName,
+    };
+    std::string transRetContent, errContent;
+    if (executeAegisTool(emitcTranTool, argsTrans, transRetContent, errContent)) {
+        llvm::errs() << errContent << "\n";
         return failure();
     }
 
-    if (pid == 0) {
-        const char* args[] = {
-            emitcTranTool.c_str(),
-            "--mlir-to-cpp",
-            inputPath.c_str(),
-            "-o", outputPath.c_str(),
-            nullptr
-        };
+    // Write return content to cpp file
+    // std::ofstream outFile(cppFullFileName);
+    // if (!outFile) {
+    //     llvm::errs() << "Cannot open input file: " << cppFullFileName << ".\n";
+    //     return failure();
+    // }
+    // outFile << transRetContent;
 
-        execvp(args[0], const_cast<char* const*>(args));
-        exit(EXIT_FAILURE);
-    } else { 
-        int status;
-        waitpid(pid, &status, 0);
-        unlink(inputPath.c_str());
-
-        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-            unlink(outputPath.c_str());
-            llvm::errs() << "mlir-translate execution failed.\n";
-            return failure();
-        }
-    }
-
+    llvm::sys::fs::remove(tmpFileName);
     return success();
 }
 
