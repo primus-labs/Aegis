@@ -11,6 +11,7 @@ FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
     GIT_TAG v2.11.1
+    GIT_SHALLOW TRUE
 )
 message(STATUS "Starting pybind11 download...")
 FetchContent_MakeAvailable(pybind11)
@@ -21,10 +22,11 @@ FetchContent_Declare(
     nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
     GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
 )
 message(STATUS "Starting nlohmann_json download...")
 FetchContent_MakeAvailable(nlohmann_json)
-message(STATUS "pybind11 nlohmann_json successfully.")
+message(STATUS "nlohmann_json downloaded successfully.")
 
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 include_directories(${Python_INCLUDE_DIRS})
