@@ -25,7 +25,6 @@
 #include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
 #include "Pass/LweToRlwe/LowerLweToRlwe.h"
 #include "Pass/AutoBootstrap/AutoBootstrap.h"
-#include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
 #include "Pass/Branch/LowerBranch.h"
 #include "mlir/Dialect/Affine/Passes.h"

@@ -22,7 +22,6 @@
 #include "Pass/LoadStoreToCopy/LoadStoreToCopy.h"
 #include "Pass/LweToRlwe/LowerLweToRlwe.h"
 #include "Pass/AutoBootstrap/AutoBootstrap.h"
-#include "Pass/Unroll/UnrollLoops.h"
 #include "Pass/UnrollAndMemOpt/UnrollLoopAndMemOpt.h"
 #include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -153,7 +152,6 @@ int main(int argc, char **argv) {
     affine::registerAffineLoopUnrollPass();
     PassRegistration<UnrollLoopAndMemOptPass>();
     PassRegistration<BranchPass>();
-    PassRegistration<UnrollLoopsPass>();
     PassRegistration<GlobalMemrefReplacePass>();
     PassRegistration<ExtractLoopBodyPass>();
     PassRegistration<ExpandMemrefCopyPass>();

@@ -28,7 +28,6 @@ set(DEP_LIBS
         MLIRTransforms
 
         AegisUnrollAndMemOpt
-        AegisUnrollLoops
         AegisGlobalMemrefReplace
         AegisExtractLoopBody
         AegisExpandMemrefCopy
