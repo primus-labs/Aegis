@@ -10,6 +10,8 @@ namespace py = pybind11;
 #include "Runtime/CompilerEngine.h"
 #include "Runtime/FHE/FHEDataProcessor.h"
 #include "Runtime/FHE/FHERuntime.h"
+#include "Runtime/Simulate/SimDataProcessor.h"
+#include "Runtime/Simulate/SimRuntime.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <capnp/serialize.h>
@@ -36,7 +38,6 @@ using namespace std;
 
 #include <nlohmann/json.hpp>
 
-
 namespace mlir::aegis {
 void to_json(nlohmann::json &j, const CompileOptions &x) {
     j = nlohmann::json{{"backendType", x.beType},
@@ -55,12 +56,14 @@ void from_json(const nlohmann::json &j, CompileOptions &x) {
 void to_json(nlohmann::json &j, const CompileResult &x) {
     j = nlohmann::json{{"outputDirPath", x.outputDirPath},
                        {"cppFileName", x.cppFileName},
+                       {"simFileName", x.simFileName},
                        {"binFileName", x.binFileName},
                        {"progSpecFileName", x.progSpecFileName}};
 }
 void from_json(const nlohmann::json &j, CompileResult &x) {
     j.at("outputDirPath").get_to(x.outputDirPath);
     j.at("cppFileName").get_to(x.cppFileName);
+    j.at("simFileName").get_to(x.simFileName);
     j.at("binFileName").get_to(x.binFileName);
     j.at("progSpecFileName").get_to(x.progSpecFileName);
 }
@@ -315,7 +318,7 @@ class Utils {
 };
 
 /// @brief
-class PyFHEDataProcessor {
+template <typename DataProcessor = FHEDataProcessor, bool IsSimualte = false> class PyDataProcessor {
   public:
     static PyValue privateInput(const py::array_t<double> &input) {
         PyValue pv;
@@ -323,13 +326,13 @@ class PyFHEDataProcessor {
         auto tensor = inputValue.getTensor<double>().value();
         auto dims = tensor.dims;
         if (dims.size() == 0 || dims.size() == 1) {
-            auto cipherValue = FHEDataProcessor().privateInput(tensor.values);
+            auto cipherValue = DataProcessor().privateInput(tensor.values);
             pv.ndim = 1;
             pv.values.push_back(cipherValue);
         } else if (dims.size() == 2) {
             // m x n (dims[0] x dims[1])
             auto values = reshape2d(tensor.values, dims[0], dims[1]);
-            auto cipherValues = FHEDataProcessor().privateInput(values);
+            auto cipherValues = DataProcessor().privateInput(values);
             pv.ndim = 2;
             pv.values = cipherValues;
         } else {
@@ -343,14 +346,24 @@ class PyFHEDataProcessor {
         auto inputValue = Utils::Numpy2Value(input);
         auto tensor = inputValue.getTensor<double>().value();
         auto dims = tensor.dims;
-        if (dims.size() == 0 || dims.size() == 1) {
-            auto cipherValue = FHEDataProcessor().publicInput(tensor.values);
+        if (dims.size() == 0) {
+            if constexpr (IsSimualte) {
+                auto cipherValue = DataProcessor().publicInput(tensor.values[0]);
+                pv.ndim = 0;
+                pv.values.push_back(cipherValue);
+            } else {
+                auto cipherValue = DataProcessor().publicInput(tensor.values);
+                pv.ndim = 1;
+                pv.values.push_back(cipherValue);
+            }
+        } else if (dims.size() == 1) {
+            auto cipherValue = DataProcessor().publicInput(tensor.values);
             pv.ndim = 1;
             pv.values.push_back(cipherValue);
         } else if (dims.size() == 2) {
             // m x n (dims[0] x dims[1])
             auto values = reshape2d(tensor.values, dims[0], dims[1]);
-            auto cipherValues = FHEDataProcessor().publicInput(values);
+            auto cipherValues = DataProcessor().publicInput(values);
             pv.ndim = 2;
             pv.values = cipherValues;
         } else {
@@ -361,15 +374,15 @@ class PyFHEDataProcessor {
 
     static py::array_t<double> processOutput(PyValue &pv) { // TODO:const input
         if (pv.ndim == 1) {
-            auto plainValues = FHEDataProcessor().processOutput(pv.values);
+            auto plainValues = DataProcessor().processOutput(pv.values);
             return Utils::Value2Numpy(plainValues[0]);
         } else if (pv.ndim == 2) {
-            auto plainValues = FHEDataProcessor().processOutput(pv.values);
+            auto plainValues = DataProcessor().processOutput(pv.values);
 
             std::vector<size_t> shapes = {plainValues.size()}; // m:dims[0]
             std::vector<double> values;
             for (auto &input : plainValues) {
-                auto tensor = input.getTensor<double>().value();
+                auto tensor = input.template getTensor<double>().value();
                 values.insert(values.end(), tensor.values.begin(), tensor.values.end());
             }
             shapes.push_back(values.size() / plainValues.size()); // n:dims[1]
@@ -516,6 +529,38 @@ class PyFHERuntime {
     }
 };
 
+/// @brief
+class PySimRuntime {
+  public:
+    vector<PyValue> run(const vector<PyValue> &pvs, const CompileResult &compileResult) {
+        auto simFileName = compileResult.outputDirPath + "/" + compileResult.simFileName;
+
+        SimRuntime rt(simFileName);
+
+        std::vector<mlir::aegis::Value> inputs;
+        for (auto pv : pvs) {
+            inputs.insert(inputs.end(), pv.values.begin(), pv.values.end());
+        }
+
+        auto result = rt.call(inputs);
+        if (!result) {
+            auto s = llvm::toString(result.takeError());
+            throw std::runtime_error(s);
+        }
+
+        std::vector<mlir::aegis::Value> res = *result;
+        std::vector<PyValue> resPVs;
+        for (auto &v : res) {
+            PyValue pv;
+            pv.ndim = 1; // origin
+            pv.values.push_back(v);
+            resPVs.push_back(pv);
+        }
+
+        return resPVs;
+    }
+};
+
 PYBIND11_MODULE(primus_aegis, m) {
     m.doc() = "Aegis";
 
@@ -544,6 +589,7 @@ PYBIND11_MODULE(primus_aegis, m) {
         .value("EMITC", TARGET::EMITC)
         .value("CPP", TARGET::CPP)
         .value("LIBRARY", TARGET::LIBRARY)
+        .value("SIM_MLIR", TARGET::SIM_MLIR)
         .export_values();
     py::enum_<FHE_SCHEME_TYPE>(m_compiler, "FHE_SCHEME_TYPE")
         .value("BGV", FHE_SCHEME_TYPE::BGV)
@@ -566,6 +612,7 @@ PYBIND11_MODULE(primus_aegis, m) {
         .def(py::init<>())
         .def_readwrite("outputDirPath", &CompileResult::outputDirPath)
         .def_readwrite("cppFileName", &CompileResult::cppFileName)
+        .def_readwrite("simFileName", &CompileResult::simFileName)
         .def_readwrite("binFileName", &CompileResult::binFileName)
         .def_readwrite("progSpecFileName", &CompileResult::progSpecFileName)
         .def(
@@ -620,10 +667,16 @@ PYBIND11_MODULE(primus_aegis, m) {
     py::module m_dp = m.def_submodule("dataprocessor");
 
     // FHE DataProcessor
-    py::class_<PyFHEDataProcessor>(m_dp, "FHEDataProcessor")
-        .def_static("privateInput", &PyFHEDataProcessor::privateInput)
-        .def_static("publicInput", &PyFHEDataProcessor::publicInput)
-        .def_static("processOutput", &PyFHEDataProcessor::processOutput);
+    py::class_<PyDataProcessor<>>(m_dp, "FHEDataProcessor")
+        .def_static("privateInput", &PyDataProcessor<>::privateInput)
+        .def_static("publicInput", &PyDataProcessor<>::publicInput)
+        .def_static("processOutput", &PyDataProcessor<>::processOutput);
+
+    // Sim DataProcessor
+    py::class_<PyDataProcessor<SimDataProcessor, true>>(m_dp, "SimDataProcessor")
+        .def_static("privateInput", &PyDataProcessor<SimDataProcessor, true>::privateInput)
+        .def_static("publicInput", &PyDataProcessor<SimDataProcessor, true>::publicInput)
+        .def_static("processOutput", &PyDataProcessor<SimDataProcessor, true>::processOutput);
 
     //
     //
@@ -634,4 +687,9 @@ PYBIND11_MODULE(primus_aegis, m) {
     py::class_<PyFHERuntime>(m_rt, "FHERuntime")
         .def(py::init<>())
         .def("run", &PyFHERuntime::run, py::arg("input"), py::arg("compile_result"));
+
+    // Sim Runtime
+    py::class_<PySimRuntime>(m_rt, "SimRuntime")
+        .def(py::init<>())
+        .def("run", &PySimRuntime::run, py::arg("input"), py::arg("compile_result"));
 }

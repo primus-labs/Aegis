@@ -26,7 +26,7 @@ if True:
 
 # load the input values
 from primus_aegis import Value
-from test_cases import testInputsLength
+from test_cases import testInputsLength, testIsSim
 
 privateInputs = []
 for i in range(testInputsLength):
@@ -36,10 +36,23 @@ for i in range(testInputsLength):
 
 
 # do calculation
-from primus_aegis.runtime import FHERuntime
+from primus_aegis.runtime import FHERuntime, SimRuntime
 
-fheRuntime = FHERuntime()
-resultDatas = fheRuntime.run(privateInputs, compileResult)
+if testIsSim:
+    from primus_aegis.dataprocessor import SimDataProcessor
+    from test_cases import testOutputs
+
+    # NOTE, do not serialize the return value, since simulate.run return plain<double> directly
+    resultDatas = SimRuntime().run(privateInputs, compileResult)
+
+    outputData = SimDataProcessor.processOutput(resultDatas[0])
+    print("len of outputData:", len(outputData))
+    print("outputData:", outputData, "expectValue:", testOutputs[0]["value"])
+
+    exit(0)
+
+
+resultDatas = FHERuntime().run(privateInputs, compileResult)
 if len(resultDatas) > 0:
     with open("resultData0.bin", "wb") as f:
         f.write(resultDatas[0].to_bytes())

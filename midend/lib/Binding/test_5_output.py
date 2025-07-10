@@ -16,7 +16,10 @@ with open("all_keys.bin", "rb") as f:
 import numpy as np
 from primus_aegis import Value
 from primus_aegis.dataprocessor import FHEDataProcessor
-from test_cases import testOutputs
+from test_cases import testOutputs, testIsSim
+
+if testIsSim:
+    exit(0)
 
 with open("resultData0.bin", "rb") as f:
     resultData0 = Value.from_bytes(f.read())

@@ -3,16 +3,18 @@ Development/Server Side
 """
 
 from primus_aegis.compiler import COMPILE_TARGET, CompileOption, Compiler
-from test_cases import testMlirContent
+from test_cases import testMlirContent, testIsSim
 
 mlirContent = testMlirContent
 compileOption = CompileOption()
 compileOption.compileTarget = COMPILE_TARGET.LIBRARY
+if testIsSim:
+    compileOption.compileTarget = COMPILE_TARGET.SIM_MLIR
 compileOption.outputDir = "./"
 print("compileOption:", compileOption.to_json(1))
 
 compileResult = Compiler().compile(mlirContent, compileOption)
-if compileOption.compileTarget == COMPILE_TARGET.LIBRARY:
+if compileOption.compileTarget in [COMPILE_TARGET.LIBRARY, COMPILE_TARGET.SIM_MLIR]:
     print("compileResult:", compileResult.to_json())
     with open("compileResult.json", "w", encoding="utf-8") as f:
         f.write(compileResult.to_json())
