@@ -7,8 +7,9 @@ if __name__ == '__main__':
     all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
     data_dir = os.getenv('AEGIS_DATA_DIR')
     file_path = os.getenv('AEGIS_CLIENT_ZIP_PATH')
+    is_sim = os.getenv('IS_SIM') == '1'
 
-    client = Client(file_path)
+    client = Client(file_path, is_sim = is_sim)
     client.load_all_keys(all_keys_path)
 
     private_data_1 = np.array([[1, 3], [5, 7], [9, 11]])

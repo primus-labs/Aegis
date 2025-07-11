@@ -15,8 +15,9 @@ class FHEClient:
     _keyset_manager: FHEKeysetManager
     _are_keys_loaded: bool
     _is_local_mode: bool
+    _is_sim: bool
 
-    def __init__(self, compile_result_or_file: Union[FHECompileResult, str], is_local_mode: bool = False):
+    def __init__(self, compile_result_or_file: Union[FHECompileResult, str], is_local_mode: bool = False, is_sim: bool = False):
         """
         Construct FHEClient instance
 
@@ -27,6 +28,8 @@ class FHEClient:
                 - str: either a zip format file or a json format file
             is_local_mode (bool):
                 True if it works in local mode
+            is_sim (bool):
+                True if it works in simulate mode
 
         raise
             RuntimeError: if compile_result_or_file is type `str`, and it is neither a zip format file nor a json format file
@@ -42,10 +45,11 @@ class FHEClient:
         if isinstance(compile_result_or_file, FHECompileResult):
             prog_spec_file = compile_result_or_file.get_prog_spec_file_path()
         self._prog_spec_file = prog_spec_file
-        self._data_processor = FHEDataProcessor()
+        self._data_processor = FHEDataProcessor(is_sim)
         self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
         self._is_local_mode = is_local_mode
+        self._is_sim = is_sim
 
     def _require_keys_loaded(self):
         """
@@ -55,7 +59,7 @@ class FHEClient:
             RuntimeError:
                 If keys are not loaded
         """
-        if self._is_local_mode:
+        if self._is_local_mode or self._is_sim:
             return
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")

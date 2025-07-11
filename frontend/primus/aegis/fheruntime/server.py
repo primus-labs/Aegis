@@ -23,19 +23,23 @@ class FHEServer:
     _are_keys_loaded: bool
     _output_dir: str
     _is_local_mode: bool
+    _is_sim: bool
 
-    def __init__(self, is_local_mode: bool = False):
+    def __init__(self, is_local_mode: bool = False, is_sim: bool = False):
         """
         Construct FHEServer
         Args
             is_local_mode (bool):
                 Whether it works in local mode
+            is_sim (boo):
+                Whether it works in simulate mode
         """
         self._compiler = FHECompiler()
-        self._runtime = FHERuntime()
+        self._runtime = FHERuntime(is_sim)
         self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
         self._is_local_mode = is_local_mode
+        self._is_sim = is_sim
         self._output_dir = './output'
         self._compile_result = None
 
@@ -55,7 +59,7 @@ class FHEServer:
         """
         Check whether keys are loaded
         """
-        if self._is_local_mode:
+        if self._is_local_mode or self._is_sim:
             return
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
@@ -266,7 +270,10 @@ class FHEServer:
         """
         if compile_option == None:
             compile_option = CompileOption()
-            compile_option.compileTarget = COMPILE_TARGET.LIBRARY
+            if self._is_sim:
+                compile_option.compileTarget = COMPILE_TARGET.SIM_MLIR
+            else:
+                compile_option.compileTarget = COMPILE_TARGET.LIBRARY
             compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
         self._output_dir = compile_option.outputDir
         if isinstance(onnx_file_or_py_function, str):
