@@ -18,6 +18,11 @@ if __name__ == '__main__':
     # private_data_1 = np.array([1, 3, 5, 7, 9, 11])
     # private_data_2 = np.array([2, 4, 6, 8, 10, 12])
 
+    x1 = 1.1
+    x2 = 2.2
+    private_data_1 = np.array(x1, dtype = np.float64)
+    private_data_2 = np.array(x2, dtype = np.float64)
+
     ser1 = client.encrypt(private_data_1, True)
     ser2 = client.plaintext(private_data_2, True)
 
