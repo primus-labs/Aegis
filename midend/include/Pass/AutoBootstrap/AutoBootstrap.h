@@ -8,7 +8,7 @@
 using namespace mlir;
 
 struct AutoBootstrapPass : public mlir::PassWrapper<AutoBootstrapPass, mlir::OperationPass<mlir::ModuleOp>> {
-    void getDependentDialects(mlir::DialectRegistry &registry) const;
+    void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
     void runOnOperation() override;
 

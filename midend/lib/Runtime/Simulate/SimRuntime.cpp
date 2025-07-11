@@ -110,6 +110,7 @@ llvm::Expected<bool> SimRuntime::replaceMlirTokenWith(const std::vector<std::str
         return ErrorMsg("Failed to write file: ") << simMlirFileName;
     }
     outputFile << content;
+    outputFile.close();
 
     return true;
 }
@@ -207,6 +208,7 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
         return ErrorMsg("Failed to write file: ") << simMlirFileName;
     }
     outFile << llvmLevelMlirContent;
+    outFile.close();
 
     // Exec mlir_cpu_runner tool to run llvm dialect mlir to get result value.
     std::string mlirRunTool = aegis::findAegisTool("mlir-cpu-runner", "MLIR_RUNNER_PATH");

@@ -92,6 +92,7 @@ static mlir::LogicalResult fromEmitcToCpp(const std::string& mlirContent, const 
         return failure();
     }
     inputFile << mlirContent;
+    inputFile.close();
 
     // Exec emitc-translate tool to get result
     std::vector<std::string> argsTrans = {
