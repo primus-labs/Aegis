@@ -34,7 +34,7 @@ cp -f ${primus_aegis_so} ${DIST_DIR}/lib/
 cp -f ${aegis_rt_so} ${DIST_DIR}/lib/
 if [[ $OSTYPE == 'darwin'* ]]; then
   cp -f ${mlir_runner_units_so} ${DIST_DIR}/lib/
-  cp -f ${mlir_runner_units_so} ${DIST_DIR}/lib/
+  cp -f ${mlir_float16_units_so} ${DIST_DIR}/lib/
 else
   cp -fL ${mlir_runner_units_so} ${DIST_DIR}/lib/
   cp -f ${mlir_float16_units_so} ${DIST_DIR}/lib/
