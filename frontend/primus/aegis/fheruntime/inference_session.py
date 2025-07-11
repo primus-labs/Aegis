@@ -26,7 +26,7 @@ class FHEInferenceSession:
     _archive_path: Optional[tuple[str, str]]
     _param_annos: Optional[Dict[str, str]]
 
-    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_local_mode: bool = False):
         """
         Construct FHEInferenceSession instance
 
@@ -42,10 +42,10 @@ class FHEInferenceSession:
             compile_option (CompileOption):
                 options for compilation
 
-            is_simulate (bool):
-                Whether it works in simulation mode
+            is_local_mode (bool):
+                Whether it works in local mode
         """
-        self._server = FHEServer(is_simulate)
+        self._server = FHEServer(is_local_mode)
         self._param_annos = param_annos
         if path_or_bytes != None:
             if isinstance(path_or_bytes, bytes):

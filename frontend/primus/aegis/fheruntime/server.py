@@ -22,20 +22,20 @@ class FHEServer:
     _keyset_manager: FHEKeysetManager
     _are_keys_loaded: bool
     _output_dir: str
-    _is_simulate: bool
+    _is_local_mode: bool
 
-    def __init__(self, is_simulate: bool = False):
+    def __init__(self, is_local_mode: bool = False):
         """
         Construct FHEServer
         Args
-            is_simulate (bool):
-                Whether it works in simulate mode
+            is_local_mode (bool):
+                Whether it works in local mode
         """
         self._compiler = FHECompiler()
         self._runtime = FHERuntime()
         self._keyset_manager = FHEKeysetManager()
         self._are_keys_loaded = False
-        self._is_simulate = is_simulate
+        self._is_local_mode = is_local_mode
         self._output_dir = './output'
         self._compile_result = None
 
@@ -55,7 +55,7 @@ class FHEServer:
         """
         Check whether keys are loaded
         """
-        if self._is_simulate:
+        if self._is_local_mode:
             return
         if not self._are_keys_loaded:
             raise RuntimeError("keys are not loaded")
@@ -190,6 +190,10 @@ class FHEServer:
                 shutil.copyfile(compile_result.get_prog_spec_file_path(), tmp_dir + '/' + progSpecFileName)
 
             if is_server:
+                simFileName = compile_result._get_sim_file_name()
+                if len(simFileName) > 0:
+                    shutil.copyfile(compile_result.get_sim_file_path(), tmp_dir + '/' + simFileName)
+
                 binFileName = compile_result._get_bin_file_name()
                 if len(binFileName) > 0:
                     shutil.copyfile(compile_result.get_bin_file_path(), tmp_dir + '/' +  binFileName)

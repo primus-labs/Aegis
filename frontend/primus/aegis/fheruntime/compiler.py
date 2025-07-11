@@ -6,6 +6,7 @@ class FHECompileResult:
     to locate the files the compiler generates
     """
     _compile_result: CompileResult
+    _simFileName: str
     _binFileName: str
     _cppFileName: str
     _progSpecFileName: str
@@ -13,10 +14,17 @@ class FHECompileResult:
 
     def __init__(self, compile_result: CompileResult):
         self._compile_result = compile_result
+        self._simFileName = compile_result.simFileName
         self._binFileName = compile_result.binFileName
         self._cppFileName = compile_result.cppFileName
         self._progSpecFileName = compile_result.progSpecFileName
         self._outputDirPath = compile_result.outputDirPath
+
+    def _get_sim_file_name(self) -> str:
+        """
+        return the simulate file name
+        """
+        return self._simFileName
 
     def _get_bin_file_name(self) -> str:
         """
@@ -52,6 +60,12 @@ class FHECompileResult:
         """
         self._compile_result.outputDirPath = outputDir
         self._outputDirPath = outputDir
+
+    def get_sim_file_path(self) -> str:
+        """
+        return the simulate file path
+        """
+        return self._outputDirPath + '/' + self._simFileName
 
     def get_bin_file_path(self) -> str:
         """

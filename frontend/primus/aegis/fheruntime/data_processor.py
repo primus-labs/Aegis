@@ -1,4 +1,4 @@
-from primus.lib.primus_aegis.dataprocessor import FHEDataProcessor as DataProcessor
+from primus.lib.primus_aegis.dataprocessor import FHEDataProcessor as DataProcessor, SimDataProcessor
 from primus.lib.primus_aegis import Value
 import numpy as np
 
@@ -6,8 +6,9 @@ class FHEDataProcessor:
     """
     FHEDataProcessor class, used for FHE encryption and decryption
     """
-    def __init__(self):
-        pass
+    _is_sim: bool
+    def __init__(self, is_sim: bool = False):
+        self._is_sim = is_sim
 
     def encrypt(self, plain_input: np.ndarray) -> Value:
         """
@@ -17,6 +18,8 @@ class FHEDataProcessor:
         Returns
             Value: return the ciphertext
         """
+        if self._is_sim:
+            return SimDataProcessor.publicInput(plain_input)
         return DataProcessor.privateInput(plain_input)
 
     def plaintext(self, plain_input: np.ndarray) -> Value:
@@ -27,6 +30,8 @@ class FHEDataProcessor:
         Returns
             Value: return the public value 
         """
+        if self._is_sim:
+            return SimDataProcessor.publicInput(plain_input)
         return DataProcessor.publicInput(plain_input)
 
     def decrypt(self, ciphertext: Value) -> Value:
@@ -37,4 +42,6 @@ class FHEDataProcessor:
         Returns
             Value: return the plaintext
         """
+        if self._is_sim:
+            return SimDataProcessor.processOutput(ciphertext)
         return DataProcessor.processOutput(ciphertext)
