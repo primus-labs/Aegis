@@ -516,14 +516,14 @@ bool case_1() {
     // if (!mlirUnitTest_2(mlirCase1, {a}, true, {b}, true, expect_output)) {
     //     return false;
     // }
-    if (!mlirUnitTest_2(mlirCase1_1, {a}, true, {b}, false, expect_output)) {
+    if (!mlirUnitTest_2(mlirCase1_1, std::vector<double>{a}, true, std::vector<double>{b}, false, expect_output)) {
         return false;
     }
 
     double a2 = 3.3;
     double b2 = 4.4;
     std::vector<double> expect_output2(1, a2*b2);
-    if (!mlirUnitTest_2(mlirCase1, {a2}, true, {b2}, true, expect_output2)) {
+    if (!mlirUnitTest_2(mlirCase1, std::vector<double>{a2}, true, std::vector<double>{b2}, true, expect_output2)) {
         return false;
     }
 

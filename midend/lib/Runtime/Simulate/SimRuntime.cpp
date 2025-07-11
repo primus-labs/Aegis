@@ -8,6 +8,11 @@
 #include <iostream>
 // #include <regex>
 
+#ifdef __APPLE__
+    #define DYLIB_EXT ".dylib"
+#else // linux, etc.
+    #define DYLIB_EXT ".so"
+#endif
 
 namespace mlir {
 namespace aegis {
@@ -110,6 +115,7 @@ llvm::Expected<bool> SimRuntime::replaceMlirTokenWith(const std::vector<std::str
         return ErrorMsg("Failed to write file: ") << simMlirFileName;
     }
     outputFile << content;
+    outputFile.close();
 
     return true;
 }
@@ -207,6 +213,7 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
         return ErrorMsg("Failed to write file: ") << simMlirFileName;
     }
     outFile << llvmLevelMlirContent;
+    outFile.close();
 
     // Exec mlir_cpu_runner tool to run llvm dialect mlir to get result value.
     std::string mlirRunTool = aegis::findAegisTool("mlir-cpu-runner", "MLIR_RUNNER_PATH");
@@ -215,8 +222,8 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
     }
     auto parentPath = llvm::sys::path::parent_path(llvm::StringRef(mlirRunTool));
     parentPath = llvm::sys::path::parent_path(llvm::StringRef(parentPath));
-    std::string argShareLib = std::string(llvm::formatv("-shared-libs={0}/lib/libmlir_runner_utils.so", 
-                                          parentPath.str()));
+    std::string argShareLib = std::string(llvm::formatv("-shared-libs={0}/lib/libmlir_runner_utils{1}", 
+                                          parentPath.str(), DYLIB_EXT));
     std::vector<std::string> argsRun = {
         "-e",
         "main",

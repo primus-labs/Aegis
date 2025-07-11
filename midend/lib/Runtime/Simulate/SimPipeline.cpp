@@ -269,6 +269,7 @@ mlir::LogicalResult lowerToSimulateMLIR(mlir::ModuleOp &moduleOp, const std::str
     // writer mlir content to mlir file
     if (auto fout = std::ofstream(mlirFullFileName)){
         fout << mlirContent;
+        fout.close();
         return success();
     } else {
         return failure();

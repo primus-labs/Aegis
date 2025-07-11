@@ -276,7 +276,7 @@ std::string findAegisTool(const std::string &toolFileName, const std::string &en
 int executeAegisTool(const std::string aegisTool, const std::vector<std::string> args, 
                      std::string &output, std::string &errorMsg) {
     // Create temporary files
-    llvm::SmallString<128> outFile, errFile;
+    llvm::SmallString<256> outFile, errFile;
     if (llvm::sys::fs::createTemporaryFile("aegistool-output", "txt", outFile)) {
         errorMsg = "Error creating temporary output file\n";
         return -1;
@@ -290,10 +290,10 @@ int executeAegisTool(const std::string aegisTool, const std::vector<std::string>
     }
 
     // Configure I/O redirection
-     std::vector<std::optional<StringRef>> Redirects = {
-        {""},                                                 
-        llvm::StringRef(outFile.str()),                            
-        llvm::StringRef(errFile.str())
+    std::optional<StringRef> Redirects[] = {
+        std::nullopt,                                                 
+        llvm::StringRef(outFile),                            
+        llvm::StringRef(errFile)
     };
 
     // Prepare argument list
@@ -305,14 +305,14 @@ int executeAegisTool(const std::string aegisTool, const std::vector<std::string>
     int retCode = llvm::sys::ExecuteAndWait(aegisTool,             // Program path
                                             fullArgs,              // Arguments array (ArrayRef<StringRef>)
                                             /*Env=*/std::nullopt,  // Environment (inherit)
-                                            ArrayRef(Redirects),   // I/O redirection
+                                            Redirects,             // I/O redirection
                                             /*SecondsToWait=*/0,   // Timeout (0=infinite)
                                             /*MemoryLimit=*/0,     // Memory limit (0=unlimited)
                                             &errorMsg,             // Error message output
                                             /*ExecutionFailed=*/nullptr);
 
     // Handle execution failure
-    if (retCode < 0) {
+    if (retCode) {
         llvm::sys::fs::remove(outFile);
         llvm::sys::fs::remove(errFile);
         return retCode;
