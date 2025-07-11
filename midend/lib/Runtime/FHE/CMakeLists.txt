@@ -67,7 +67,7 @@ set(RT_DEP_LIBS
 set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
 target_link_libraries(AegisRuntime PUBLIC ${RT_DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore OPENFHEpke OPENFHEbinfhe)
 if(APPLE)
-target_link_options(AegisRuntime PRIVATE "LINKER:-rpath,@loader_path" "LINKER:-rpath,/usr/local/lib")
+target_link_options(AegisRuntime PRIVATE "-Wl,-rpath,@loader_path" "-Wl,-rpath,/usr/local/lib")
 endif()
 #target_link_options(AegisRuntime PUBLIC "-Wl,--verbose")
 
