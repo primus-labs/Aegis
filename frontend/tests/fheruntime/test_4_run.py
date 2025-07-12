@@ -7,6 +7,7 @@ if __name__ == '__main__':
     data_dir = os.getenv('AEGIS_DATA_DIR')
     output_dir = os.getenv('AEGIS_OUTPUT_DIR')
     eva_keys_path = os.getenv('AEGIS_EVA_KEYS_PATH')
+    is_sim = os.getenv('IS_SIM') == '1'
 
     private_data = load_data_array(data_dir + '/private_data.bin')
     private_data_1 = private_data[0]
@@ -17,12 +18,12 @@ if __name__ == '__main__':
     print('test_server_api:', test_server_api)
 
     if test_server_api:
-        server = Server()
+        server = Server(is_sim = is_sim)
         server.load_eva_keys(eva_keys_path)
         server.load(archive_path)
         output = server.run([private_data_1, private_data_2])
     else:
-        inference_session = InferenceSession()
+        inference_session = InferenceSession(is_sim = is_sim)
         inference_session.get_server().load_eva_keys(eva_keys_path)
         inference_session.get_server().load(archive_path)
         output = inference_session.run(['Y'], {'X1': private_data_1, 'X2': private_data_2})

@@ -1,4 +1,4 @@
-from primus.lib.primus_aegis.runtime import FHERuntime as Runtime
+from primus.lib.primus_aegis.runtime import FHERuntime as Runtime, SimRuntime
 from primus.lib.primus_aegis.compiler import CompileOption
 from primus.lib.primus_aegis import Value
 from typing import List, Union
@@ -8,10 +8,13 @@ class FHERuntime:
     """
     FHERuntime class, used to execute FHE operations
     """
-    _runtime: Runtime
+    _runtime: Union[Runtime, SimRuntime]
 
-    def __init__(self):
-        self._runtime = Runtime()
+    def __init__(self, is_sim: bool = False):
+        if is_sim:
+            self._runtime = SimRuntime()
+        else:
+            self._runtime = Runtime()
 
     def run(self, private_data: Union[Value, List[Value]], compile_result: FHECompileResult) -> Union[Value, List[Value]]:
         """

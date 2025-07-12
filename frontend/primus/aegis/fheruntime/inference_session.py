@@ -26,7 +26,7 @@ class FHEInferenceSession:
     _archive_path: Optional[tuple[str, str]]
     _param_annos: Optional[Dict[str, str]]
 
-    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_simulate: bool = False):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_local_mode: bool = False, is_sim: bool = False):
         """
         Construct FHEInferenceSession instance
 
@@ -42,10 +42,12 @@ class FHEInferenceSession:
             compile_option (CompileOption):
                 options for compilation
 
-            is_simulate (bool):
-                Whether it works in simulation mode
+            is_local_mode (bool):
+                Whether it works in local mode
+            is_sim (bool):
+                Whether it works in sim mode
         """
-        self._server = FHEServer(is_simulate)
+        self._server = FHEServer(is_local_mode, is_sim)
         self._param_annos = param_annos
         if path_or_bytes != None:
             if isinstance(path_or_bytes, bytes):
@@ -219,7 +221,7 @@ class LocalFHEInferenceSession(FHEInferenceSession):
     LocalFHEInferenceSession class, used to compute FHE operations locally
     """
     _client: FHEClient
-    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None):
+    def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_sim: bool = False):
         """
         Construct LocalFHEInferenceSession instance
 
@@ -233,10 +235,12 @@ class LocalFHEInferenceSession(FHEInferenceSession):
                 Paramter annotations, either encrypted/clear
             compile_option (CompileOption):
                 Options for compilation
+            is_sim (bool):
+                Wheter it works in sim mode
         """
-        super().__init__(path_or_bytes, param_annos, compile_option, True)
+        super().__init__(path_or_bytes, param_annos, compile_option, True, is_sim)
         compile_result = self._server.get_compile_result()
-        self._client = FHEClient(compile_result, True)
+        self._client = FHEClient(compile_result, True, is_sim)
         self._client.keygen()
 
     def run(self, output_names: List[str], input_feed: Dict[str, np.ndarray]) -> Union[np.ndarray, List[np.ndarray]]:
