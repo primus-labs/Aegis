@@ -2,14 +2,13 @@
 
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
 TEST_DIR=${SCRIPT_DIR}/../frontend/tests/fheruntime
-export PYTHONPATH=/usr/local/python_packages/mlir_core
 
 FRONTEND_DIR=${SCRIPT_DIR}/../frontend
 
 cd ${FRONTEND_DIR}
 
 ${SCRIPT_DIR}/build_wheel.sh
-pip install --force-reinstall dist/primus-0.1.0-py3-none-any.whl
+pip install --force-reinstall dist/aegis-0.1.0-py3-none-any.whl
 
 cd ${TEST_DIR}
 
@@ -24,6 +23,7 @@ export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
 
 export TEST_SERVER_API=1
 # export TEST_SERVER_API=0
+export IS_SIM=1
 
 python3 test_1_compile.py
 python3 test_2_keygen.py
