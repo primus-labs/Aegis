@@ -6,6 +6,7 @@ from primus.lib.primus_aegis import Value
 from typing import List, Union, Optional, Dict
 import numpy as np
 import os
+import re
 import json
 import tempfile
 
@@ -25,6 +26,9 @@ class FHEInferenceSession:
     _server: FHEServer
     _archive_path: Optional[tuple[str, str]]
     _param_annos: Optional[Dict[str, str]]
+    _input_names: Optional[List[str]]
+    _output_names: Optional[List[str]]
+    _is_sim: bool
 
     def __init__(self, path_or_bytes: Optional[Union[bytes, str, os.PathLike]] = None, param_annos: Optional[Dict[str,str]] = None, compile_option: CompileOption = None, is_local_mode: bool = False, is_sim: bool = False):
         """
@@ -49,6 +53,9 @@ class FHEInferenceSession:
         """
         self._server = FHEServer(is_local_mode, is_sim)
         self._param_annos = param_annos
+        self._input_names = None
+        self._output_names = None
+        self._is_sim = is_sim
         if path_or_bytes != None:
             if isinstance(path_or_bytes, bytes):
                 with tempfile.TemporaryDirectory() as tmp_dir:
@@ -116,17 +123,35 @@ class FHEInferenceSession:
         Returns
             (List[str], List[str]): return input names and output names
         """
-        prog_spec_file_path = compile_result.get_prog_spec_file_path()
-        with open(prog_spec_file_path, 'r') as f:
-            content = f.read()
-        j = json.loads(content)
-        function = j['funcsInfo']['functions'][0]
-        inputs = function['inputs']
-        outputs = function['outputs']
+        if self._input_names == None:
+            if self._is_sim:
+                sim_mlir_file_path = compile_result.get_sim_file_path()
+                with open(sim_mlir_file_path, 'r') as f:
+                    content = f.read()
+                func = re.search('func.func @\w+\((.*?)\) -> \((.*?)\)', content)
+                has_output_name = True
+                if func == None:
+                    func = re.search('func.func @\w+\((.*?)\) -> ', content)
+                    has_output_name = False
+                func_input = func.group(1)
+                self._input_names = re.findall('onnx.name\s*=\s*"([^"]+)"', func_input)
+                if has_output_name:
+                    func_output = func.group(2)
+                    self._output_names = re.findall('onnx.name\s*=\s*"([^"]+)"', func_output)
+                else:
+                    self._output_names = ['Y']
+            else:
+                prog_spec_file_path = compile_result.get_prog_spec_file_path()
+                with open(prog_spec_file_path, 'r') as f:
+                    content = f.read()
+                j = json.loads(content)
+                function = j['funcsInfo']['functions'][0]
+                inputs = function['inputs']
+                outputs = function['outputs']
 
-        input_names = [i['name'] for i in inputs]
-        output_names = [o['name'] for o in outputs]
-        return (input_names, output_names)
+                self._input_names = [i['name'] for i in inputs]
+                self._output_names = [o['name'] for o in outputs]
+        return (self._input_names, self._output_names)
 
     def _check_input_output_names(self, input_names: List[str], output_names:List[str], all_input_names: List[str], all_output_names: List[str]):
         """

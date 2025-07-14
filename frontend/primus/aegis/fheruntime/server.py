@@ -277,7 +277,12 @@ class FHEServer:
             compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
         self._output_dir = compile_option.outputDir
         if isinstance(onnx_file_or_py_function, str):
-            mlir_file = self._convert_onnx_to_mlir(onnx_file_or_py_function)
+            if onnx_file_or_py_function.endswith('.mlir'):
+                mlir_file = onnx_file_or_py_function
+            elif onnx_file_or_py_function.endswith('.onnx'):
+                mlir_file = self._convert_onnx_to_mlir(onnx_file_or_py_function)
+            else:
+                raise RuntimeError('unsupported file type ' + onnx_file_or_py_function)
         elif callable(onnx_file_or_py_function):
             mlir_file = self._convert_py_to_mlir(self._output_dir, onnx_file_or_py_function)
         else:
