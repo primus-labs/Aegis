@@ -14,9 +14,9 @@ def __valid_check(bin_path: str):
 def load_dependencis():
     try:
         system = platform.system()
-        so_names = ["libmlir_float16_utils.so.20.0git", "libmlir_c_runner_utils.so", "libAegisRuntime.so.20.0git"]
+        so_names = ["libmlir_float16_utils.so.20.0git", "libmlir_runner_utils.so", "libAegisRuntime.so.20.0git"]
         if system == "Darwin":
-            so_names = ["libmlir_float16_utils.dylib", "libmlir_c_runner_utils.dylib", "libAegisRuntime.dylib"]
+            so_names = ["libmlir_float16_utils.dylib", "libmlir_runner_utils.dylib", "libAegisRuntime.dylib"]
         for so_name in so_names:
             lib_path = importlib.resources.files("primus").joinpath(f"lib/{so_name}")
             lib_path_str = str(lib_path)
