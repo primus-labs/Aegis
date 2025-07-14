@@ -24,6 +24,7 @@ export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
 export TEST_SERVER_API=1
 # export TEST_SERVER_API=0
 export IS_SIM=1
+export IS_SIM=0
 
 python3 test_1_compile.py
 python3 test_2_keygen.py
