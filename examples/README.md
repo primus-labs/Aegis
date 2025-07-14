@@ -3,9 +3,12 @@
 
 - Deployment
   - [deploy/deployment.py](./deploy/deployment.py), full process of deployment.
+  
 - ONNX Model
   - [onnx/use_onnx.py](./onnx/use_onnx.py)
     This example demonstrates Aegis' support for ONNX models: It seamlessly compiles plaintext ONNX models into executable ciphertext models while maintaining full API compatibility with ONNX Runtime.
+  - [onnx/use_onnx_sim.py](./onnx/use_onnx_sim.py)
+    To verify the consistency between encrypted and plaintext execution of ONNX models, Aegis provides a simulate feature that executes models in plaintext mode. This example demonstrates how to use the simulate feature for ONNX model execution.
   
 - ​Target Function
   - [loop/loop_2d_add.py](./loop/loop_2d_add.py)
