@@ -16,6 +16,9 @@ public:
     Value publicInput(const std::vector<double> &theArg) override;
     std::vector<Value> publicInput(const std::vector<std::vector<double>> &args) override;
     std::vector<Value> processOutput(const std::vector<Value> &outputs) override;
+
+private:
+    Value processOutput(const Value &output);
 };
 
 } // namespace aegis

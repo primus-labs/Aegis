@@ -37,8 +37,32 @@ std::vector<Value> SimDataProcessor::publicInput(const std::vector<std::vector<d
 }
 
 std::vector<Value> SimDataProcessor::processOutput(const std::vector<Value> &outputs) {
-    //​​Return it directly without any processing
-    return outputs;
+    std::vector<Value> outputData;
+    for (auto const& output : outputs) {
+        outputData.emplace_back(processOutput(output));
+    }
+
+    return outputData;
+}
+
+Value SimDataProcessor::processOutput(const Value &output) {
+    auto tensor = output.getTensor<uint8_t>().value();
+    auto dims = output.getDims();
+    std::vector<double> res;
+    if (dims.size() == 1) {
+        if (dims[0] == 1) {
+            res.resize(1);
+            res[0] = deserializeToDouble(tensor.values);
+        } else {
+            res = deserializeToVectorDouble(tensor.values);
+        }   
+    } else if (dims.size() == 2) {
+        res = deserializeToVectorDouble(tensor.values);
+    } else {
+        assert((dims.size() == 1 || dims.size() == 2) && "Invalid dimension: must be 1 or 2");
+    }
+
+    return Value(Tensor<double>(res, output.getDims()));
 }
 
 

@@ -248,18 +248,24 @@ llvm::Expected<std::vector<Value>> SimRuntime::call(const std::vector<Value> &in
     auto inSizes = retAry[0].size();
     if (outSizes == 1) {
         if (inSizes == 1) {
-            std::vector<double> res{retAry[0][0]};
-            return std::vector<Value>{Value(Tensor<double>(res, std::vector<size_t>{inSizes}))};
+            auto bytes = serializeFormDouble(retAry[0][0]);
+            return std::vector<Value>{Value(Tensor<uint8_t>(bytes, std::vector<size_t>{inSizes}))};
+            //std::vector<double> res{retAry[0][0]};
+            //return std::vector<Value>{Value(Tensor<double>(res, std::vector<size_t>{inSizes}))};
         } else {
-            std::vector<double> res = retAry[0];
-            return std::vector<Value>{Value(Tensor<double>(res, std::vector<size_t>{inSizes}))};
+            auto bytes = serializeFormVectorDouble(retAry[0]);
+            return std::vector<Value>{Value(Tensor<uint8_t>(bytes, std::vector<size_t>{inSizes}))};
+            //std::vector<double> res = retAry[0];
+            //return std::vector<Value>{Value(Tensor<double>(res, std::vector<size_t>{inSizes}))};
         }
     } else {
         std::vector<double> res;
         for (auto i = 0; i < retAry.size(); i++) {
             res.insert(res.end(), retAry[i].begin(), retAry[i].end());
         }
-        return std::vector<Value>{Value(Tensor<double>(res, std::vector<size_t>{outSizes, inSizes}))};
+        auto bytes = serializeFormVectorDouble(res);
+        return std::vector<Value>{Value(Tensor<uint8_t>(bytes, std::vector<size_t>{outSizes, inSizes}))};
+        //return std::vector<Value>{Value(Tensor<double>(res, std::vector<size_t>{outSizes, inSizes}))};
     }
 }
 
