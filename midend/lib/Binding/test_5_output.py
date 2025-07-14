@@ -15,15 +15,15 @@ with open("all_keys.bin", "rb") as f:
 # decrypt the result
 import numpy as np
 from primus_aegis import Value
-from primus_aegis.dataprocessor import FHEDataProcessor
+from primus_aegis.dataprocessor import FHEDataProcessor, SimDataProcessor
 from test_cases import testOutputs, testIsSim
-
-if testIsSim:
-    exit(0)
 
 with open("resultData0.bin", "rb") as f:
     resultData0 = Value.from_bytes(f.read())
     print("type of resultData0:", type(resultData0))
-    outputData = FHEDataProcessor.processOutput(resultData0)
+    if testIsSim:
+        outputData = SimDataProcessor.processOutput(resultData0)
+    else:
+        outputData = FHEDataProcessor.processOutput(resultData0)
     print("len of outputData:", len(outputData))
     print("outputData:", outputData, "expectValue:", testOutputs[0]["value"])
