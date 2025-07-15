@@ -1,6 +1,7 @@
 # from onnxruntime import InferenceSession
 from primus.aegis.fheruntime import LocalFHEInferenceSession as InferenceSession
 import numpy as np
+from test_config import aegis_is_sim as is_sim
 
 if __name__ == '__main__':
     onnx_file = 'data/add.onnx'
@@ -8,7 +9,7 @@ if __name__ == '__main__':
     with open(onnx_file, 'rb') as f:
         content = f.read()
 
-    inference_session = InferenceSession(content)
+    inference_session = InferenceSession(content, is_sim = is_sim)
     inputs = inference_session.get_inputs()
     outputs = inference_session.get_outputs()
     input_name = [i.name for i in inputs]

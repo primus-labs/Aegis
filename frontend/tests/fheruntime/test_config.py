@@ -15,4 +15,4 @@ aegis_all_keys_path = f'{aegis_runtime_dir}/all_keys.bin'
 aegis_eva_keys_path = f'{aegis_runtime_dir}/eva_keys.bin'
 
 aegis_test_server_api = True
-aegis_is_sim = False
+aegis_is_sim = False 
