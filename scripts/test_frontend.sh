@@ -1,5 +1,7 @@
 #! /bin/bash
 
+build_wheel=${1:-notbuild}
+
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
 TEST_DIR=${SCRIPT_DIR}/../frontend/tests/fheruntime
 
@@ -7,24 +9,31 @@ FRONTEND_DIR=${SCRIPT_DIR}/../frontend
 
 cd ${FRONTEND_DIR}
 
-${SCRIPT_DIR}/build_wheel.sh
-pip install --force-reinstall dist/aegis-0.1.0-py3-none-any.whl
+if [ "$build_wheel" == "build" ]; then
+    ${SCRIPT_DIR}/build_wheel.sh
+    pip install --force-reinstall dist/aegis-0.1.0-py3-none-any.whl
+fi
 
 cd ${TEST_DIR}
 
-export AEGIS_OUTPUT_DIR=${TEST_DIR}/output
+export AEGIS_OUTPUT_DIR=/tmp/aegis_output
 export AEGIS_PROG_SPEC_PATH=${AEGIS_OUTPUT_DIR}/prog_spec.json
 export AEGIS_CLIENT_ZIP_PATH=${AEGIS_OUTPUT_DIR}/client.zip
 
 export AEGIS_DATA_DIR=${TEST_DIR}/data
-export AEGIS_ALL_KEYS_PATH=${AEGIS_DATA_DIR}/all_keys.bin
-export AEGIS_EVA_KEYS_PATH=${AEGIS_DATA_DIR}/eva_keys.bin
 export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
+
+export AEGIS_RUNTIME_DIR=/tmp/aegis_runtime
+export AEGIS_ALL_KEYS_PATH=${AEGIS_RUNTIME_DIR}/all_keys.bin
+export AEGIS_EVA_KEYS_PATH=${AEGIS_RUNTIME_DIR}/eva_keys.bin
 
 export TEST_SERVER_API=1
 # export TEST_SERVER_API=0
 export IS_SIM=1
 export IS_SIM=0
+
+mkdir -p /tmp/aegis_output
+mkdir -p /tmp/aegis_runtime
 
 python3 test_1_compile.py
 python3 test_2_keygen.py

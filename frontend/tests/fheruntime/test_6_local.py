@@ -5,7 +5,6 @@ import os
 
 if __name__ == '__main__':
     onnx_file_path = os.getenv('AEGIS_ONNX_FILE_PATH')
-    output_dir = os.getenv('AEGIS_OUTPUT_DIR')
     is_sim = os.getenv('IS_SIM') == '1'
 
     with open(onnx_file_path, 'rb') as f:

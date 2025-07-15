@@ -5,7 +5,7 @@ from test_utils import save_data_array
 
 if __name__ == '__main__':
     all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
-    data_dir = os.getenv('AEGIS_DATA_DIR')
+    runtime_dir = os.getenv('AEGIS_RUNTIME_DIR')
     file_path = os.getenv('AEGIS_CLIENT_ZIP_PATH')
     is_sim = os.getenv('IS_SIM') == '1'
 
@@ -21,4 +21,4 @@ if __name__ == '__main__':
     ser1 = client.encrypt(private_data_1, True)
     ser2 = client.plaintext(private_data_2, True)
 
-    save_data_array([ser1, ser2], data_dir + "/private_data.bin")
+    save_data_array([ser1, ser2], f'{runtime_dir}/private_data.bin')

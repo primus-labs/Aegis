@@ -40,7 +40,7 @@ class FHEServer:
         self._are_keys_loaded = False
         self._is_local_mode = is_local_mode
         self._is_sim = is_sim
-        self._output_dir = './output'
+        self._output_dir = '/tmp/aegis_output'
         self._compile_result = None
 
     def get_output_dir(self) -> str:
@@ -86,6 +86,12 @@ class FHEServer:
         Returns
             str: return the mlir file path
         """
+        tmpdir = tempfile.mkdtemp()
+        file_name = onnx_file[onnx_file.rfind('/') + 1:]
+        onnx_file2 = f'{tmpdir}/{file_name}'
+        shutil.copyfile(onnx_file, onnx_file2)
+        onnx_file = onnx_file2
+
         import os
         import subprocess
         cmd = ['onnx-mlir', '--EmitMLIR', onnx_file]
@@ -297,7 +303,7 @@ class FHEServer:
                 compile_option.compileTarget = COMPILE_TARGET.SIM_MLIR
             else:
                 compile_option.compileTarget = COMPILE_TARGET.LIBRARY
-            compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "./output")
+            compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "/tmp/aegis_output")
         self._output_dir = compile_option.outputDir
         if isinstance(onnx_file_or_py_function, str):
             if onnx_file_or_py_function.endswith('.mlir'):
@@ -307,7 +313,8 @@ class FHEServer:
             else:
                 raise RuntimeError('unsupported file type ' + onnx_file_or_py_function)
         elif callable(onnx_file_or_py_function):
-            mlir_file = self._convert_py_to_mlir(self._output_dir, onnx_file_or_py_function)
+            tmpdir = tempfile.mkdtemp()
+            mlir_file = self._convert_py_to_mlir(tmpdir, onnx_file_or_py_function)
         else:
             raise RuntimeError("onnx_file and py_function are None")
 
