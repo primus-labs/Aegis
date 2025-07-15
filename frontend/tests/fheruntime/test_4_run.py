@@ -2,19 +2,18 @@ from primus.aegis.fheruntime import FHEServer as Server, FHEInferenceSession as 
 from typing import List
 import os
 from test_utils import load_data_array, save_data_array
+from test_config import aegis_runtime_dir as runtime_dir
+from test_config import aegis_output_dir as output_dir
+from test_config import aegis_eva_keys_path as eva_keys_path
+from test_config import aegis_is_sim as is_sim
+from test_config import aegis_test_server_api as test_server_api
 
 if __name__ == '__main__':
-    runtime_dir = os.getenv('AEGIS_RUNTIME_DIR')
-    output_dir = os.getenv('AEGIS_OUTPUT_DIR')
-    eva_keys_path = os.getenv('AEGIS_EVA_KEYS_PATH')
-    is_sim = os.getenv('IS_SIM') == '1'
-
     private_data = load_data_array(f'{runtime_dir}/private_data.bin')
     private_data_1 = private_data[0]
     private_data_2 = private_data[1]
     archive_path = f'{output_dir}/server.zip'
 
-    test_server_api = os.getenv('TEST_SERVER_API') == '1'
     print('test_server_api:', test_server_api)
 
     if test_server_api:

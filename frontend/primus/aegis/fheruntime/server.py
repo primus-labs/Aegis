@@ -305,8 +305,8 @@ class FHEServer:
                 compile_option.compileTarget = COMPILE_TARGET.SIM_MLIR
             else:
                 compile_option.compileTarget = COMPILE_TARGET.LIBRARY
-            compile_option.outputDir = os.getenv('AEGIS_OUTPUT_DIR', "/tmp/aegis_output")
-        self._output_dir = compile_option.outputDir
+        if len(compile_option.outputDir) > 0:
+            self._output_dir = compile_option.outputDir
         if isinstance(onnx_file_or_py_function, str):
             if onnx_file_or_py_function.endswith('.mlir'):
                 mlir_file = onnx_file_or_py_function

@@ -1,6 +1,9 @@
 from primus.aegis.fheruntime import FHEServer as Server, FHEInferenceSession as InferenceSession, CompileOption, CompileResult, COMPILE_TARGET 
 import numpy as np
 import os
+from test_config import aegis_onnx_file_path as onnx_file_path
+from test_config import aegis_test_server_api as test_server_api
+from test_config import aegis_is_sim as is_sim
 
 def add_2d_6elements(X1: list[list[float, 2], 3], X2: list[list[float, 2], 3]) -> list[list[float, 2], 3]:
     for i in range(3):
@@ -9,9 +12,6 @@ def add_2d_6elements(X1: list[list[float, 2], 3], X2: list[list[float, 2], 3]) -
     return X1
 
 def test_compile() -> str:
-    onnx_file_path = os.getenv('AEGIS_ONNX_FILE_PATH')
-    test_server_api = os.getenv('TEST_SERVER_API') == '1'
-    is_sim = os.getenv('IS_SIM') == '1'
     print('test_server_api:', test_server_api)
 
     with open(onnx_file_path, 'rb') as f:

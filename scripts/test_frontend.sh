@@ -16,21 +16,9 @@ fi
 
 cd ${TEST_DIR}
 
-export AEGIS_OUTPUT_DIR=/tmp/aegis_output
-export AEGIS_PROG_SPEC_PATH=${AEGIS_OUTPUT_DIR}/prog_spec.json
-export AEGIS_CLIENT_ZIP_PATH=${AEGIS_OUTPUT_DIR}/client.zip
 
-export AEGIS_DATA_DIR=${TEST_DIR}/data
-export AEGIS_ONNX_FILE_PATH=${AEGIS_DATA_DIR}/add.onnx
-
-export AEGIS_RUNTIME_DIR=/tmp/aegis_runtime
-export AEGIS_ALL_KEYS_PATH=${AEGIS_RUNTIME_DIR}/all_keys.bin
-export AEGIS_EVA_KEYS_PATH=${AEGIS_RUNTIME_DIR}/eva_keys.bin
-
-export TEST_SERVER_API=1
-# export TEST_SERVER_API=0
-export IS_SIM=1
-export IS_SIM=0
+rm -rf /tmp/aegis_output
+rm -rf /tmp/aegis_runtime
 
 mkdir -p /tmp/aegis_output
 mkdir -p /tmp/aegis_runtime

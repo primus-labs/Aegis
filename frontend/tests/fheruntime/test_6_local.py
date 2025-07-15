@@ -2,11 +2,10 @@ from primus.aegis.fheruntime import LocalFHEInferenceSession as LocalInferenceSe
 from typing import List
 import numpy as np
 import os
+from test_config import aegis_onnx_file_path as onnx_file_path
+from test_config import aegis_is_sim as is_sim
 
 if __name__ == '__main__':
-    onnx_file_path = os.getenv('AEGIS_ONNX_FILE_PATH')
-    is_sim = os.getenv('IS_SIM') == '1'
-
     with open(onnx_file_path, 'rb') as f:
         onnx_file_bytes = f.read()
     param_annos = {'X1': 'encrypted', 'X2': 'clear'}

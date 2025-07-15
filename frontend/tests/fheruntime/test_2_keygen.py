@@ -1,16 +1,11 @@
 from primus.aegis.fheruntime import FHEClient as Client 
 import os
+from test_config import aegis_client_zip_path as file_path
+from test_config import aegis_all_keys_path as all_keys_path
+from test_config import aegis_eva_keys_path as eva_keys_path
+from test_config import aegis_is_sim as is_sim
 
 if __name__ == '__main__':
-    # progSpecFile path
-    # file_path = os.getenv('AEGIS_PROG_SPEC_PATH')
-    # OR
-    # client.zip path
-    file_path = os.getenv('AEGIS_CLIENT_ZIP_PATH')
-
-    all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
-    eva_keys_path = os.getenv('AEGIS_EVA_KEYS_PATH')
-    is_sim = os.getenv('IS_SIM') == '1'
     if is_sim:
         exit(0) 
 

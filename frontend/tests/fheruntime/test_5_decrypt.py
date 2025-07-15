@@ -3,13 +3,12 @@ import numpy as np
 import os
 from typing import List
 from test_utils import load_data_array
+from test_config import aegis_runtime_dir as runtime_dir
+from test_config import aegis_all_keys_path as all_keys_path
+from test_config import aegis_client_zip_path as file_path
+from test_config import aegis_is_sim as is_sim
 
 if __name__ == '__main__':
-    runtime_dir = os.getenv('AEGIS_RUNTIME_DIR')
-    all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
-    file_path = os.getenv('AEGIS_CLIENT_ZIP_PATH')
-    is_sim = os.getenv('IS_SIM') == '1'
-
     client = Client(file_path, is_sim = is_sim)
     client.load_all_keys(all_keys_path)
 
