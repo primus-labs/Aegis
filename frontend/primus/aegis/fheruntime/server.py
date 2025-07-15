@@ -72,6 +72,8 @@ class FHEServer:
             key_file_path (str):
                 The location from which eva keys are loaded
         """
+        if self._is_sim:
+            return
         self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 

@@ -19,12 +19,14 @@ if __name__ == '__main__':
 
     if test_server_api:
         server = Server(is_sim = is_sim)
-        server.load_eva_keys(eva_keys_path)
+        if not is_sim:
+            server.load_eva_keys(eva_keys_path)
         server.load(archive_path)
         output = server.run([private_data_1, private_data_2])
     else:
         inference_session = InferenceSession(is_sim = is_sim)
-        inference_session.get_server().load_eva_keys(eva_keys_path)
+        if not is_sim:
+            inference_session.get_server().load_eva_keys(eva_keys_path)
         inference_session.get_server().load(archive_path)
         output = inference_session.run(['Y'], {'X1': private_data_1, 'X2': private_data_2})
 

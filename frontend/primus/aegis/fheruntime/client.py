@@ -89,6 +89,8 @@ class FHEClient:
         """
         Generate FHE keys
         """
+        if self._is_sim:
+            return
         self._keyset_manager.keygen(self._prog_spec_file)
         self._are_keys_loaded = True
 
@@ -100,6 +102,8 @@ class FHEClient:
             key_file_path (str):
                 The location where all keys will be saved
         """
+        if self._is_sim:
+            return
         self._require_keys_loaded()
         self._keyset_manager.save_all_keys(key_file_path)
 
@@ -111,6 +115,8 @@ class FHEClient:
             key_file_path (str)
                 The location where eva keys will be saved
         """
+        if self._is_sim:
+            return
         self._require_keys_loaded()
         self._keyset_manager.save_eva_keys(key_file_path)
 
@@ -122,6 +128,8 @@ class FHEClient:
             key_file_path (str):
                 The location from which all keys will be loaded
         """
+        if self._is_sim:
+            return
         self._keyset_manager.load_keys(key_file_path)
         self._are_keys_loaded = True
 

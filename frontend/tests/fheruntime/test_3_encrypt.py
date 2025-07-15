@@ -10,7 +10,8 @@ if __name__ == '__main__':
     is_sim = os.getenv('IS_SIM') == '1'
 
     client = Client(file_path, is_sim = is_sim)
-    client.load_all_keys(all_keys_path)
+    if not is_sim:
+        client.load_all_keys(all_keys_path)
 
     private_data_1 = np.array([[1, 3], [5, 7], [9, 11]])
     private_data_2 = np.array([[2, 4], [6, 8], [10, 12]])

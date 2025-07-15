@@ -11,6 +11,8 @@ if __name__ == '__main__':
     all_keys_path = os.getenv('AEGIS_ALL_KEYS_PATH')
     eva_keys_path = os.getenv('AEGIS_EVA_KEYS_PATH')
     is_sim = os.getenv('IS_SIM') == '1'
+    if is_sim:
+        exit(0) 
 
     client = Client(file_path, is_sim = is_sim)
     client.keygen()
