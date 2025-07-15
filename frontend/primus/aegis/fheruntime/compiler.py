@@ -65,25 +65,25 @@ class FHECompileResult:
         """
         return the simulate file path
         """
-        return self._outputDirPath + '/' + self._simFileName
+        return f'{self._outputDirPath}/{self._simFileName}'
 
     def get_bin_file_path(self) -> str:
         """
         return the binary file path
         """
-        return self._outputDirPath + '/' + self._binFileName
+        return f'{self._outputDirPath}/{self._binFileName}'
 
     def get_cpp_file_path(self) -> str:
         """
         return the cpp file path
         """
-        return self._outputDirPath + '/' + self._cppFileName
+        return f'{self._outputDirPath}/{self._cppFileName}'
 
     def get_prog_spec_file_path(self) -> str:
         """
         return the prog spec file path
         """
-        return self._outputDirPath + '/' +  self._progSpecFileName
+        return f'{self._outputDirPath}/{self._progSpecFileName}'
 
     def to_json(self) -> str:
         """

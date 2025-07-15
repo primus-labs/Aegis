@@ -59,7 +59,7 @@ class FHEInferenceSession:
         if path_or_bytes != None:
             if isinstance(path_or_bytes, bytes):
                 with tempfile.TemporaryDirectory() as tmp_dir:
-                    onnx_file = tmp_dir + '/' + 'tmp.onnx'
+                    onnx_file = f'{tmp_dir}/tmp.onnx'
                     with open(onnx_file, 'wb') as f:
                         f.write(path_or_bytes)
                     self._do_compile(onnx_file, param_annos, compile_option)

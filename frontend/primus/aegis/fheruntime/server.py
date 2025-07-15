@@ -155,23 +155,25 @@ class FHEServer:
             for i in range(len(match_arg)):
                 if has_onnx_name:
                     name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
-                    name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos.get(name, 'encrypted') + '"'
+                    onnx_type = param_annos.get(name, 'encrypted')
+                    name_and_type = f'{match_arg[i][2]}, onnx.type = "{onnx_type}"'
                 else:
-                    name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos.get(param_names[i], 'encrypted') + '"'
+                    onnx_type = param_annos.get(param_names[i], 'encrypted')
+                    name_and_type = f'onnx.name = "{param_names[i]}", onnx.type = "{onnx_type}"'
                 arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
 
             args_str2 = ''
             for arg in arg_lst:
                 if len(args_str2) > 0:
                     args_str2 += ', '
-                args_str2 += arg[0] + ': ' + arg[1] + ' {' + arg[2] + '}'
+                args_str2 += f'{arg[0]}: {arg[1]} {{{arg[2]}}}'
 
-            sub_fn = re.sub('\((.*?)\)\s*->', '(' + args_str2 + ') ->', fn_str)
+            sub_fn = re.sub('\((.*?)\)\s*->', f'({args_str2}) ->', fn_str)
             if not has_onnx_name:
                 return_type = re.search('->\s*([^\s]+)\s*{', sub_fn)
                 return_type = return_type.group(1)
                 onnx_name = '{onnx.name = "Y"}'
-                sub_fn = re.sub('->.*?{', '-> (' + return_type + ' ' + onnx_name + ') {', sub_fn)
+                sub_fn = re.sub('->.*?{', f'-> ({return_type} {onnx_name}) {{', sub_fn)
             sub_content = re.sub('func.func.*{', sub_fn, content)
 
         with open(mlir_file, 'w') as f:
@@ -212,26 +214,26 @@ class FHEServer:
         with tempfile.TemporaryDirectory() as tmp_dir:
             progSpecFileName = compile_result._get_prog_spec_file_name()
             if len(progSpecFileName) > 0:
-                shutil.copyfile(compile_result.get_prog_spec_file_path(), tmp_dir + '/' + progSpecFileName)
+                shutil.copyfile(compile_result.get_prog_spec_file_path(), f'{tmp_dir}/{progSpecFileName}')
 
             if is_server:
                 simFileName = compile_result._get_sim_file_name()
                 if len(simFileName) > 0:
-                    shutil.copyfile(compile_result.get_sim_file_path(), tmp_dir + '/' + simFileName)
+                    shutil.copyfile(compile_result.get_sim_file_path(), f'{tmp_dir}/{simFileName}')
 
                 binFileName = compile_result._get_bin_file_name()
                 if len(binFileName) > 0:
-                    shutil.copyfile(compile_result.get_bin_file_path(), tmp_dir + '/' +  binFileName)
+                    shutil.copyfile(compile_result.get_bin_file_path(), f'{tmp_dir}/{binFileName}')
 
                 cppFileName = compile_result._get_cpp_file_name()
                 if len(cppFileName) > 0:
-                    shutil.copyfile(compile_result.get_cpp_file_path(), tmp_dir + '/' +  cppFileName)
+                    shutil.copyfile(compile_result.get_cpp_file_path(), f'{tmp_dir}/{cppFileName}')
 
-            with open(tmp_dir + '/' + 'compile_result.json', 'w') as f:
+            with open(f'{tmp_dir}/compile_result.json', 'w') as f:
                 f.write(compile_result.to_json())
 
-            shutil.make_archive(output_dir + '/' + file_name, 'zip', tmp_dir)
-        return output_dir + '/' + file_name + '.zip'
+            shutil.make_archive(f'{output_dir}/{file_name}', 'zip', tmp_dir)
+        return f'{output_dir}/{file_name}.zip'
     
     def save(self, compile_result: FHECompileResult, output_dir: str) -> tuple[str, str]:
         """
@@ -263,7 +265,7 @@ class FHEServer:
         """
         tmp_dir = tempfile.mkdtemp()
         shutil.unpack_archive(archive_path, tmp_dir, 'zip')
-        with open(tmp_dir + '/' + 'compile_result.json', 'r') as f:
+        with open(f'{tmp_dir}/compile_result.json', 'r') as f:
             content = f.read()
         self._compile_result = FHECompileResult.from_json(content)
         self._compile_result.set_output_dir_path(tmp_dir)

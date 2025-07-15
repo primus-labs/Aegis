@@ -78,7 +78,7 @@ class FHEClient:
         """
         tmp_dir = tempfile.mkdtemp()
         shutil.unpack_archive(archive_path, tmp_dir, 'zip')
-        with open(tmp_dir + '/' + 'compile_result.json', 'r') as f:
+        with open(f'{tmp_dir}/compile_result.json', 'r') as f:
             content = f.read()
         self._compile_result = FHECompileResult.from_json(content)
         self._compile_result.set_output_dir_path(tmp_dir)
