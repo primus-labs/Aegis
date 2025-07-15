@@ -119,39 +119,60 @@ class FHEServer:
         """
         with open(mlir_file, 'r') as f:
             content = f.read()
-        match_fn = re.search('func.func.*{', content)
-        fn_str = match_fn.group()
-    
-        match_args = re.search('\((.*?)\)', fn_str)
-        args_str = match_args.group(1)
-    
-        match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)\s*{([^}]+)}', args_str)
-        has_onnx_name = True
-        if len(match_arg) == 0:
-            match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)', args_str)
-            has_onnx_name = False
-        arg_lst = []
-        for i in range(len(match_arg)):
-            if has_onnx_name:
-                name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
-                name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos.get(name, 'encrypted') + '"'
-            else:
-                name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos.get(param_names[i], 'encrypted') + '"'
-            arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
-    
-        args_str2 = ''
-        for arg in arg_lst:
-            if len(args_str2) > 0:
-                args_str2 += ', '
-            args_str2 += arg[0] + ': ' + arg[1] + ' {' + arg[2] + '}'
-    
-        sub_fn = re.sub('\((.*?)\)\s*->', '(' + args_str2 + ') ->', fn_str)
-        if not has_onnx_name:
-            return_type = re.search('->\s*([^\s]+)\s*{', sub_fn)
-            return_type = return_type.group(1)
-            onnx_name = '{onnx.name = "Y"}'
-            sub_fn = re.sub('->.*?{', '-> (' + return_type + ' ' + onnx_name + ') {', sub_fn)
-        sub_content = re.sub('func.func.*{', sub_fn, content)
+        match_fn = re.search('"func.func"\(\)\s*<\{.*?\}>\s*\(\{', content)
+        if match_fn != None:
+            fn_str = match_fn.group()
+
+            match_def = re.search('<\{(.*?)\}>', fn_str)
+            def_str = match_def.group(1)
+
+            input_annos = ''
+            for (k, v) in param_annos.items():
+                one_item = f'{{onnx.name = "{k}", onnx.type = "{v}"}}'
+                if len(input_annos) == 0:
+                    input_annos = f'arg_attrs = [ {one_item}'
+                else:
+                    input_annos += f', {one_item}'
+            input_annos += ']'
+
+            output_annos = 'res_attrs = [{onnx.name = "Y"}]'
+            substr = f'<{{{def_str}, {input_annos}, {output_annos}}}>'
+            fn_str2 = re.sub('<\{(.*?)\}>', substr, fn_str)
+            sub_content = re.sub('"func.func"\(\)\s*<\{.*?\}>\s*\(\{', fn_str2, content)
+        else:
+            match_fn = re.search('func.func.*{', content)
+            fn_str = match_fn.group()
+
+            match_args = re.search('\((.*?)\)', fn_str)
+            args_str = match_args.group(1)
+
+            match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)\s*{([^}]+)}', args_str)
+            has_onnx_name = True
+            if len(match_arg) == 0:
+                match_arg = re.findall('([%\w]+)\s*:\s*([<>\w]+)', args_str)
+                has_onnx_name = False
+            arg_lst = []
+            for i in range(len(match_arg)):
+                if has_onnx_name:
+                    name = re.search('onnx.name\s*=\s*\"(\w+)\"', match_arg[i][2]).group(1)
+                    name_and_type = match_arg[i][2] + ', onnx.type = "' + param_annos.get(name, 'encrypted') + '"'
+                else:
+                    name_and_type = 'onnx.name = "' + param_names[i] + '", onnx.type = "' + param_annos.get(param_names[i], 'encrypted') + '"'
+                arg_lst.append((match_arg[i][0], match_arg[i][1], name_and_type))
+
+            args_str2 = ''
+            for arg in arg_lst:
+                if len(args_str2) > 0:
+                    args_str2 += ', '
+                args_str2 += arg[0] + ': ' + arg[1] + ' {' + arg[2] + '}'
+
+            sub_fn = re.sub('\((.*?)\)\s*->', '(' + args_str2 + ') ->', fn_str)
+            if not has_onnx_name:
+                return_type = re.search('->\s*([^\s]+)\s*{', sub_fn)
+                return_type = return_type.group(1)
+                onnx_name = '{onnx.name = "Y"}'
+                sub_fn = re.sub('->.*?{', '-> (' + return_type + ' ' + onnx_name + ') {', sub_fn)
+            sub_content = re.sub('func.func.*{', sub_fn, content)
 
         with open(mlir_file, 'w') as f:
             f.write(sub_content)
