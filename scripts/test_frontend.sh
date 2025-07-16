@@ -23,10 +23,24 @@ rm -rf /tmp/aegis_runtime
 mkdir -p /tmp/aegis_output
 mkdir -p /tmp/aegis_runtime
 
-python3 test_1_compile.py
-python3 test_2_keygen.py
-python3 test_3_encrypt.py
-python3 test_4_run.py
-python3 test_5_decrypt.py
-python3 test_6_local.py
-python3 test_7_onnxruntime.py
+test_server_api_set=(OFF ON)
+is_sim_set=(OFF ON)
+
+for test_server_api in ${test_server_api_set[@]}
+do
+    for is_sim in ${is_sim_set[@]}
+    do
+        export AEGIS_TEST_SERVER_API=${test_server_api}
+        export AEGIS_IS_SIM=${is_sim}
+        echo "test server api:${test_server_api}"
+        echo "is sim: ${is_sim}"
+
+        python3 test_1_compile.py
+        python3 test_2_keygen.py
+        python3 test_3_encrypt.py
+        python3 test_4_run.py
+        python3 test_5_decrypt.py
+        python3 test_6_local.py
+        python3 test_7_onnxruntime.py
+    done
+done
