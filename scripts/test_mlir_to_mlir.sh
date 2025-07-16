@@ -23,7 +23,7 @@ fi
 #echo "get command line:$cmdline"
 
 
-cd ../debug_build/bin
+cd ../build/bin
 FILECHECK_TOOL="../../third_party/llvm-project/build/bin/FileCheck"
 
 #./aegiscompiler --collect-metadata --unroll-loop-and-memory-opt --affine-simplify-structures --lower-affine --arith-to-secret --canonicalize --func-to-secret --canonicalize --cse --memref-to-secret --canonicalize --cse --secret-to-fhe --canonicalize --cse < "$1" | "$FILECHECK_TOOL" "$1"

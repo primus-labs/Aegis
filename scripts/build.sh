@@ -1,21 +1,26 @@
 #!/bin/bash
 
 build_type="Release"
-if [[ $# -gt 0 ]]; then
-  case "${1,,}" in
+run_tests=0
+
+for arg in "$@"; do
+  case "${arg,,}" in
   "debug")
     build_type="Debug"
     ;;
   "release")
     build_type="Release"
     ;;
+  "--test")
+    run_tests=1
+    ;;
   *)
-    echo "Unknown build type: $1"
-    echo "Valid options: debug | release"
+    echo "Unknown build type: $arg"
+    echo "Valid options: debug | release | --test"
     exit 1
     ;;
   esac
-fi
+done
 
 llvm_targets_to_build="X86"
 if [[ $OSTYPE == 'darwin'* ]]; then
@@ -94,7 +99,9 @@ cmake ../midend/ \
   -DPython3_EXECUTABLE=$(which python3)
 make -j8
 
-echo "****************************************************"
-echo "**************       test aegis        *************"
-echo "****************************************************"
-make check-aegis
+if [[ $run_tests -eq 1 ]]; then
+  echo "****************************************************"
+  echo "**************       test aegis        *************"
+  echo "****************************************************"
+  make check-aegis
+fi

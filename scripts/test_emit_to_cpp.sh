@@ -23,7 +23,7 @@ fi
 #echo "get command line:$cmdline"
 
 
-cd ../debug_build/bin
+cd ../build/bin
 FILECHECK_TOOL="../../third_party/llvm-project/build/bin/FileCheck"
 
 output=$(./emitc-translate $cmdline < "$1" | "$FILECHECK_TOOL" "$1" 2>&1) 

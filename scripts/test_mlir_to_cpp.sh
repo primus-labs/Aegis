@@ -23,7 +23,7 @@ fi
 echo "get command line:$cmdline"
 
 
-cd ../debug_build/bin
+cd ../build/bin
 FILECHECK_TOOL="../../third_party/llvm-project/build/bin/FileCheck"
 
 #./aegiscompiler --xxx < "$1" | ./emitc-translate --mlir-to-cpp |"$FILECHECK_TOOL" "$1"
