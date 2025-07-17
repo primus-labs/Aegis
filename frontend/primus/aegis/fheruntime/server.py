@@ -321,6 +321,11 @@ class FHEServer:
             raise RuntimeError("onnx_file and py_function are None")
 
         if param_annos != None:
+            if not all([v == 'encrypted' or v == 'clear' for (k, v) in param_annos.items()]):
+                raise RuntimeError("onnx.type must be encrypted or clear")
+            if all([v == 'clear' for (k, v) in param_annos.items()]):
+                if not self._is_sim:
+                    raise RuntimeError("at least one param should be encrypted")
             param_names = None
             if callable(onnx_file_or_py_function):
                 source = inspect.getsource(onnx_file_or_py_function)
