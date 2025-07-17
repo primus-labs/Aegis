@@ -11,10 +11,15 @@ Aegis provides developer-friendly FHE compiler and runtime environment toolkit, 
 ### Prerequisites
 
 > python version 3.10 or above (which can be checked by running python --version).
+
 > cmake version >= 3.13.4 <= 3.27
+
 > make >= 4.2.1
+
 > ninja >= 1.10.2
+
 > gcc >= 7 (with C++17 support)
+
 
 #### Ubuntu
 
@@ -100,8 +105,8 @@ Here is the full examples:
     data_1 = np.array([1, 3, 5, 7, 9, 11], dtype = np.float32)
     data_2 = np.array([2, 4, 6, 8, 10, 12], dtype = np.float32)
 
-    inference_session = LocalInferenceSession("/path/to/add.onnx")
-    output = inference_session.run(['Y'], {'X1': data_1, 'X2': data_2})
+    session = LocalInferenceSession("/path/to/add.onnx")
+    output = session.run(['Y'], {'X1': data_1, 'X2': data_2})
     print(output)
   ```
 
@@ -145,8 +150,8 @@ Here is the full examples:
 ## Resources
 - [Quick Start](https://fhe.primuslabs.xyz/docs/Quick%20Start/quick_start)
 - [Deployment](https://fhe.primuslabs.xyz/docs/Quick%20Start/deploy)
-- [Core Architecture](https://fhe.primuslabs.xyz/docs/Installation/core_architecture)
-- [Compilation Workflow](https://fhe.primuslabs.xyz/docs/Installation/compile_workflow)
+- [Core Architecture](https://fhe.primuslabs.xyz/docs/Architecture/core_architecture)
+- [Compilation Workflow](https://fhe.primuslabs.xyz/docs/Architecture/compile_workflow)
 
 ## Contributing
 Aegis is an open source project developed under the Apache-2.0 license and maintained by [Primus Labs](https://www.primuslabs.xyz/). Contributions from individuals and organizations are all welcome. Before beginning, please take a look at our [contributing guidelines](CONTRIBUTING.md). Our project adheres to [code of conduct](CODE_OF_CONDUCT.md). By participating in our community, you are expected to uphold this code. 
