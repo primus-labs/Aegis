@@ -9,8 +9,8 @@ onnx_file = os.path.join(py_dir, "add.onnx")
 # developer role
 # ---------------
 session = InferenceSession(onnx_file)
-archive_path = session.get_archive_path()
-print(archive_path)
+(client_archive_path, server_archive_path) = session.get_archive_path()
+print(client_archive_path, server_archive_path)
 # send server.zip to server
 # send client.zip to client
 
@@ -18,7 +18,7 @@ print(archive_path)
 # client role
 # ---------------
 # key gen
-client = Client("./output/client.zip")
+client = Client(client_archive_path)
 client.keygen()
 
 # save eva keys
@@ -37,7 +37,7 @@ enc_val1, enc_val2 = client.encrypt([data_1, data_2])
 # server role
 # ---------------
 server = Server()
-res = server.load("./output/server.zip")
+res = server.load(server_archive_path)
 
 # load eva keys
 server.load_eva_keys(eva_keys)
