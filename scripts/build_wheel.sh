@@ -21,7 +21,7 @@ bash ./copy_files_to_frontend.sh
 FRONTEND_DIR=${SCRIPT_DIR}/../frontend
 cd ${FRONTEND_DIR}
 
-python -m build
+python3 -m build
 
 #
 # Install wheel

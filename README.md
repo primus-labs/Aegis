@@ -31,6 +31,7 @@ sudo apt install python3
 sudo apt install python3-pip
 sudo apt install libomp5
 sudo apt install libomp-dev
+sudo apt install python3.10-venv
 sudo python3 -m pip install -r frontend/requirements.txt      
 ```
 
