@@ -86,6 +86,14 @@ cmake .. -DRUN_HAVE_POSIX_REGEX=0 \
   -DBUILD_EXAMPLES=OFF
 make -j8
 sudo make install
+if [[ "$OSTYPE" =~ "linux" ]]; then
+    so_names=(libOPENFHEbinfhe.so libOPENFHEpke.so)
+    for so_name in ${so_names[@]}
+    do
+        sudo patchelf --remove-rpath /usr/local/lib/$so_name
+        sudo patchelf --set-rpath '$ORIGIN' /usr/local/lib/$so_name
+    done
+fi
 
 echo "****************************************************"
 echo "**************       build aegis       *************"
