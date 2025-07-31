@@ -42,12 +42,6 @@ else
   patchelf --remove-rpath libmlir_runner_utils.so
   patchelf --set-rpath '$ORIGIN' libmlir_runner_utils.so
 
-  patchelf --remove-rpath ${DIST_DIR}/lib/$(basename ${aegis_rt_so})
-  patchelf --set-rpath '/usr/local/lib' ${DIST_DIR}/lib/$(basename ${aegis_rt_so})
-
-  patchelf --remove-rpath ${DIST_DIR}/lib/$(basename ${primus_aegis_so})
-  patchelf --set-rpath '$ORIGIN:/usr/local/lib' ${DIST_DIR}/lib/$(basename ${primus_aegis_so})
-
 fi
 cp -f ${onnx_mlir_exe} ${DIST_DIR}/bin/
 cp -f ${aegis_compiler_exe} ${DIST_DIR}/bin/
