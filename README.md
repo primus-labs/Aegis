@@ -153,6 +153,7 @@ Here is the full examples:
 - [Deployment](https://fhe.primuslabs.xyz/docs/Quick%20Start/deploy)
 - [Core Architecture](https://fhe.primuslabs.xyz/docs/Architecture/core_architecture)
 - [Compilation Workflow](https://fhe.primuslabs.xyz/docs/Architecture/compile_workflow)
+- [FAQ](https://github.com/primus-labs/Aegis/wiki/FAQ)
 
 ## Contributing
 Aegis is an open source project developed under the Apache-2.0 license and maintained by [Primus Labs](https://www.primuslabs.xyz/). Contributions from individuals and organizations are all welcome. Before beginning, please take a look at our [contributing guidelines](CONTRIBUTING.md). Our project adheres to [code of conduct](CODE_OF_CONDUCT.md). By participating in our community, you are expected to uphold this code. 
