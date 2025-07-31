@@ -64,11 +64,14 @@ set(RT_DEP_LIBS
     AegisSimRuntime
 )
 
-set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib)
-target_link_libraries(AegisRuntime PUBLIC ${RT_DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore OPENFHEpke OPENFHEbinfhe)
+set(OPENFHE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/../third_party/openfhe/build/lib /usr/local/lib)
+set(_origin_prefix "\$ORIGIN")
 if(APPLE)
-target_link_options(AegisRuntime PRIVATE "-Wl,-rpath,@loader_path" "-Wl,-rpath,/usr/local/lib")
+    set(_origin_prefix "@loader_path")
 endif()
+target_link_options(AegisRuntime PRIVATE "-Wl,-rpath,${_origin_prefix}" "-Wl,-rpath,/usr/local/lib")
+target_link_libraries(AegisRuntime PUBLIC ${RT_DEP_LIBS} -L${OPENFHE_LIBRARY_PATH} OPENFHEcore OPENFHEpke OPENFHEbinfhe)
+
 #target_link_options(AegisRuntime PUBLIC "-Wl,--verbose")
 
 target_include_directories(AegisRuntime PUBLIC ${PROJECT_SOURCE_DIR}/include)
