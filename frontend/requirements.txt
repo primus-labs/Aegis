@@ -6,4 +6,5 @@ ml_dtypes>=0.1.0, <=0.6.0; python_version<"3.13"   # provides several NumPy dtyp
 ml_dtypes>=0.5.0, <=0.6.0; python_version>="3.13"
 setuptools
 build
+onnx
 torch
