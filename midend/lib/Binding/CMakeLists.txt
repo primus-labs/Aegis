@@ -29,6 +29,8 @@ FetchContent_MakeAvailable(nlohmann_json)
 message(STATUS "nlohmann_json downloaded successfully.")
 
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+message(STATUS "Python include: ${Python3_INCLUDE_DIRS}")
+message(STATUS "Python lib: ${Python3_LIBRARIES}")
 include_directories(${Python_INCLUDE_DIRS})
 
 # The following two forms of library files can be imported directly into python by `import primus_aegis`
