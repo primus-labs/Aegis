@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euxo pipefail
 
 build_type="Release"
 run_tests=0
